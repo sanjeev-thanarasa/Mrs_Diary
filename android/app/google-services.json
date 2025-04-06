@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "933324978596",
+    "project_id": "mrs-diary-v1",
+    "storage_bucket": "mrs-diary-v1.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:933324978596:android:f8196ec53e65152987a931",
+        "android_client_info": {
+          "package_name": "com.sms.mrs_dth_diary_v1"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "933324978596-l3qfvuqdoka5uv8hiu0g50s9bqs38dus.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.sms.mrs_dth_diary_v1",
+            "certificate_hash": "e853b363aa0aa7362675c59321b38902b00b1acd"
+          }
+        },
+        {
+          "client_id": "933324978596-pcm8ni4o4v73e6o8jpugoeur13c3f2sk.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCIJQs0FavniFgDmXxHIkFBmld3fVpC5WA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "933324978596-pcm8ni4o4v73e6o8jpugoeur13c3f2sk.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
