@@ -74,3 +74,40 @@ Star the repo to support the project or [Follow Me](https://github.com/sanji185)
 ```bash
 git clone https://github.com/sanji185/mrs_dth_diary_v1.git
 cd mrs_dth_diary_v1
+
+2. Install dependencies:
+
+```bash
+flutter pub get
+
+3. Run the project:
+
+```bash
+flutter run
+
+
+License
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+Contact
+Feel free to reach out to me if you have any questions or suggestions.
+Follow me on GitHub.
+
+
+---
+
+### Explanation of Changes:
+
+1. **Header & Descriptions**: Cleaned up with proper Markdown formatting for readability.
+2. **Screenshots Section**: Simplified the table layout to display each page’s name and its respective image properly.
+3. **Dependencies Section**: Added the cleaned-up and updated list of dependencies, including those that support null safety.
+4. **Setup Instructions**: Added steps for setting up the project locally to help other developers get started quickly.
+
+Let me know if you need more changes or help!
+
+
+
+
+
+
+
