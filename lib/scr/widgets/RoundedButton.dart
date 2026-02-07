@@ -3,15 +3,16 @@ import 'package:mrs_dth_diary_v1/scr/widgets/subHelpers/styles.dart';
 
 class RoundedButton extends StatelessWidget {
   final String text;
-  final Function press;
-  final Color color, textColor;
+  final VoidCallback? press;
+  final Color color;
+  final Color textColor;
   const RoundedButton({
-    Key key,
-    this.text,
+    super.key,
+    required this.text,
     this.press,
     this.color = kPrimaryColor,
     this.textColor = Colors.white,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -21,9 +22,14 @@ class RoundedButton extends StatelessWidget {
       width: size.width * 0.8,
       child: ClipRRect(
         borderRadius: BorderRadius.circular(29),
-        child: FlatButton(
-          padding: EdgeInsets.symmetric(vertical: 15, horizontal: 35),
-          color: color,
+        child: TextButton(
+          style: TextButton.styleFrom(
+            padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 35),
+            backgroundColor: color,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(29),
+            ),
+          ),
           onPressed: press,
           child: Text(
             text,

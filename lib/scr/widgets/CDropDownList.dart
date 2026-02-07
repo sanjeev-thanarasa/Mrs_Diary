@@ -6,41 +6,37 @@ import 'customText.dart';
 class SelectDropList extends StatefulWidget {
   final String itemSelected;
   final DropListModel dropListModel;
-  final Function(String) onOptionSelected;
-  final String image;
+  final ValueChanged<String> onOptionSelected;
+  final String? image;
   final bool onlyIcon;
-  final double iconSize;
-  final Color iconColor;
+  final double? iconSize;
+  final Color? iconColor;
 
-  const SelectDropList({Key key,
-    this.itemSelected,
-    this.dropListModel,
-    this.onOptionSelected,
+  const SelectDropList({
+    super.key,
+    required this.itemSelected,
+    required this.dropListModel,
+    required this.onOptionSelected,
     this.image,
-    this.onlyIcon=false,
+    this.onlyIcon = false,
     this.iconSize,
-    this.iconColor
-  }) : super(key: key);
-
+    this.iconColor,
+  });
 
   @override
   _SelectDropListState createState() => _SelectDropListState();
 }
 
-class _SelectDropListState extends State<SelectDropList> with SingleTickerProviderStateMixin {
-
-
-
-  AnimationController expandController;
-  Animation<double> animation;
+class _SelectDropListState extends State<SelectDropList>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController expandController;
+  late final Animation<double> animation;
   bool isShow = false;
   @override
   void initState() {
     super.initState();
-    expandController = AnimationController(
-        vsync: this,
-        duration: Duration(milliseconds: 350)
-    );
+    expandController =
+        AnimationController(vsync: this, duration: Duration(milliseconds: 350));
     animation = CurvedAnimation(
       parent: expandController,
       curve: Curves.fastOutSlowIn,
@@ -49,7 +45,7 @@ class _SelectDropListState extends State<SelectDropList> with SingleTickerProvid
   }
 
   void _runExpandCheck() {
-    if(isShow) {
+    if (isShow) {
       expandController.forward();
     } else {
       expandController.reverse();
@@ -67,83 +63,89 @@ class _SelectDropListState extends State<SelectDropList> with SingleTickerProvid
     return Container(
       child: Column(
         children: <Widget>[
-         GestureDetector(
-          onTap: (){
-            this.isShow = !this.isShow;
-            _runExpandCheck();},
-            child:  widget.onlyIcon
+          GestureDetector(
+            onTap: () {
+              this.isShow = !this.isShow;
+              _runExpandCheck();
+            },
+            child: widget.onlyIcon
                 ? IconButton(
-              onPressed: (){
-                this.isShow = !this.isShow;
-                _runExpandCheck();
-                setState(() {
-
-                });
-              },
-              icon: Icon(
-                  Icons.arrow_drop_down_outlined,
-                size: widget.iconSize ?? 30.0,
-
-              ),)
+                    onPressed: () {
+                      this.isShow = !this.isShow;
+                      _runExpandCheck();
+                      setState(() {});
+                    },
+                    icon: Icon(
+                      Icons.arrow_drop_down_outlined,
+                      size: widget.iconSize ?? 30.0,
+                    ),
+                  )
                 : Container(
-              height: 50.0,
-              margin:
-              const EdgeInsets.symmetric(vertical: 5.0, horizontal: 10.0),
-              decoration: new BoxDecoration(
-              border: Border.all(color: widget.iconColor ?? mainBlue, width: 1.0,),
-            borderRadius: BorderRadius.circular(10.0),
-            boxShadow: [
-            BoxShadow(
-            blurRadius: 1,
-            color: Colors.white,
-                      offset: Offset(0, 2))
-                ],
-              ),
-              child: new Row(
-                mainAxisSize: MainAxisSize.max,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: <Widget>[
-                  Padding(
-                      padding:
-                      EdgeInsets.symmetric(vertical: 0.0, horizontal: 15.0),
-                      child: Image(
-                        image:AssetImage(
-                        widget.image,
-                      ),fit: BoxFit.cover,height: 30,width: 25,color: widget.iconColor ?? mainBlue,)
-                  ),//////ICON OR IMAGE////////
-                  Container(
-                    height: 25.0,
-                    width: 1.0,
-                    color: widget.iconColor ?? mainBlue,
-                    margin: const EdgeInsets.only(left: 00.0, right: 10.0),
-                  ),///////// | //////////
-                  SizedBox(width: 10,),
-                  Expanded(
-                      child: GestureDetector(
-                        onTap: () {
-                          this.isShow = !this.isShow;
-                          _runExpandCheck();
-                          setState(() {
-
-                          });
-                        },
-                        child: CText(
-                            msg:widget.itemSelected,
-                            color: Colors.blue,
-                            size: 16),
-                      )
-                  ),
-                  Align(
-                    alignment: Alignment(1, 0),
-                    child: Icon(
-                      isShow ? Icons.arrow_drop_down : Icons.arrow_right,
-                      color: Colors.black,
-                      size: 40,
+                    height: 50.0,
+                    margin: const EdgeInsets.symmetric(
+                        vertical: 5.0, horizontal: 10.0),
+                    decoration: new BoxDecoration(
+                      border: Border.all(
+                        color: widget.iconColor ?? mainBlue,
+                        width: 1.0,
+                      ),
+                      borderRadius: BorderRadius.circular(10.0),
+                      boxShadow: [
+                        BoxShadow(
+                            blurRadius: 1,
+                            color: Colors.white,
+                            offset: Offset(0, 2))
+                      ],
+                    ),
+                    child: new Row(
+                      mainAxisSize: MainAxisSize.max,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: <Widget>[
+                        Padding(
+                            padding: EdgeInsets.symmetric(
+                                vertical: 0.0, horizontal: 15.0),
+                            child: widget.image == null
+                                ? const SizedBox(width: 25, height: 30)
+                                : Image(
+                                    image: AssetImage(widget.image!),
+                                    fit: BoxFit.cover,
+                                    height: 30,
+                                    width: 25,
+                                    color: widget.iconColor ?? mainBlue,
+                                  )), //////ICON OR IMAGE////////
+                        Container(
+                          height: 25.0,
+                          width: 1.0,
+                          color: widget.iconColor ?? mainBlue,
+                          margin:
+                              const EdgeInsets.only(left: 00.0, right: 10.0),
+                        ), ///////// | //////////
+                        SizedBox(
+                          width: 10,
+                        ),
+                        Expanded(
+                            child: GestureDetector(
+                          onTap: () {
+                            this.isShow = !this.isShow;
+                            _runExpandCheck();
+                            setState(() {});
+                          },
+                          child: CText(
+                              msg: widget.itemSelected,
+                              color: Colors.blue,
+                              size: 16),
+                        )),
+                        Align(
+                          alignment: Alignment(1, 0),
+                          child: Icon(
+                            isShow ? Icons.arrow_drop_down : Icons.arrow_right,
+                            color: Colors.black,
+                            size: 40,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                ],
-              ),
-            ),
           ),
           SizeTransition(
               axisAlignment: 1.0,
@@ -152,7 +154,9 @@ class _SelectDropListState extends State<SelectDropList> with SingleTickerProvid
                   margin: const EdgeInsets.only(bottom: 10),
                   padding: const EdgeInsets.only(bottom: 10),
                   decoration: new BoxDecoration(
-                    borderRadius: BorderRadius.only(bottomLeft: Radius.circular(20), bottomRight: Radius.circular(20)),
+                    borderRadius: BorderRadius.only(
+                        bottomLeft: Radius.circular(20),
+                        bottomRight: Radius.circular(20)),
                     color: Colors.white,
                     boxShadow: [
                       BoxShadow(
@@ -161,9 +165,8 @@ class _SelectDropListState extends State<SelectDropList> with SingleTickerProvid
                           offset: Offset(0, 4))
                     ],
                   ),
-                  child: _buildDropListOptions(widget.dropListModel.listOptionItems, context)
-              )
-          ),
+                  child: _buildDropListOptions(
+                      widget.dropListModel.listOptionItems, context))),
           // AnimatedSizeTransition(
           //     duration: 500,
           //     child: Container(
@@ -205,7 +208,8 @@ class _SelectDropListState extends State<SelectDropList> with SingleTickerProvid
               child: Container(
                 padding: const EdgeInsets.only(top: 20),
                 decoration: BoxDecoration(
-                  border: Border(top: BorderSide(color: Colors.grey[200], width: 1)),
+                  border: Border(
+                      top: BorderSide(color: Colors.grey.shade200, width: 1)),
                 ),
                 child: Text(item.name,
                     style: TextStyle(
@@ -227,5 +231,4 @@ class _SelectDropListState extends State<SelectDropList> with SingleTickerProvid
       ),
     );
   }
-
 }

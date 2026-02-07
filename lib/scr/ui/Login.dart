@@ -12,13 +12,15 @@ import 'Welcome.dart';
 const storedPasscode = '198430';
 
 class LoginScreen extends StatefulWidget {
+  const LoginScreen({super.key});
 
   @override
   State<StatefulWidget> createState() => _LoginScreenState();
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final StreamController<bool> _verificationNotifier = StreamController<bool>.broadcast();
+  final StreamController<bool> _verificationNotifier =
+      StreamController<bool>.broadcast();
 
   bool isAuthenticated = false;
 
@@ -30,55 +32,67 @@ class _LoginScreenState extends State<LoginScreen> {
         child: Column(
           children: [
             Container(
-                height: MediaQuery.of(context).size.height*0.4,
+              height: MediaQuery.of(context).size.height * 0.4,
               child: FadeInImage(
-                placeholder: AssetImage("assets/images/diary.png",),
-                image: AssetImage("assets/images/bgworld.png",),
+                placeholder: AssetImage(
+                  "assets/images/diary.png",
+                ),
+                image: AssetImage(
+                  "assets/images/bgworld.png",
+                ),
                 fadeInDuration: Duration(seconds: 1),
                 fit: BoxFit.cover,
               ),
-              ),
-           SizedBox(height: 30.0,),
+            ),
+            SizedBox(
+              height: 30.0,
+            ),
             SvgPicture.asset(
-                  "assets/icons/chat.svg",
-                  height: size.height * 0.40,
-                ),
-           SizedBox(height: 30.0,),
-           Center(
-                  child: RoundedButton(
-                    text: "LOGIN",
-                    press: () {
-                      _showLockScreen(
-                        context,
-                        opaque: false,
-                        cancelButton: CText(
-                          msg : 'Cancel',
-                          size: 16, color: Colors.white,
-                          semanticsLabel: 'Cancel',
-                        ),
-                      );
-                    },
-                  ),
-                ),
+              "assets/icons/chat.svg",
+              height: size.height * 0.40,
+            ),
+            SizedBox(
+              height: 30.0,
+            ),
+            Center(
+              child: RoundedButton(
+                text: "LOGIN",
+                press: () {
+                  _showLockScreen(
+                    context,
+                    opaque: false,
+                    cancelButton: CText(
+                      msg: 'Cancel',
+                      size: 16,
+                      color: Colors.white,
+                      semanticsLabel: 'Cancel',
+                    ),
+                  );
+                },
+              ),
+            ),
           ],
         ),
       ),
     );
   }
 
-  _showLockScreen(BuildContext context,
-      {bool opaque,
-        CircleUIConfig circleUIConfig,
-        KeyboardUIConfig keyboardUIConfig,
-        Widget cancelButton,
-        List<String> digits}) {
+  void _showLockScreen(
+    BuildContext context, {
+    bool opaque = false,
+    CircleUIConfig? circleUIConfig,
+    KeyboardUIConfig? keyboardUIConfig,
+    Widget? cancelButton,
+    List<String>? digits,
+  }) {
     Navigator.push(
         context,
         PageRouteBuilder(
           opaque: opaque,
-          pageBuilder: (context, animation, secondaryAnimation) => PasscodeScreen(
+          pageBuilder: (context, animation, secondaryAnimation) =>
+              PasscodeScreen(
             title: CText(
-              msg : 'Enter App Passcode',
+              msg: 'Enter App Passcode',
               textAlign: TextAlign.center,
               color: Colors.white,
               size: 28,
@@ -86,15 +100,15 @@ class _LoginScreenState extends State<LoginScreen> {
             circleUIConfig: circleUIConfig,
             keyboardUIConfig: keyboardUIConfig,
             passwordEnteredCallback: _onPasscodeEntered,
-            cancelButton: cancelButton,
+            cancelButton: cancelButton ?? const SizedBox(),
             deleteButton: CText(
-              msg :'Delete',
+              msg: 'Delete',
               size: 16,
               color: Colors.white,
               semanticsLabel: 'Delete',
             ),
             shouldTriggerVerification: _verificationNotifier.stream,
-            backgroundColor: Colors.black.withOpacity(0.8),
+            backgroundColor: Colors.black.withValues(alpha: 0.8),
             cancelCallback: _onPasscodeCancelled,
             digits: digits,
             passwordDigits: 6,
@@ -110,9 +124,11 @@ class _LoginScreenState extends State<LoginScreen> {
       setState(() {
         this.isAuthenticated = isValid;
       });
-      Navigator.push(context, PageRouteBuilder(
-          pageBuilder: (context, animation, secondaryAnimation) => IntroScreen()
-      ));
+      Navigator.push(
+          context,
+          PageRouteBuilder(
+              pageBuilder: (context, animation, secondaryAnimation) =>
+                  IntroScreen()));
     }
   }
 
@@ -126,24 +142,25 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  _buildPasscodeRestoreButton() => Align(
-    alignment: Alignment.bottomCenter,
-    child: Container(
-      margin: const EdgeInsets.only(bottom: 10.0, top: 20.0),
-      child: FlatButton(
-        child: CText(
-         msg: "Reset passcode",
-          textAlign: TextAlign.center,
-          size: 16,
-          color: Colors.white,
-          weight: FontWeight.w300,
+  Widget _buildPasscodeRestoreButton() => Align(
+        alignment: Alignment.bottomCenter,
+        child: Container(
+          margin: const EdgeInsets.only(bottom: 10.0, top: 20.0),
+          child: TextButton(
+            style: TextButton.styleFrom(
+              foregroundColor: Colors.white,
+            ),
+            onPressed: _resetAppPassword,
+            child: CText(
+              msg: "Reset passcode",
+              textAlign: TextAlign.center,
+              size: 16,
+              color: Colors.white,
+              weight: FontWeight.w300,
+            ),
+          ),
         ),
-        splashColor: Colors.white.withOpacity(0.4),
-        highlightColor: Colors.white.withOpacity(0.2),
-        onPressed: _resetAppPassword,
-      ),
-    ),
-  );
+      );
 
   _resetAppPassword() {
     Navigator.maybePop(context).then((result) {
@@ -167,32 +184,31 @@ class _LoginScreenState extends State<LoginScreen> {
             color: Colors.black87,
           ),
           content: CText(
-            msg :"Passcode reset is a non-secure operation!\n\nConsider removing all user data if this action performed.",
+            msg:
+                "Passcode reset is a non-secure operation!\n\nConsider removing all user data if this action performed.",
             color: Colors.black87,
           ),
           actions: <Widget>[
             // usually buttons at the bottom of the dialog
-            FlatButton(
-              child: CText(
-               msg:"Cancel",
-                size: 18,
-              ),
+            TextButton(
               onPressed: () {
                 Navigator.maybePop(context);
               },
-            ),
-            FlatButton(
               child: CText(
-                msg:"I understand",
+                msg: "Cancel",
                 size: 18,
               ),
+            ),
+            TextButton(
               onPressed: onAccepted,
+              child: CText(
+                msg: "I understand",
+                size: 18,
+              ),
             ),
           ],
         );
       },
     );
   }
-
 }
-

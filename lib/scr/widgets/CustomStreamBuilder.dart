@@ -5,30 +5,52 @@ import 'loading.dart';
 
 class CustomStreamBuilder extends StatelessWidget {
   final BuildContext context;
-  final Stream stream;
-  final Function body;
+  final Stream<QuerySnapshot<Map<String, dynamic>>> stream;
+  final Widget Function(
+      AsyncSnapshot<QuerySnapshot<Map<String, dynamic>>> snapshot) body;
 
-  const CustomStreamBuilder({Key key,
-    @required this.context,
-    @required this.stream,
-    @required this.body,
-
-  }) : super(key: key);
+  const CustomStreamBuilder({
+    super.key,
+    required this.context,
+    required this.stream,
+    required this.body,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<QuerySnapshot>(
-        stream: stream,
-        builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
-          return snapshot.hasData
-              ? body(snapshot)
-          : snapshot.connectionState == ConnectionState.waiting ? SizedBox(
-            height: MediaQuery.of(context).size.height/2 + 100,
-              child: Center(child: LoadingCircle()))
-              : snapshot.error ? Center(child: CText(msg: "Something went wrong!!!",color: Colors.black,size: 30.0,))
-              : snapshot.data.docs.length == 0 ? Center(child: CText(msg: "No Records Found!!!",color: Colors.black,size: 30.0,))
-              : Center(child: LoadingCircle());
-        },
-      );
-    }
+    return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+      stream: stream,
+      builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return const Center(
+            child: CText(
+              msg: "Something went wrong!!!",
+              color: Colors.black,
+              size: 30.0,
+            ),
+          );
+        }
+
+        if (snapshot.connectionState == ConnectionState.waiting ||
+            !snapshot.hasData) {
+          return SizedBox(
+            height: MediaQuery.of(context).size.height / 2 + 100,
+            child: const Center(child: LoadingCircle()),
+          );
+        }
+
+        if (snapshot.data!.docs.isEmpty) {
+          return const Center(
+            child: CText(
+              msg: "No Records Found!!!",
+              color: Colors.black,
+              size: 30.0,
+            ),
+          );
+        }
+
+        return body(snapshot);
+      },
+    );
   }
+}

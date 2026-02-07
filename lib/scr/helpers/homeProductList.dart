@@ -2,7 +2,6 @@
 
 import 'package:mrs_dth_diary_v1/scr/models/homeProduct.dart';
 import 'package:mrs_dth_diary_v1/scr/ui/VillagesPage.dart';
-import 'package:mrs_dth_diary_v1/scr/ui/splashScreen.dart';
 import 'package:mrs_dth_diary_v1/scr/ui/todayPackageExpiredUsers.dart';
 import 'package:mrs_dth_diary_v1/scr/ui/todayPaymentUsers.dart';
 import 'package:mrs_dth_diary_v1/scr/ui/totalBalanceUsers.dart';

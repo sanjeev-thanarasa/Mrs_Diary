@@ -1,20 +1,15 @@
-import 'package:flutter/material.dart';
-import 'package:toast/toast.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 
-class CToast extends StatelessWidget {
-  final BuildContext context;
-  final String message;
-
-  const CToast({Key key,
-  @required this.context,
-  @required this.message
-  }) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return toast(message);
-  }
-  toast(String message){
-    return Toast.show(message, context, duration: Toast.LENGTH_SHORT, gravity:  Toast.CENTER);
+class CToast {
+  static void show({
+    required String message,
+    ToastGravity gravity = ToastGravity.CENTER,
+    Toast toastLength = Toast.LENGTH_SHORT,
+  }) {
+    Fluttertoast.showToast(
+      msg: message,
+      gravity: gravity,
+      toastLength: toastLength,
+    );
   }
 }

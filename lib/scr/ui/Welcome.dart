@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animation_progress_bar/flutter_animation_progress_bar.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/customText.dart';
@@ -7,16 +6,16 @@ import 'package:mrs_dth_diary_v1/scr/widgets/subHelpers/styles.dart';
 
 import 'homePage.dart';
 
-
 class IntroScreen extends StatefulWidget {
+  const IntroScreen({super.key});
   @override
   _IntroScreenState createState() => _IntroScreenState();
 }
 
 class _IntroScreenState extends State<IntroScreen>
     with SingleTickerProviderStateMixin {
-  AnimationController controller;
-  Animation<double> animation;
+  late final AnimationController controller;
+  late final Animation<double> animation;
   final duration = Duration(milliseconds: 5000);
 
   @override
@@ -24,21 +23,19 @@ class _IntroScreenState extends State<IntroScreen>
     super.initState();
     controller = AnimationController(vsync: this, duration: duration);
     animation = CurvedAnimation(parent: controller, curve: Curves.bounceInOut);
-
+    controller.addStatusListener((status) {
+      if (status == AnimationStatus.completed) {
+        Future.delayed(
+          const Duration(milliseconds: 500),
+          () => changeScreenReplacement(context, HomePage()),
+        );
+      }
+    });
     controller.forward();
   }
 
   @override
   Widget build(BuildContext context) {
-    controller.addStatusListener((status) {
-      if (status == AnimationStatus.completed) {
-        Future.delayed(
-          Duration(milliseconds: 500),
-              () => changeScreenReplacement(context, HomePage()),
-        );
-      }
-    });
-
     return Scaffold(
       backgroundColor: kIndigoLight,
       body: Padding(

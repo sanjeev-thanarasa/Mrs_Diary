@@ -1,4 +1,3 @@
-import 'package:animated_icon_button/animated_icon_button.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -18,12 +17,13 @@ class EditUserDetail extends StatefulWidget {
   final List data;
   final int index;
 
-  const EditUserDetail({Key key,
-    this.userId,
-    this.data,
-    this.index,
-    this.collectionName,
-  }) : super(key: key);
+  const EditUserDetail({
+    super.key,
+    required this.userId,
+    required this.data,
+    required this.index,
+    required this.collectionName,
+  });
   @override
   _EditUserDetailState createState() => _EditUserDetailState();
 }
@@ -42,29 +42,43 @@ class _EditUserDetailState extends State<EditUserDetail> {
     super.initState();
   }
 
-  void editInitialize(){
-    if(widget.collectionName=='NewUser'){
+  void editInitialize() {
+    if (widget.collectionName == 'NewUser') {
       editOldUserInitialize();
-      print("widget.collectionName?>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> ${widget.collectionName}");
-      _uSerServices.shopController.text = widget.data[widget.index]["shopName"] ?? '';
-      _uSerServices.registerDate = widget.data[widget.index]['registerDate'] != null ? widget.data[widget.index]['registerDate'].toDate() : null;
-      _uSerServices.expiredDate = widget.data[widget.index]['expiredDate'] != null ? widget.data[widget.index]['expiredDate'].toDate() : null;
-    }else{
+      print(
+          "widget.collectionName?>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> ${widget.collectionName}");
+      _uSerServices.shopController.text =
+          widget.data[widget.index]["shopName"] ?? '';
+      _uSerServices.registerDate =
+          widget.data[widget.index]['registerDate'] != null
+              ? widget.data[widget.index]['registerDate'].toDate()
+              : null;
+      _uSerServices.expiredDate =
+          widget.data[widget.index]['expiredDate'] != null
+              ? widget.data[widget.index]['expiredDate'].toDate()
+              : null;
+    } else {
       editOldUserInitialize();
     }
-
   }
-  void editOldUserInitialize(){
-    print("widget.collectionName?>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> ${widget.collectionName}");
+
+  void editOldUserInitialize() {
+    print(
+        "widget.collectionName?>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> ${widget.collectionName}");
     _uSerServices.nameController.text = widget.data[widget.index]["name"] ?? '';
-    _uSerServices.addressController.text = widget.data[widget.index]["address"] ?? '';
-    _uSerServices.mobileController.text = widget.data[widget.index]["mobileNo"] ?? '';
-    _uSerServices.mobileController1.text = widget.data[widget.index]["mobileNo2"] ?? '';
-    _uSerServices.dishNumberController.text = widget.data[widget.index]["dishNumber"] ?? '';
+    _uSerServices.addressController.text =
+        widget.data[widget.index]["address"] ?? '';
+    _uSerServices.mobileController.text =
+        widget.data[widget.index]["mobileNo"] ?? '';
+    _uSerServices.mobileController1.text =
+        widget.data[widget.index]["mobileNo2"] ?? '';
+    _uSerServices.dishNumberController.text =
+        widget.data[widget.index]["dishNumber"] ?? '';
     _uSerServices.selectedArea = widget.data[widget.index]['area'];
     _uSerServices.selectedDishType = widget.data[widget.index]['dishType'];
-    _uSerServices.createAt = widget.data[widget.index]['createAt'] != null ? widget.data[widget.index]['createAt'].toDate() : null;
-
+    _uSerServices.createAt = widget.data[widget.index]['createAt'] != null
+        ? widget.data[widget.index]['createAt'].toDate()
+        : null;
   }
 
   @override
@@ -84,7 +98,11 @@ class _EditUserDetailState extends State<EditUserDetail> {
         actions: [
           Padding(
             padding: EdgeInsets.only(right: 8.0),
-            child: Image.asset("assets/images/mrslogo.png",height: 50,width: 50,),
+            child: Image.asset(
+              "assets/images/mrslogo.png",
+              height: 50,
+              width: 50,
+            ),
           )
         ],
       ),
@@ -126,7 +144,7 @@ class _EditUserDetailState extends State<EditUserDetail> {
             hintTextColor: Colors.blue,
             leadingIconColor: mainBlue,
             controller: _uSerServices.nameController,
-            hintText: "பெயர் : ${ _uSerServices.nameController.text}",
+            hintText: "பெயர் : ${_uSerServices.nameController.text}",
             icon: Icons.person_outline,
             keyboardType: TextInputType.text,
           ), //பெயர்
@@ -141,28 +159,28 @@ class _EditUserDetailState extends State<EditUserDetail> {
           SelectDropList(
               itemSelected: _uSerServices.selectedArea,
               dropListModel: villageDropListModel,
-              onOptionSelected:(optionItem){
-                setState(()=>_uSerServices.selectedArea=optionItem);},
-              image:'assets/images/dish.png'
-          ), //எந்த ஊர்
+              onOptionSelected: (optionItem) {
+                setState(() => _uSerServices.selectedArea = optionItem);
+              },
+              image: 'assets/images/dish.png'), //எந்த ஊர்
           Visibility(
-            visible:  _uSerServices.mobileController.text != '' ? true : false,
+            visible: _uSerServices.mobileController.text != '' ? true : false,
             child: CustomTextField(
               hintTextColor: Colors.blue,
               leadingIconColor: mainBlue,
-                controller: _uSerServices.mobileController,
-                hintText: "M.No : ${_uSerServices.mobileController.text}",
-                icon: Icons.phone,
-                keyboardType: TextInputType.number,
+              controller: _uSerServices.mobileController,
+              hintText: "M.No : ${_uSerServices.mobileController.text}",
+              icon: Icons.phone,
+              keyboardType: TextInputType.number,
             ),
           ), //தொலைபேசி இலக்கம்
           Visibility(
-            visible:  _uSerServices.mobileController1.text != '' ? true : false,
+            visible: _uSerServices.mobileController1.text != '' ? true : false,
             child: CustomTextField(
               hintTextColor: Colors.blue,
               leadingIconColor: mainBlue,
               controller: _uSerServices.mobileController1,
-              hintText: "M.No : ${ _uSerServices.mobileController1.text}",
+              hintText: "M.No : ${_uSerServices.mobileController1.text}",
               icon: Icons.phone,
               keyboardType: TextInputType.number,
             ),
@@ -171,39 +189,43 @@ class _EditUserDetailState extends State<EditUserDetail> {
             hintTextColor: Colors.blue,
             leadingIconColor: mainBlue,
             controller: _uSerServices.dishNumberController,
-            hintText: "Dish இலக்கம் : ${_uSerServices.dishNumberController.text}",
+            hintText:
+                "Dish இலக்கம் : ${_uSerServices.dishNumberController.text}",
             image: 'assets/images/dish.png',
             keyboardType: TextInputType.number,
           ), //Dish இலக்கம்
           SelectDropList(
               itemSelected: _uSerServices.selectedDishType,
               dropListModel: dishDropListModel,
-              onOptionSelected:(name){setState(()=>_uSerServices.selectedDishType=name);},
-              image:'assets/images/dish.png'
-          ),//Dish ன் வகை
+              onOptionSelected: (name) {
+                setState(() => _uSerServices.selectedDishType = name);
+              },
+              image: 'assets/images/dish.png'), //Dish ன் வகை
 
           CustomTextField(
             hintTextColor: Colors.blue,
             leadingIconColor: mainBlue,
             controller: _uSerServices.createAtDateController,
-            hintText: "பதிந்த திகதி : ${_uSerServices.createAt != null ? DateFormat('dd-MM-yyyy hh:mm a').format(_uSerServices.createAt) : "No Data"}",
+            hintText: _uSerServices.createAt != null
+                ? "பதிந்த திகதி : ${DateFormat('dd-MM-yyyy hh:mm a').format(_uSerServices.createAt!)}"
+                : "பதிந்த திகதி : Select Date",
             icon: Icons.phone,
             keyboardType: TextInputType.text,
             iconButton: true,
             animatedIconButtonStratIcon: Icons.date_range,
             animatedIconButtonEndIcon: Icons.date_range_outlined,
-            animatedIconButtonOnTap: (){
+            animatedIconButtonOnTap: () {
               showCupertinoModalPopup(
                   context: context,
                   builder: (_) => DatePicker(
-                    onDateTimeChanged: (val){
-                      setState(() {
-                        _uSerServices.createAt = val;
-                        _uSerServices.createAtDateController.text = DateFormat('dd-MM-yyyy hh:mm a')
-                            .format(val);
-                      });
-                    },
-                  ));
+                        onDateTimeChanged: (val) {
+                          setState(() {
+                            _uSerServices.createAt = val;
+                            _uSerServices.createAtDateController.text =
+                                DateFormat('dd-MM-yyyy hh:mm a').format(val);
+                          });
+                        },
+                      ));
             },
           ),
           buildNewUserFields(collectionName: widget.collectionName),
@@ -215,13 +237,13 @@ class _EditUserDetailState extends State<EditUserDetail> {
             paddingLeft: 140.0,
             paddingRight: 140.0,
             paddingTop: 8.0,
-            buttonPressed: (){
-                _uSerServices.updateRecord(
-                  index: 0,
-                  userId: widget.userId,
-                  context: context,
-                  collectionName: widget.collectionName,
-                );
+            buttonPressed: () {
+              _uSerServices.updateRecord(
+                index: 0,
+                userId: widget.userId,
+                context: context,
+                collectionName: widget.collectionName,
+              );
             },
           ),
           SizedBox(
@@ -231,11 +253,11 @@ class _EditUserDetailState extends State<EditUserDetail> {
       ),
     );
   }
-  buildNewUserFields({String collectionName}){
-    if(collectionName == 'OldUser'){
+
+  Widget buildNewUserFields({required String collectionName}) {
+    if (collectionName == 'OldUser') {
       return SizedBox();
-    }
-    else if(collectionName == 'NewUser'){
+    } else if (collectionName == 'NewUser') {
       return Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -248,57 +270,60 @@ class _EditUserDetailState extends State<EditUserDetail> {
           CustomTextField(
             hintTextColor: Colors.blue,
             controller: _uSerServices.registerDateController,
-            hintText: "Register Date : ${_uSerServices.registerDate != null ? DateFormat('dd-MM-yyyy hh:mm a').format(_uSerServices.registerDate) : "No Data"}",
+            hintText: _uSerServices.registerDate != null
+                ? "Register Date : ${DateFormat('dd-MM-yyyy hh:mm a').format(_uSerServices.registerDate!)}"
+                : "Register Date : Select Date",
             icon: Icons.phone,
             keyboardType: TextInputType.text,
             iconButton: true,
             readOnly: true,
             animatedIconButtonStratIcon: Icons.date_range,
             animatedIconButtonEndIcon: Icons.date_range_outlined,
-            animatedIconButtonOnTap: (){
+            animatedIconButtonOnTap: () {
               showCupertinoModalPopup(
                   context: context,
                   builder: (_) => DatePicker(
-                    onDateTimeChanged: (val){
-                      setState(() {
-                        _uSerServices.registerDate = val;
-                        _uSerServices.registerDateController.text = DateFormat('dd-MM-yyyy hh:mm a')
-                            .format(val);
-                      });
-                    },
-                  ));
+                        onDateTimeChanged: (val) {
+                          setState(() {
+                            _uSerServices.registerDate = val;
+                            _uSerServices.registerDateController.text =
+                                DateFormat('dd-MM-yyyy hh:mm a').format(val);
+                          });
+                        },
+                      ));
             },
           ),
           CustomTextField(
             hintTextColor: Colors.blue,
             controller: _uSerServices.expiredDateController,
-            hintText: "முடியும் திகதி : ${_uSerServices.expiredDate != null ? DateFormat('dd-MM-yyyy hh:mm a').format(_uSerServices.expiredDate) : "No Data"}",
+            hintText: _uSerServices.expiredDate != null
+                ? "முடியும் திகதி : ${DateFormat('dd-MM-yyyy hh:mm a').format(_uSerServices.expiredDate!)}"
+                : "முடியும் திகதி : Select Date",
             icon: Icons.phone,
             keyboardType: TextInputType.text,
             iconButton: true,
             animatedIconButtonStratIcon: Icons.date_range,
             animatedIconButtonEndIcon: Icons.date_range_outlined,
-            animatedIconButtonOnTap: (){
+            animatedIconButtonOnTap: () {
               showCupertinoModalPopup(
                   context: context,
                   builder: (_) => DatePicker(
-                    onDateTimeChanged: (val){
-                      setState(() {
-                        _uSerServices.expiredDate = val;
-                        _uSerServices.expiredDateController.text = DateFormat('dd-MM-yyyy hh:mm a')
-                            .format(val);
-                      });
-                    },
-                  ));
+                        onDateTimeChanged: (val) {
+                          setState(() {
+                            _uSerServices.expiredDate = val;
+                            _uSerServices.expiredDateController.text =
+                                DateFormat('dd-MM-yyyy hh:mm a').format(val);
+                          });
+                        },
+                      ));
             },
           ),
         ],
       );
+    } else {
+      return SizedBox();
     }
-    else{return SizedBox();}
-
   }
-
 
   Widget _buildBackground(BuildContext context) {
     return Container(

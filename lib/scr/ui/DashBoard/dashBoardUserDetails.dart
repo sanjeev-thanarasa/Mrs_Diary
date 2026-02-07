@@ -1,15 +1,7 @@
 import 'dart:async';
-import 'package:animated_icon_button/animated_icon_button.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
-import 'package:mrs_dth_diary_v1/scr/helpers/dashBoardService.dart';
-import 'package:mrs_dth_diary_v1/scr/helpers/operations.dart';
-import 'package:mrs_dth_diary_v1/scr/widgets/CTextField.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/CustomStreamBuilder.dart';
-import 'package:mrs_dth_diary_v1/scr/widgets/RoundedLoadingButton.dart';
-import 'package:mrs_dth_diary_v1/scr/widgets/animatedSizeTransition.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/customText.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/dashBoardPaymentContainerListTile.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/subHelpers/screen_navigation.dart';
@@ -22,27 +14,26 @@ import 'createDashboardPayment.dart';
 class DashBoardUserDetails extends StatefulWidget {
   final DocumentSnapshot data;
 
-  const DashBoardUserDetails({Key key, this.data}) : super(key: key);
+  const DashBoardUserDetails({super.key, required this.data});
 
   @override
   _DashBoardUserDetailsState createState() => _DashBoardUserDetailsState();
 }
 
 class _DashBoardUserDetailsState extends State<DashBoardUserDetails> {
-
   RefreshController _refreshController =
-  RefreshController(initialRefresh: true);
+      RefreshController(initialRefresh: true);
 
-  String dbID;
+  late String dbID;
 
-  void _onRefresh() async{
+  void _onRefresh() async {
     print("___On Refresh_______________");
-   // getUsersStreamSnapshots(collectionName: widget.collectionName ?? '');
+    // getUsersStreamSnapshots(collectionName: widget.collectionName ?? '');
     await Future.delayed(Duration(milliseconds: 1000));
     _refreshController.refreshCompleted();
   }
 
-  void _onLoading() async{
+  void _onLoading() async {
     await Future.delayed(Duration(milliseconds: 1000));
     print("___On Loading_______________");
     _refreshController.loadComplete();
@@ -84,14 +75,15 @@ class _DashBoardUserDetailsState extends State<DashBoardUserDetails> {
         child: CustomStreamBuilder(
           context: context,
           stream: filterStream(),
-          body:(snapshot){
+          body: (snapshot) {
+            final docs = snapshot.data?.docs ?? [];
             return PullToRevealTopItemList(
               startRevealed: true,
-              itemCount: snapshot.data.docs.length,
+              itemCount: docs.length,
               itemBuilder: (BuildContext context, int index) {
-                var data = snapshot.data.docs[index];
+                var data = docs[index];
                 print(data.runtimeType);
-                print(snapshot.data.docs.length);
+                print(docs.length);
                 print(data);
                 print(data);
                 return DashBoardPaymentContainerListTile(
@@ -99,7 +91,10 @@ class _DashBoardUserDetailsState extends State<DashBoardUserDetails> {
                 );
               },
               revealableHeight: MediaQuery.of(context).size.height * 0.33,
-              revealableBuilder: (BuildContext context, RevealableToggler opener, RevealableToggler closer, BoxConstraints constraints) {
+              revealableBuilder: (BuildContext context,
+                  RevealableToggler opener,
+                  RevealableToggler closer,
+                  BoxConstraints constraints) {
                 return Stack(
                   alignment: Alignment.topLeft,
                   children: <Widget>[
@@ -120,12 +115,12 @@ class _DashBoardUserDetailsState extends State<DashBoardUserDetails> {
     );
   }
 
-  Stream<QuerySnapshot> filterStream() async* {
+  Stream<QuerySnapshot<Map<String, dynamic>>> filterStream() async* {
     var firestore = FirebaseFirestore.instance;
     var _stream = firestore
         .collection('DashboardPaymentRecords')
         .where('DB_ID', isEqualTo: dbID)
-        .orderBy('CREATE_AT',descending: true)
+        .orderBy('CREATE_AT', descending: true)
         .snapshots();
 
     yield* _stream;
@@ -139,7 +134,7 @@ class _DashBoardUserDetailsState extends State<DashBoardUserDetails> {
           child: Container(
             padding: EdgeInsets.all(6),
             decoration: BoxDecoration(
-                color: Colors.white.withOpacity(.8),
+                color: Colors.white.withValues(alpha: .8),
                 borderRadius: BorderRadius.all(Radius.circular(16))),
             child: ClipRRect(
                 borderRadius: BorderRadius.all(Radius.circular(16)),
@@ -160,19 +155,14 @@ class _DashBoardUserDetailsState extends State<DashBoardUserDetails> {
           ),
           child: CircleAvatar(
             radius: 35,
-            child: AnimatedIconButton(
-              duration: Duration(seconds: 1),
-              size: 35.0,
-              startIcon: Icon(
+            child: IconButton(
+              iconSize: 35.0,
+              icon: const Icon(
                 Icons.add,
                 color: white,
               ),
-              endIcon: Icon(
-                Icons.add,
-                color: white,
-              ),
-              onPressed: () => changeScreen(context, CreateDashBoardPayment(dbId: widget.data["id"],)),
-              splashColor: kBlueColor,
+              onPressed: () => changeScreen(
+                  context, CreateDashBoardPayment(dbId: widget.data["id"])),
             ),
             backgroundColor: kPrimaryColor,
           ),
@@ -189,8 +179,7 @@ class _DashBoardUserDetailsState extends State<DashBoardUserDetails> {
             image: DecorationImage(
                 image: AssetImage("assets/images/money.jpg"),
                 fit: BoxFit.cover),
-            borderRadius:
-                BorderRadius.only(bottomRight: Radius.circular(112)),
+            borderRadius: BorderRadius.only(bottomRight: Radius.circular(112)),
           ),
           height: MediaQuery.of(context).size.height * 0.25,
         ),

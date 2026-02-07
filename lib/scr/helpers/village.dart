@@ -1,5 +1,3 @@
-
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:mrs_dth_diary_v1/scr/models/village.dart';
 
@@ -9,12 +7,11 @@ class VillageServices {
 
   List<VillageModel> searchVillages = [];
 
-  Future createVillage({Map data})async {
+  Future createVillage({required Map data}) async {
     _firestore.collection(collection).doc(data['id']).set({
       "id": data['id'],
       "name": data['name'],
-      "createAt" : DateTime.now(),
-
+      "createAt": DateTime.now(),
     });
   }
 
@@ -27,7 +24,7 @@ class VillageServices {
         return villages;
       });
 
-  Future<List<VillageModel>> searchVillage({String name}) {
+  Future<List<VillageModel>> searchVillage({required String name}) {
     String searchKey = name[0].toUpperCase() + name.substring(1);
     return _firestore
         .collection(collection)
@@ -36,10 +33,10 @@ class VillageServices {
         .endAt([searchKey + '\uf8ff'])
         .get()
         .then((result) {
-      for (DocumentSnapshot product in result.docs) {
-        searchVillages.add(VillageModel.fromSnapshot(product));
-      }
-      return searchVillages;
-    });
+          for (DocumentSnapshot product in result.docs) {
+            searchVillages.add(VillageModel.fromSnapshot(product));
+          }
+          return searchVillages;
+        });
   }
 }

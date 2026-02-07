@@ -10,14 +10,12 @@ import 'package:mrs_dth_diary_v1/scr/widgets/RoundedLoadingButton.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/datePicker.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/subHelpers/styles.dart';
 
-
 class CreateNewUser extends StatefulWidget {
   @override
   _CreateNewUserState createState() => _CreateNewUserState();
 }
 
 class _CreateNewUserState extends State<CreateNewUser> {
-
   int _index = 0;
   USerServices _uSerServices = USerServices();
   bool mNoVisible = false;
@@ -75,7 +73,7 @@ class _CreateNewUserState extends State<CreateNewUser> {
                       BoxShadow(
                         offset: Offset(10, 10),
                         blurRadius: 30,
-                        color: Color(0xFFB7B7B7).withOpacity(.16),
+                        color: Color(0xFFB7B7B7).withValues(alpha: .16),
                       ),
                     ],
                   ),
@@ -87,7 +85,7 @@ class _CreateNewUserState extends State<CreateNewUser> {
               _buildRegionTabBar(),
               Container(
                 decoration: BoxDecoration(
-                  color: white.withOpacity(.8),
+                  color: white.withValues(alpha: .8),
                   borderRadius: BorderRadius.circular(15.0),
                   boxShadow: [
                     BoxShadow(
@@ -179,10 +177,10 @@ class _CreateNewUserState extends State<CreateNewUser> {
         SelectDropList(
             itemSelected: _uSerServices.selectedArea,
             dropListModel: villageDropListModel,
-            onOptionSelected:(optionItem){
-              setState(()=>_uSerServices.selectedArea=optionItem);},
-            image:'assets/images/dish.png'
-        ), //எந்த ஊர்
+            onOptionSelected: (optionItem) {
+              setState(() => _uSerServices.selectedArea = optionItem);
+            },
+            image: 'assets/images/dish.png'), //எந்த ஊர்
         CustomTextField(
             controller: _uSerServices.mobileController,
             hintText: "தொலைபேசி இலக்கம்",
@@ -193,7 +191,8 @@ class _CreateNewUserState extends State<CreateNewUser> {
             iconButton: true,
             animatedIconButtonStratIcon: Icons.add_circle_outline_rounded,
             animatedIconButtonEndIcon: Icons.indeterminate_check_box_outlined,
-            animatedIconButtonOnTap: ()=>setState(()=>mNoVisible = !mNoVisible)), //தொலைபேசி இலக்கம்
+            animatedIconButtonOnTap: () =>
+                setState(() => mNoVisible = !mNoVisible)), //தொலைபேசி இலக்கம்
         Visibility(
           visible: mNoVisible,
           child: CustomTextField(
@@ -216,9 +215,10 @@ class _CreateNewUserState extends State<CreateNewUser> {
         SelectDropList(
             itemSelected: _uSerServices.selectedDishType,
             dropListModel: dishDropListModel,
-            onOptionSelected:(name){setState(()=>_uSerServices.selectedDishType=name);},
-            image:'assets/images/dish.png'
-        ),//Dish ன் வகை
+            onOptionSelected: (name) {
+              setState(() => _uSerServices.selectedDishType = name);
+            },
+            image: 'assets/images/dish.png'), //Dish ன் வகை
 
         Visibility(
           visible: visible,
@@ -233,19 +233,19 @@ class _CreateNewUserState extends State<CreateNewUser> {
             readOnly: true,
             animatedIconButtonStratIcon: Icons.date_range,
             animatedIconButtonEndIcon: Icons.date_range_outlined,
-            animatedIconButtonOnTap: (){
+            animatedIconButtonOnTap: () {
               showCupertinoModalPopup(
                   context: context,
                   builder: (_) => DatePicker(
-                    onDateTimeChanged: (val){
-                      setState(() {
-                        print(val);
-                        _uSerServices.registerDate = val;
-                        _uSerServices.registerDateController.text = DateFormat('dd-MM-yyyy hh:mm a')
-                            .format(val);
-                      });
-                    },
-                   ));
+                        onDateTimeChanged: (val) {
+                          setState(() {
+                            print(val);
+                            _uSerServices.registerDate = val;
+                            _uSerServices.registerDateController.text =
+                                DateFormat('dd-MM-yyyy hh:mm a').format(val);
+                          });
+                        },
+                      ));
             },
           ),
         ),
@@ -262,18 +262,18 @@ class _CreateNewUserState extends State<CreateNewUser> {
             iconButton: true,
             animatedIconButtonStratIcon: Icons.date_range,
             animatedIconButtonEndIcon: Icons.date_range_outlined,
-            animatedIconButtonOnTap: (){
+            animatedIconButtonOnTap: () {
               showCupertinoModalPopup(
                   context: context,
                   builder: (_) => DatePicker(
-                    onDateTimeChanged: (val){
-                      setState(() {
-                        _uSerServices.expiredDate = val;
-                        _uSerServices.expiredDateController.text = DateFormat('dd-MM-yyyy hh:mm a')
-                            .format(val);
-                      });
-                    },
-                   ));
+                        onDateTimeChanged: (val) {
+                          setState(() {
+                            _uSerServices.expiredDate = val;
+                            _uSerServices.expiredDateController.text =
+                                DateFormat('dd-MM-yyyy hh:mm a').format(val);
+                          });
+                        },
+                      ));
             },
           ),
         ),
@@ -296,8 +296,8 @@ class _CreateNewUserState extends State<CreateNewUser> {
           paddingLeft: 140.0,
           paddingRight: 140.0,
           paddingTop: 8.0,
-          buttonPressed: (){
-            _uSerServices.createRecord(index: _index,context: context);
+          buttonPressed: () {
+            _uSerServices.createRecord(index: _index, context: context);
           },
         ),
         SizedBox(
@@ -306,10 +306,11 @@ class _CreateNewUserState extends State<CreateNewUser> {
       ],
     );
   }
+
   @override
   void dispose() {
-    _uSerServices.selectedArea='Select Area';
-    _uSerServices.selectedDishType='Select Dish Type';
+    _uSerServices.selectedArea = 'Select Area';
+    _uSerServices.selectedDishType = 'Select Dish Type';
     super.dispose();
   }
 }

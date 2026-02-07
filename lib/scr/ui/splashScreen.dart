@@ -5,7 +5,7 @@ import 'package:mrs_dth_diary_v1/scr/widgets/subHelpers/screen_navigation.dart';
 class SplashScreen extends StatefulWidget {
   final Widget secondScreen;
 
-  const SplashScreen({Key key, @required this.secondScreen}) : super(key: key);
+  const SplashScreen({super.key, required this.secondScreen});
   @override
   _SplashScreenState createState() => _SplashScreenState();
 }
@@ -20,13 +20,15 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        body: initScreen(context),
+      body: initScreen(context),
     );
   }
-  startTime() async {
-    var duration = new Duration(seconds: 6);
-    return new Timer(duration, route);
+
+  Timer startTime() {
+    const duration = Duration(seconds: 6);
+    return Timer(duration, route);
   }
+
   route() {
     changeScreenAnimated(context, widget.secondScreen);
   }

@@ -4,28 +4,26 @@ import 'package:mrs_dth_diary_v1/scr/helpers/village.dart';
 import 'package:mrs_dth_diary_v1/scr/models/totalCustomers.dart';
 import 'package:mrs_dth_diary_v1/scr/models/village.dart';
 
-class VillageProvider with ChangeNotifier{
-
+class VillageProvider with ChangeNotifier {
   VillageServices _villageServices = VillageServices();
   TotalCounterServices _totalCounterServices = TotalCounterServices();
 
-
-   List<VillageModel> village = [];
+  List<VillageModel> village = [];
   List<TotalCustomersFilterize> totalOldCustomersCount = [];
   List<TotalCustomersFilterize> totalNewCustomersCount = [];
-  List todayPaymentCount =[];
-  List todayExpiredCount =[];
-  List totalBalanceCount =[];
-  List totalPendingCount =[];
-  List totalPaidCount =[];
+  List todayPaymentCount = [];
+  List todayExpiredCount = [];
+  List totalBalanceCount = [];
+  List totalPendingCount = [];
+  List totalPaidCount = [];
 
   TextEditingController editControllerName = TextEditingController();
 
-  VillageProvider.initialize(){
+  VillageProvider.initialize() {
     loadProducts();
   }
 
-  loadProducts() async{
+  loadProducts() async {
     village = await _villageServices.getVillage();
     totalOldCustomersCount = await _totalCounterServices.getOldUserCount();
     totalNewCustomersCount = await _totalCounterServices.getNewUserCount();
@@ -37,25 +35,21 @@ class VillageProvider with ChangeNotifier{
     notifyListeners();
   }
 
-  Future<bool> uploadVillage({String id}) async{
-    try{
+  Future<bool> uploadVillage({required String id}) async {
+    try {
       Map data = {
         "id": id,
         "name": editControllerName.text.trim(),
-
       };
-      _villageServices.createVillage(data:data);
+      _villageServices.createVillage(data: data);
       return true;
-    }catch(e){
+    } catch (e) {
       print(e.toString());
       return false;
     }
-
   }
 
-  clear(){
+  clear() {
     editControllerName.clear();
   }
-
-
 }

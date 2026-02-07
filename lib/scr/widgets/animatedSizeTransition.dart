@@ -4,25 +4,26 @@ class AnimatedSizeTransition extends StatefulWidget {
   final Widget child;
   final int duration;
 
-  const AnimatedSizeTransition({Key key,
-    @required this.child,
-    this.duration,
-
-  }) : super(key: key);
+  const AnimatedSizeTransition({
+    super.key,
+    required this.child,
+    required this.duration,
+  });
   @override
   _AnimatedSizeTransitionState createState() => _AnimatedSizeTransitionState();
 }
 
-class _AnimatedSizeTransitionState extends State<AnimatedSizeTransition>  with SingleTickerProviderStateMixin{
-  AnimationController expandController;
-  Animation<double> animation;
+class _AnimatedSizeTransitionState extends State<AnimatedSizeTransition>
+    with SingleTickerProviderStateMixin {
+  late AnimationController expandController;
+  late Animation<double> animation;
   bool isShow = true;
 
   @override
   void initState() {
     super.initState();
-    expandController =
-        AnimationController(vsync: this, duration: Duration(milliseconds: widget.duration ?? 800));
+    expandController = AnimationController(
+        vsync: this, duration: Duration(milliseconds: widget.duration));
     animation = CurvedAnimation(
       parent: expandController,
       curve: Curves.fastOutSlowIn,
@@ -51,15 +52,14 @@ class _AnimatedSizeTransitionState extends State<AnimatedSizeTransition>  with S
         axis: Axis.vertical,
         sizeFactor: animation,
         child: Container(
-          margin: const EdgeInsets.only(bottom: 10),
-          padding: const EdgeInsets.only(bottom: 10),
-          decoration: new BoxDecoration(
-            borderRadius: BorderRadius.only(
-                bottomLeft: Radius.circular(20),
-                bottomRight: Radius.circular(20)),
-            color: Colors.white,
-          ),
-          child: widget.child
-        ));
+            margin: const EdgeInsets.only(bottom: 10),
+            padding: const EdgeInsets.only(bottom: 10),
+            decoration: new BoxDecoration(
+              borderRadius: BorderRadius.only(
+                  bottomLeft: Radius.circular(20),
+                  bottomRight: Radius.circular(20)),
+              color: Colors.white,
+            ),
+            child: widget.child));
   }
 }

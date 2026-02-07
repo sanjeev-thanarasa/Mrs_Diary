@@ -3,70 +3,99 @@ import 'package:mrs_dth_diary_v1/scr/widgets/subHelpers/styles.dart';
 
 import 'customText.dart';
 
-
 class SimpleCalc extends StatefulWidget {
   @override
   _SimpleCalcState createState() => _SimpleCalcState();
 }
 
 class _SimpleCalcState extends State<SimpleCalc> {
-  List content = ["1","2","3","+","4","5","6","-","7","8","9","*","C","0",".","/","AC","="];
+  List content = [
+    "1",
+    "2",
+    "3",
+    "+",
+    "4",
+    "5",
+    "6",
+    "-",
+    "7",
+    "8",
+    "9",
+    "*",
+    "C",
+    "0",
+    ".",
+    "/",
+    "AC",
+    "="
+  ];
   double result = 0;
   CustomStk obj = CustomStk();
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        body: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.all(10.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                ConstrainedBox(
-                  constraints: new BoxConstraints(
-                    minHeight: 200,
-                    maxHeight: 250,
-                  ),
-                  child: Container(
-                      alignment: Alignment.bottomRight,
-                      decoration: BoxDecoration(color: kBlueColor,
-                          borderRadius:BorderRadius.circular(5.0),
-                          boxShadow: [BoxShadow(color: Colors.grey,offset: Offset(5.0,5.0),blurRadius: 10.0)]  ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.max,
-                          mainAxisAlignment: MainAxisAlignment.end,
-                          children: [
-                            _buildText(result.toString(), 45.0, Colors.white),
-                            _buildText(obj.getExpr(), 30.0, Colors.white54),
-                          ],
-                        ),
-                      ),
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(10.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              ConstrainedBox(
+                constraints: new BoxConstraints(
+                  minHeight: 200,
+                  maxHeight: 250,
+                ),
+                child: Container(
+                  alignment: Alignment.bottomRight,
+                  decoration: BoxDecoration(
+                      color: kBlueColor,
+                      borderRadius: BorderRadius.circular(5.0),
+                      boxShadow: [
+                        BoxShadow(
+                            color: Colors.grey,
+                            offset: Offset(5.0, 5.0),
+                            blurRadius: 10.0)
+                      ]),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.max,
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        _buildText(result.toString(), 45.0, Colors.white),
+                        _buildText(obj.getExpr(), 30.0, Colors.white54),
+                      ],
                     ),
+                  ),
                 ),
-                SizedBox(height: 5.0,),
-                Container(
-                  height: 250.0,
-                  child: Column(children: List.generate(5, (i) => _buildRows(i))),
-                ),
-              ],
-            ),
+              ),
+              SizedBox(
+                height: 5.0,
+              ),
+              Container(
+                height: 250.0,
+                child: Column(children: List.generate(5, (i) => _buildRows(i))),
+              ),
+            ],
           ),
         ),
-      );
+      ),
+    );
   }
 
   _buildText(text, size, color) {
-    return CText(msg: text, size: size, color: color,);
+    return CText(
+      msg: text,
+      size: size,
+      color: color,
+    );
   }
 
   _buildRows(i) {
     if (i != 4)
       return Expanded(
-        child: Row(
-            children: List.generate(4, (j) => _buildBtn(j, i * 4))),
+        child: Row(children: List.generate(4, (j) => _buildBtn(j, i * 4))),
       );
     else
       return Expanded(
@@ -78,30 +107,27 @@ class _SimpleCalcState extends State<SimpleCalc> {
     String text = content[i + count];
     return Expanded(
       child: SizedBox.expand(
-        child: OutlineButton(
-          splashColor: Colors.blue,
-          borderSide: BorderSide(
-            color: Colors.grey,
-          ),
-          child: _buildText(text, 27.0, Colors.blueGrey),
-          onPressed: () {
-            setState(() {
-              if (text == "C") {
-                result = obj.pop();
-              } else if (text == "AC"){
-                obj.clear();
-                result = 0.0;
-              }
-              else if (text == "=") {
-                result = obj.result;
-                obj.clear();
-                obj.cstStk.add(result.toString());
-              } else
-                result = obj.push(text);
-            });
-          },
-        )
-      ),
+          child: OutlinedButton(
+        style: OutlinedButton.styleFrom(
+          side: const BorderSide(color: Colors.grey),
+        ),
+        child: _buildText(text, 27.0, Colors.blueGrey),
+        onPressed: () {
+          setState(() {
+            if (text == "C") {
+              result = obj.pop();
+            } else if (text == "AC") {
+              obj.clear();
+              result = 0.0;
+            } else if (text == "=") {
+              result = obj.result;
+              obj.clear();
+              obj.cstStk.add(result.toString());
+            } else
+              result = obj.push(text);
+          });
+        },
+      )),
     );
   }
 }
@@ -109,8 +135,8 @@ class _SimpleCalcState extends State<SimpleCalc> {
 class CustomStk {
   String num1 = "";
   double result = 0;
-  int i;
-  List oprs = ["+","*","-","/"];
+  int i = 0;
+  List oprs = ["+", "*", "-", "/"];
   List nmbrs = List.generate(11, (n) => (n == 10) ? "." : n.toString());
   List cstStk = [];
   List opnStk = [];
@@ -153,11 +179,15 @@ class CustomStk {
     }
     for (i = 0; i < opnStk.length; i++) {
       t = opnStk[i];
-      if (oprs.contains(t)) doOp(t);
-      else rstStk.add(double.parse(t));
+      if (oprs.contains(t))
+        doOp(t);
+      else
+        rstStk.add(double.parse(t));
     }
-    if (rstStk.isEmpty) return 0;
-    else return rstStk[0];
+    if (rstStk.isEmpty)
+      return 0;
+    else
+      return rstStk[0];
   }
 
   bool highP(t, topOfStk) {
@@ -165,13 +195,17 @@ class CustomStk {
     int tosP = getP(topOfStk);
 
     if (t == topOfStk) return false;
-    if (tosP >= currentP) return true;
-    else return false;
+    if (tosP >= currentP)
+      return true;
+    else
+      return false;
   }
 
   int getP(t) {
-    if (t == "*" || t == "/") return 2;
-    else return 1;
+    if (t == "*" || t == "/")
+      return 2;
+    else
+      return 1;
   }
 
   doOp(symbol) {
@@ -182,17 +216,22 @@ class CustomStk {
     rstStk.removeLast();
     num2 = rstStk.last;
     rstStk.removeLast();
-    if (symbol == "+") rstStk.add(num1 + num2);
-    else if (symbol =="-") rstStk.add(num2 - num1);
-    else if (symbol == "*") rstStk.add(num1 * num2);
-    else rstStk.add(num2 / num1);
+    if (symbol == "+")
+      rstStk.add(num1 + num2);
+    else if (symbol == "-")
+      rstStk.add(num2 - num1);
+    else if (symbol == "*")
+      rstStk.add(num1 * num2);
+    else
+      rstStk.add(num2 / num1);
   }
 
   pop() {
     num1 = "";
     if (cstStk.isNotEmpty) {
       String tmp = cstStk.last;
-      if (tmp.length == 1) cstStk.removeLast();
+      if (tmp.length == 1)
+        cstStk.removeLast();
       else {
         tmp = tmp.substring(0, tmp.length - 1);
         cstStk.removeLast();
@@ -203,7 +242,7 @@ class CustomStk {
   }
 
   clear() {
-    if(rstStk.isNotEmpty) result = rstStk[0];
+    if (rstStk.isNotEmpty) result = rstStk[0];
     num1 = "";
     cstStk.clear();
     opnStk.clear();

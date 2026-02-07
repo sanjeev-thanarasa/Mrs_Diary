@@ -2,31 +2,30 @@ import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 
 class LoadingWave extends StatelessWidget {
+  const LoadingWave({super.key});
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: Colors.transparent,
-      child: SpinKitWave(
-        color: Colors.grey,
-        size: 20,
-      )
-    );
+        color: Colors.transparent,
+        child: SpinKitWave(
+          color: Colors.grey,
+          size: 20,
+        ));
   }
 }
 
 class LoadingCircle extends StatelessWidget {
-  final Color color;
+  final Color? color;
 
-  const LoadingCircle({Key key, this.color}) : super(key: key);
+  const LoadingCircle({super.key, this.color});
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: Colors.transparent,
-      child: SpinKitCircle(
-        duration: Duration(milliseconds: 1200),
-        color: color ?? Colors.black,
-        size: 30,
-      )
-    );
+        color: Colors.transparent,
+        child: SpinKitCircle(
+          duration: const Duration(milliseconds: 1200),
+          color: color ?? Colors.black,
+          size: 30,
+        ));
   }
 }

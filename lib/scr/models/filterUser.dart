@@ -109,45 +109,34 @@ class FilterUser {
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class FilterUser {
-  // String title;
-  // DateTime startDate;
-  // DateTime endDate;
-  // double budget;
-  // Map budgetTypes;
-  // String travelType;
-  // String photoReference;
-  // String notes;
-  // String documentId;
-  // double saved;
+  late bool blackList;
+  late bool noteList;
+  late String address;
+  late String area;
+  late String dishNumber;
+  late String dishType;
+  late String id;
+  late String mobileNo;
+  late String mobileNo2;
+  late String name;
+  late DateTime createAt;
 
-  bool blackList;
-  bool noteList;
-  String address;
-  String area;
-  String dishNumber;
-  String dishType;
-  String id;
-  String mobileNo;
-  String mobileNo2;
-  String name;
-  DateTime createAt;
-
-
-  FilterUser(this.blackList,
-      this.noteList,
-      this.address,
-      this.area,
-      this.dishNumber,
-      this.dishType,
-      this.id,
-      this.mobileNo,
-      this.mobileNo2,
-      this.name,
-      this.createAt);
+  FilterUser(
+    this.blackList,
+    this.noteList,
+    this.address,
+    this.area,
+    this.dishNumber,
+    this.dishType,
+    this.id,
+    this.mobileNo,
+    this.mobileNo2,
+    this.name,
+    this.createAt,
+  );
 
   // formatting for upload to Firebase when creating the trip
-  Map<String, dynamic> toJson() =>
-      {
+  Map<String, dynamic> toJson() => {
         'BlackList': blackList,
         'NoteList': noteList,
         'address': address,
@@ -170,10 +159,10 @@ class FilterUser {
       };
 
   // creating a Trip object from a firebase snapshot
-  FilterUser.fromSnapshot(DocumentSnapshot snapshot){
+  FilterUser.fromSnapshot(DocumentSnapshot snapshot) {
     blackList = snapshot['BlackList'];
     noteList = snapshot['NoteList'];
-    address= snapshot['address'];
+    address = snapshot['address'];
     area = snapshot['area'];
     dishNumber = snapshot['dishNumber'];
     dishType = snapshot['dishType'];
@@ -184,10 +173,7 @@ class FilterUser {
     createAt = snapshot['createAt'].toDate();
   }
 
-
-
-
- // blackList = snapshot['BlackList'],
+  // blackList = snapshot['BlackList'],
 //       noteList = snapshot['startDate'].toDate(),
 //       address = snapshot['endDate'].toDate(),
 //       budget = snapshot['budget'],
@@ -197,7 +183,6 @@ class FilterUser {
 //       notes = snapshot['notes'],
 //       documentId = snapshot.documentID,
 //       saved = snapshot['saved'];
-
 
 // Map<String, Icon> types() => {
 //   "car": Icon(Icons.directions_car, size: 50),
@@ -228,4 +213,3 @@ class FilterUser {
 //   return diff;
 //}
 }
-

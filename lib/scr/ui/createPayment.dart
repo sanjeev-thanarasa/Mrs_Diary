@@ -1,4 +1,3 @@
-import 'package:animated_icon_button/animated_icon_button.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -14,27 +13,30 @@ import 'package:pull_to_reveal/pull_to_reveal.dart';
 class CreatePayment extends StatefulWidget {
   final String userId;
 
-  const CreatePayment({Key key, this.userId})
-      : super(key: key);
+  const CreatePayment({
+    super.key,
+    required this.userId,
+  });
 
   @override
   _CreatePaymentState createState() => _CreatePaymentState();
 }
 
 class _CreatePaymentState extends State<CreatePayment> {
-  PaymentServices _paymentServices = PaymentServices();
+  final PaymentServices _paymentServices = PaymentServices();
 
   @override
   void dispose() {
-   _paymentServices.clearRecords();
-   _paymentServices.btnController.reset();
+    _paymentServices.clearRecords();
+    _paymentServices.btnController.reset();
     super.dispose();
   }
 
   @override
   void initState() {
-   _paymentServices.createRecordDate.text = DateFormat('MM/dd/yyyy hh:mm a').format(DateTime.now());
-   _paymentServices.createDate = DateTime.now();
+    _paymentServices.createRecordDate.text =
+        DateFormat('MM/dd/yyyy hh:mm a').format(DateTime.now());
+    _paymentServices.createDate = DateTime.now();
     super.initState();
   }
 
@@ -43,7 +45,11 @@ class _CreatePaymentState extends State<CreatePayment> {
     _paymentServices.btnController.reset();
   }
 
-  TextStyle _style = TextStyle(fontSize: 16.0, fontFamily: "TamilArima", color: Colors.blue);
+  final TextStyle _style = const TextStyle(
+    fontSize: 16.0,
+    fontFamily: "TamilArima",
+    color: Colors.blue,
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -108,17 +114,12 @@ class _CreatePaymentState extends State<CreatePayment> {
       height: MediaQuery.of(context).size.height * 0.28,
       width: double.infinity,
       child: Padding(
-        padding: const EdgeInsets.only(bottom: 10.0,left: 5.0),
+        padding: const EdgeInsets.only(bottom: 10.0, left: 5.0),
         child: Align(
             alignment: Alignment.bottomCenter,
-            child: AnimatedIconButton(
-              duration: Duration(milliseconds: 500),
-              startIcon: Icon(Icons.refresh),
-              endIcon: Icon(Icons.replay),
-              startBackgroundColor: Color(0xff484a49),
-              splashRadius: 10.0,
-              size: 25.0,
-              onPressed: () => _onRefresh(),
+            child: IconButton(
+              icon: const Icon(Icons.refresh, color: Colors.white),
+              onPressed: _onRefresh,
             )),
       ),
     );
@@ -145,19 +146,26 @@ class _CreatePaymentState extends State<CreatePayment> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               CText(
-                msg: DateFormat('MM/dd/yyyy hh:mm a').format(_paymentServices.createDate),
+                msg: _paymentServices.createDate != null
+                    ? DateFormat('MM/dd/yyyy hh:mm a')
+                        .format(_paymentServices.createDate!)
+                    : "Select Date",
                 color: Colors.blue,
               ),
               GestureDetector(
-                  onTap: () {
-                    showCupertinoModalPopup(
-                        context: context,
-                        builder: (_) => DatePicker(
-                          onDateTimeChanged: (val){setState(() {_paymentServices.createDate=val;});},
-                            )).whenComplete(
-                        () => setState(() => _color = Colors.green));
-                  },
-                child: buildTikImage(height: 20,width: 40,color: _color),
+                onTap: () {
+                  showCupertinoModalPopup(
+                      context: context,
+                      builder: (_) => DatePicker(
+                            onDateTimeChanged: (val) {
+                              setState(() {
+                                _paymentServices.createDate = val;
+                              });
+                            },
+                          )).whenComplete(
+                      () => setState(() => _color = Colors.green));
+                },
+                child: buildTikImage(height: 20, width: 40, color: _color),
               )
             ],
           ),
@@ -180,7 +188,7 @@ class _CreatePaymentState extends State<CreatePayment> {
             ),
           ),
           CustomTextField(
-            controller:_paymentServices.giveAmount,
+            controller: _paymentServices.giveAmount,
             hintText: "தந்த பணம்",
             icon: Icons.monetization_on,
             textStyle: _style,
@@ -202,7 +210,8 @@ class _CreatePaymentState extends State<CreatePayment> {
               print("Animated Icon Button Pressed");
               print("Animated Icon Button Pressed");
 
-              int recharge = int.parse(_paymentServices.rechargeAmount.text.trim());
+              int recharge =
+                  int.parse(_paymentServices.rechargeAmount.text.trim());
 
               int give = int.parse(_paymentServices.giveAmount.text.trim());
 
@@ -220,7 +229,8 @@ class _CreatePaymentState extends State<CreatePayment> {
                   _paymentServices.pending = false;
                   _paymentServices.balance = true;
                   _paymentServices.pendingAmount.clear();
-                  _paymentServices.balanceAmount.text = (give - recharge).toString();
+                  _paymentServices.balanceAmount.text =
+                      (give - recharge).toString();
                 });
               } else {
                 setState(() {
@@ -240,7 +250,6 @@ class _CreatePaymentState extends State<CreatePayment> {
               msg2: ":  ${_paymentServices.pendingAmount.text} ",
               color1: Colors.grey,
             ),
-
           ),
           Visibility(
             visible: _paymentServices.balance,
@@ -248,7 +257,7 @@ class _CreatePaymentState extends State<CreatePayment> {
               color1: Colors.grey,
               size1: 16.0,
               msg1: "கொடுமதி பணம் :",
-              msg2: "  ${_paymentServices.balanceAmount.text}" ,
+              msg2: "  ${_paymentServices.balanceAmount.text}",
             ),
           ),
           Visibility(
@@ -266,17 +275,17 @@ class _CreatePaymentState extends State<CreatePayment> {
                 showCupertinoModalPopup(
                     context: context,
                     builder: (_) => DatePicker(
-                      onDateTimeChanged: (val){
+                          onDateTimeChanged: (val) {
                             setState(() {
                               _paymentServices.pendingDate = val;
-                              _paymentServices.pendingDateController.text = DateFormat('MM/dd/yyyy hh:mm a').format(_paymentServices.pendingDate);
+                              _paymentServices.pendingDateController.text =
+                                  DateFormat('MM/dd/yyyy hh:mm a').format(val);
                             });
-                      },
+                          },
                         ));
               },
             ),
           ),
-
           CustomTextField(
             controller: _paymentServices.expiredDateController,
             hintText: "முடியும் திகதி",
@@ -291,12 +300,13 @@ class _CreatePaymentState extends State<CreatePayment> {
               showCupertinoModalPopup(
                   context: context,
                   builder: (_) => DatePicker(
-                    onDateTimeChanged: (val){
+                        onDateTimeChanged: (val) {
                           setState(() {
-                            _paymentServices.expiredDate=val;
-                            _paymentServices.expiredDateController.text = DateFormat('MM/dd/yyyy hh:mm a').format(_paymentServices.expiredDate);
+                            _paymentServices.expiredDate = val;
+                            _paymentServices.expiredDateController.text =
+                                DateFormat('MM/dd/yyyy hh:mm a').format(val);
                           });
-                    },
+                        },
                       ));
             },
           ),
@@ -309,7 +319,8 @@ class _CreatePaymentState extends State<CreatePayment> {
               iconButton: true,
               animatedIconButtonStratIcon: Icons.add_circle_outline_rounded,
               animatedIconButtonEndIcon: Icons.indeterminate_check_box_outlined,
-              animatedIconButtonOnTap: () => setState(() => noteVisible = !noteVisible)),
+              animatedIconButtonOnTap: () =>
+                  setState(() => noteVisible = !noteVisible)),
           Visibility(
             visible: noteVisible,
             child: CustomTextField(
@@ -341,7 +352,8 @@ class _CreatePaymentState extends State<CreatePayment> {
       ),
     );
   }
-  buildTikImage({Color color , double height , double width}){
+
+  Widget buildTikImage({Color? color, double? height, double? width}) {
     return Image.asset(
       "assets/images/tik.png",
       height: height,

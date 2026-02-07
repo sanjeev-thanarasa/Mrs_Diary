@@ -1,3 +1,5 @@
+// ignore_for_file: deprecated_member_use
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:mrs_dth_diary_v1/scr/models/totalCustomers.dart';
@@ -16,17 +18,16 @@ class TotalPendingUsers extends StatefulWidget {
 }
 
 class _TotalPendingUsersState extends State<TotalPendingUsers> {
-  String searchText='';
-  int _radioValue=0;
-  bool searchVisible=false;
-  CollectionReference paymentRecords;
-  CollectionReference oldUser;
+  String searchText = '';
+  int _radioValue = 0;
+  bool searchVisible = false;
+  late CollectionReference paymentRecords;
+  late CollectionReference oldUser;
   ScrollController _controller = ScrollController();
-
 
   @override
   void dispose() {
-    searchText=null;
+    _controller.dispose();
     super.dispose();
   }
 
@@ -40,13 +41,13 @@ class _TotalPendingUsersState extends State<TotalPendingUsers> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: white.withOpacity(.9),
+      backgroundColor: white.withValues(alpha: .9),
       appBar: CustomAppBar(
         hintText: "தருமதிகள்",
         prefixIcon: Icons.arrow_back,
-        iconOnTap : ()=> Navigator.pop(context),
-        onChanged: (text)=>_onSearchChanged(text),
-        logoOnTap: ()=>setState(()=>searchVisible=!searchVisible),
+        iconOnTap: () => Navigator.pop(context),
+        onChanged: (text) => _onSearchChanged(text),
+        logoOnTap: () => setState(() => searchVisible = !searchVisible),
       ),
       body: SingleChildScrollView(
         child: Column(
@@ -56,90 +57,102 @@ class _TotalPendingUsersState extends State<TotalPendingUsers> {
               child: Expanded(
                   flex: 0,
                   child: Padding(
-                    padding: const EdgeInsets.only(top: 15.0,bottom: 15.0),
+                    padding: const EdgeInsets.only(top: 15.0, bottom: 15.0),
                     child: Column(
                       children: [
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                           children: [
-                            _buildRadio(value: 0,name: "Name"),
-                            _buildRadio(value: 1,name: "DishNumber"),
+                            _buildRadio(value: 0, name: "Name"),
+                            _buildRadio(value: 1, name: "DishNumber"),
                           ],
                         ),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                           children: [
-                            _buildRadio(value: 2,name: "Mobile No"),
-                            _buildRadio(value: 3,name: "Dish Type"),
+                            _buildRadio(value: 2, name: "Mobile No"),
+                            _buildRadio(value: 3, name: "Dish Type"),
                           ],
                         ),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            _buildRadio(value: 4,name: "Village"),
+                            _buildRadio(value: 4, name: "Village"),
                           ],
                         ),
                       ],
                     ),
                   )),
             ),
-
             Padding(
               padding: const EdgeInsets.only(top: 15.0),
               child: CustomStreamBuilder(
                   context: context,
                   stream: paymentRecords
-                      .where("PENDING_AMOUNT",  isNotEqualTo: "")
-                      .snapshots(),
-                  body: (todayExpiredTotUsers){
-                    if (todayExpiredTotUsers.data.docs.length >0) {
+                          .where("PENDING_AMOUNT", isNotEqualTo: "")
+                          .snapshots()
+                      as Stream<QuerySnapshot<Map<String, dynamic>>>,
+                  body: (todayExpiredTotUsers) {
+                    final pendingDocs = todayExpiredTotUsers.data?.docs ?? [];
+                    if (pendingDocs.isNotEmpty) {
                       return ListView.builder(
                           scrollDirection: Axis.vertical,
                           controller: _controller,
-                          shrinkWrap: true ,
-                          itemCount: todayExpiredTotUsers.data.docs.length,
-                          itemBuilder: (_,index){
-                            var todayExpiredTotalUsers = todayExpiredTotUsers.data.docs[index];
-                            var pendingAmount = todayExpiredTotalUsers['PENDING_AMOUNT'];
+                          shrinkWrap: true,
+                          itemCount: pendingDocs.length,
+                          itemBuilder: (_, index) {
+                            var todayExpiredTotalUsers = pendingDocs[index];
+                            var pendingAmount =
+                                todayExpiredTotalUsers['PENDING_AMOUNT'];
                             return CustomStreamBuilder(
                               context: context,
                               stream: oldUser
-                                  .where("id",  isEqualTo: todayExpiredTotalUsers['USER_ID']).snapshots(),
-                              body:(snapshot){
-                                var showResults = _searchResultsList(snapshot.data.docs);
+                                      .where("id",
+                                          isEqualTo:
+                                              todayExpiredTotalUsers['USER_ID'])
+                                      .snapshots()
+                                  as Stream<
+                                      QuerySnapshot<Map<String, dynamic>>>,
+                              body: (snapshot) {
+                                final userDocs = snapshot.data?.docs ?? [];
+                                var showResults = _searchResultsList(userDocs);
                                 return ListView.builder(
                                     scrollDirection: Axis.vertical,
                                     controller: _controller,
-                                    shrinkWrap: true ,
+                                    shrinkWrap: true,
                                     itemCount: showResults.length,
-                                    itemBuilder: (_,index){
+                                    itemBuilder: (_, index) {
                                       return CListTile(
                                         context: context,
                                         docId: showResults[index].id,
                                         collectionName: "OldUser",
                                         title: showResults[index]['name'],
                                         pendingAmount: pendingAmount,
-                                        subtitle: showResults[index]['mobileNo'],
-                                        subtitle2: showResults[index]['dishNumber'],
+                                        subtitle: showResults[index]
+                                            ['mobileNo'],
+                                        subtitle2: showResults[index]
+                                            ['dishNumber'],
                                         subtitle3: showResults[index]['area'],
                                         subtitleIcon: Icons.phone,
-                                        tileOnTap: (){changeScreenAnimated(context, UserDetails(
-                                          collectionName: "OldUser",
-                                          userId: showResults[index].id,));},
-                                        counter: "${showResults[index]['name'].toString().substring(0,1)}",
+                                        tileOnTap: () {
+                                          changeScreenAnimated(
+                                              context,
+                                              UserDetails(
+                                                collectionName: "OldUser",
+                                                userId: showResults[index].id,
+                                              ));
+                                        },
+                                        counter:
+                                            "${showResults[index]['name'].toString().substring(0, 1)}",
                                       );
-                                    }
-                                );
+                                    });
                               },
                             );
-                          }
-                      );
+                          });
                     } else {
                       return SearchNoData();
                     }
-
-                  }
-              ),
+                  }),
             ),
           ],
         ),
@@ -147,7 +160,7 @@ class _TotalPendingUsersState extends State<TotalPendingUsers> {
     );
   }
 
-  _buildRadio({int value, String name}){
+  Widget _buildRadio({required int value, required String name}) {
     return Row(
       children: [
         Radio(
@@ -156,20 +169,25 @@ class _TotalPendingUsersState extends State<TotalPendingUsers> {
           groupValue: _radioValue,
           onChanged: _handleRadioValueChange,
         ),
-        CText(msg: name,color: Colors.black,size: 20.0,),
+        CText(
+          msg: name,
+          color: Colors.black,
+          size: 20.0,
+        ),
       ],
     );
   }
 
-  _handleRadioValueChange(int value){
+  void _handleRadioValueChange(int? value) {
+    if (value == null) return;
     setState(() {
-      _radioValue=value;
+      _radioValue = value;
     });
   }
 
   _onSearchChanged(String text) {
     setState(() {
-      searchText=text;
+      searchText = text;
       print(searchText);
     });
     // searchResultsList();
@@ -179,30 +197,53 @@ class _TotalPendingUsersState extends State<TotalPendingUsers> {
   _searchResultsList(var snapshots) {
     var showResults = [];
 
-    if(searchText != "") {
-      for(var snapshot in snapshots){
+    if (searchText != "") {
+      for (var snapshot in snapshots) {
         var title;
-        switch(_radioValue){
-          case 0 :
-            {title = TotalCustomersFilterize.fromSnapshot(snapshot).name.toLowerCase();}
+        switch (_radioValue) {
+          case 0:
+            {
+              title = TotalCustomersFilterize.fromSnapshot(snapshot)
+                  .name
+                  .toLowerCase();
+            }
             break;
           case 1:
-            {title = TotalCustomersFilterize.fromSnapshot(snapshot).dishNumber.toLowerCase();}
+            {
+              title = TotalCustomersFilterize.fromSnapshot(snapshot)
+                  .dishNumber
+                  .toLowerCase();
+            }
             break;
           case 2:
-            {title = TotalCustomersFilterize.fromSnapshot(snapshot).mobileNo.toLowerCase();}
+            {
+              title = TotalCustomersFilterize.fromSnapshot(snapshot)
+                  .mobileNo
+                  .toLowerCase();
+            }
             break;
           case 3:
-            {title = TotalCustomersFilterize.fromSnapshot(snapshot).dishType.toLowerCase();}
+            {
+              title = TotalCustomersFilterize.fromSnapshot(snapshot)
+                  .dishType
+                  .toLowerCase();
+            }
             break;
           case 4:
-            {title = TotalCustomersFilterize.fromSnapshot(snapshot).villageName.toLowerCase();}
+            {
+              title = TotalCustomersFilterize.fromSnapshot(snapshot)
+                  .villageName
+                  .toLowerCase();
+            }
             break;
-          default: {_radioValue=0;}
-          break;
+          default:
+            {
+              _radioValue = 0;
+            }
+            break;
         }
 
-        if(title.contains(searchText.toLowerCase())) {
+        if (title.contains(searchText.toLowerCase())) {
           showResults.add(snapshot);
         }
       }

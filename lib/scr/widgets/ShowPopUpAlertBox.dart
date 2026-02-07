@@ -5,19 +5,20 @@ class PopUpBox extends StatelessWidget {
   final String hintText;
   final String labelText;
   final String btnText;
-  final Function bthFunction;
+  final ValueChanged<String> bthFunction;
 
-  const PopUpBox({Key key,
-    @required this.context,
-    @required this.hintText,
-    @required this.labelText,
-    @required this.btnText,
-    @required this.bthFunction}) : super(key: key);
-
+  const PopUpBox({
+    super.key,
+    required this.context,
+    required this.hintText,
+    required this.labelText,
+    required this.btnText,
+    required this.bthFunction,
+  });
 
   @override
   Widget build(BuildContext context) {
-    TextEditingController textEditingController=TextEditingController();
+    TextEditingController textEditingController = TextEditingController();
     return AlertDialog(
       contentPadding: const EdgeInsets.all(20.0),
       content: new Row(
@@ -31,33 +32,28 @@ class PopUpBox extends StatelessWidget {
                 decoration: new InputDecoration(
                     hintText: hintText,
                     labelText: labelText,
-                    labelStyle: TextStyle(fontSize: 25.0)
-
-                ),
+                    labelStyle: TextStyle(fontSize: 25.0)),
               ),
             ),
           )
         ],
       ),
       actions: <Widget>[
-        FlatButton(
-            child: const Text('CANCEL'),
-            onPressed: (){
-              textEditingController.clear();
-              Navigator.pop(context);
-            }
-
-    ),
-
+        TextButton(
+          child: const Text('CANCEL'),
+          onPressed: () {
+            textEditingController.clear();
+            Navigator.pop(context);
+          },
+        ),
         ElevatedButton(
-          onPressed: (){
+          onPressed: () {
             bthFunction(textEditingController.text);
             Navigator.pop(context);
             textEditingController.clear();
-            },
+          },
           child: Text(btnText),
         ),
-
       ],
     );
   }

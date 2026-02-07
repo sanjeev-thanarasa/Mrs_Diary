@@ -1,11 +1,8 @@
 import 'package:curved_navigation_bar/curved_navigation_bar.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/painting.dart';
 import 'package:mrs_dth_diary_v1/scr/providers/village.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/customText.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/homeCard.dart';
-import 'package:mrs_dth_diary_v1/scr/widgets/subHelpers/screen_navigation.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/subHelpers/styles.dart';
 import 'package:provider/provider.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
@@ -36,7 +33,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin{
       : Container(),
       bottomNavigationBar: CurvedNavigationBar(
         height: 60.0,
-        backgroundColor: _selectedIndex==2? kPrimaryColor.withOpacity(0.7) : Colors.white,
+        backgroundColor: _selectedIndex==2? kPrimaryColor.withValues(alpha: 0.7) : Colors.white,
         color: kPrimaryColor,
         items: <Widget>[
           Icon(Icons.home, size: 30,color: white),

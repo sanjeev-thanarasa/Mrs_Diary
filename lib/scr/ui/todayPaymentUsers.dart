@@ -1,3 +1,5 @@
+// ignore_for_file: deprecated_member_use
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -17,22 +19,22 @@ class TodayPaymentUsers extends StatefulWidget {
 }
 
 class _TodayPaymentUsersState extends State<TodayPaymentUsers> {
-
-  String searchText='';
-  int _radioValue=0;
-  bool searchVisible=false;
-  DateTime _dateTodayStart;
-  DateTime _dateTodayEnd;
-  String formattedDateStart = "${DateFormat('yyyyMMdd').format(DateTime.now())}T000000";
-  String formattedDateEnd = "${DateFormat('yyyyMMdd').format(DateTime.now())}T235959";
-  CollectionReference paymentRecords;
-  CollectionReference oldUser;
+  String searchText = '';
+  int _radioValue = 0;
+  bool searchVisible = false;
+  late DateTime _dateTodayStart;
+  late DateTime _dateTodayEnd;
+  String formattedDateStart =
+      "${DateFormat('yyyyMMdd').format(DateTime.now())}T000000";
+  String formattedDateEnd =
+      "${DateFormat('yyyyMMdd').format(DateTime.now())}T235959";
+  late CollectionReference paymentRecords;
+  late CollectionReference oldUser;
   ScrollController _controller = ScrollController();
-
 
   @override
   void dispose() {
-    searchText=null;
+    _controller.dispose();
     super.dispose();
   }
 
@@ -42,25 +44,27 @@ class _TodayPaymentUsersState extends State<TodayPaymentUsers> {
     _dateTodayEnd = DateTime.parse(formattedDateEnd);
     paymentRecords = FirebaseFirestore.instance.collection("PaymentRecords");
     oldUser = FirebaseFirestore.instance.collection("OldUser");
-    
-    print(formattedDateStart+"Started Date >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
-    print(formattedDateEnd+"Ended Date >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
-  
+
+    print(formattedDateStart +
+        "Started Date >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
+    print(formattedDateEnd +
+        "Ended Date >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
+
     super.initState();
   }
 
   /// _dateTime = DateTime.parse('20210205T000000'); this is a timestamp format
-  
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: white.withOpacity(.9),
+      backgroundColor: white.withValues(alpha: .9),
       appBar: CustomAppBar(
         hintText: "இன்று பணம் தர வேண்டியவர்கள்",
         prefixIcon: Icons.arrow_back,
-        iconOnTap : ()=> Navigator.pop(context),
-        onChanged: (text)=>_onSearchChanged(text),
-        logoOnTap: ()=>setState(()=>searchVisible=!searchVisible),
+        iconOnTap: () => Navigator.pop(context),
+        onChanged: (text) => _onSearchChanged(text),
+        logoOnTap: () => setState(() => searchVisible = !searchVisible),
       ),
       body: SingleChildScrollView(
         child: Column(
@@ -70,27 +74,27 @@ class _TodayPaymentUsersState extends State<TodayPaymentUsers> {
               child: Expanded(
                   flex: 0,
                   child: Padding(
-                    padding: const EdgeInsets.only(top: 15.0,bottom: 15.0),
+                    padding: const EdgeInsets.only(top: 15.0, bottom: 15.0),
                     child: Column(
                       children: [
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                           children: [
-                            _buildRadio(value: 0,name: "Name"),
-                            _buildRadio(value: 1,name: "DishNumber"),
+                            _buildRadio(value: 0, name: "Name"),
+                            _buildRadio(value: 1, name: "DishNumber"),
                           ],
                         ),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                           children: [
-                            _buildRadio(value: 2,name: "Mobile No"),
-                            _buildRadio(value: 3,name: "Dish Type"),
+                            _buildRadio(value: 2, name: "Mobile No"),
+                            _buildRadio(value: 3, name: "Dish Type"),
                           ],
                         ),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                           children: [
-                            _buildRadio(value: 4,name: "Village"),
+                            _buildRadio(value: 4, name: "Village"),
                           ],
                         ),
                       ],
@@ -102,61 +106,69 @@ class _TodayPaymentUsersState extends State<TodayPaymentUsers> {
               child: CustomStreamBuilder(
                   context: context,
                   stream: paymentRecords
-                      .where("PENDING_DATE",  isGreaterThan:_dateTodayStart)
-                     .where("PENDING_DATE",  isLessThanOrEqualTo:_dateTodayEnd)
-                      .snapshots(),
-                  body: (todayPayTotUsers){
-                    print("todayPayTotUsers>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>${todayPayTotUsers.data.docs.length}");
-                    return todayPayTotUsers.data.docs.length > 0
+                      .where("PENDING_DATE", isGreaterThan: _dateTodayStart)
+                      .where("PENDING_DATE", isLessThanOrEqualTo: _dateTodayEnd)
+                      .snapshots() as Stream<QuerySnapshot<Map<String, dynamic>>>,
+                  body: (todayPayTotUsers) {
+                    final paymentDocs = todayPayTotUsers.data?.docs ?? [];
+                    return paymentDocs.isNotEmpty
                         ? ListView.builder(
-                        scrollDirection: Axis.vertical,
-                        controller: _controller,
-                        shrinkWrap: true ,
-                        itemCount: todayPayTotUsers.data.docs.length,
-                        itemBuilder: (_,index){
-                          var todayPayTotalUsers = todayPayTotUsers.data.docs[index];
-                        return CustomStreamBuilder(
-                            context: context,
-                            stream: oldUser
-                                .where("id",  isEqualTo: todayPayTotalUsers['USER_ID']).snapshots(),
-                            body:(snapshot){
-                              var showResults = _searchResultsList(snapshot.data.docs);
-                              print(showResults.length);
-                              print("showResults.length>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>${showResults.length}");
-                              return showResults.length > 0
-                                  ? ListView.builder(
-                                  scrollDirection: Axis.vertical,
-                                  controller: _controller,
-                                  shrinkWrap: true ,
-                                  itemCount: showResults.length,
-                                  itemBuilder: (_,index){
-                                    print('${showResults[index].id}  QQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQ');
-                                    print( '${showResults[index]['id']}  QQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQ');
-                                    print( '${showResults.length}  QQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQ');
-                                    return CListTile(
-                                      context: context,
-                                      docId: showResults[index].id,
-                                      collectionName: "OldUser",
-                                      title: showResults[index]['name'],
-                                      subtitle: showResults[index]['mobileNo'],
-                                      subtitle2: showResults[index]['dishNumber'],
-                                      subtitle3: showResults[index]['area'],
-                                      subtitleIcon: Icons.phone,
-                                      tileOnTap: (){changeScreenAnimated(context, UserDetails(
-                                        collectionName: "OldUser",
-                                        userId: showResults[index].id,));},
-                                      counter: "${index+1}",
-                                    );
-                                  }
-                              )
-                              : SearchNoData();
-                            },
-                        );
-                      }
-                    )
-                        :SearchNoData();
-                  }
-              ),
+                            scrollDirection: Axis.vertical,
+                            controller: _controller,
+                            shrinkWrap: true,
+                            itemCount: paymentDocs.length,
+                            itemBuilder: (_, index) {
+                              final todayPayTotalUsers = paymentDocs[index];
+                              return CustomStreamBuilder(
+                                context: context,
+                                stream: oldUser
+                                        .where("id",
+                                            isEqualTo:
+                                                todayPayTotalUsers['USER_ID'])
+                                        .snapshots()
+                                    as Stream<
+                                        QuerySnapshot<Map<String, dynamic>>>,
+                                body: (snapshot) {
+                                  final userDocs = snapshot.data?.docs ?? [];
+                                  final showResults =
+                                      _searchResultsList(userDocs);
+                                  return showResults.isNotEmpty
+                                      ? ListView.builder(
+                                          scrollDirection: Axis.vertical,
+                                          controller: _controller,
+                                          shrinkWrap: true,
+                                          itemCount: showResults.length,
+                                          itemBuilder: (_, index) {
+                                            return CListTile(
+                                              context: context,
+                                              docId: showResults[index].id,
+                                              collectionName: "OldUser",
+                                              title: showResults[index]['name'],
+                                              subtitle: showResults[index]
+                                                  ['mobileNo'],
+                                              subtitle2: showResults[index]
+                                                  ['dishNumber'],
+                                              subtitle3: showResults[index]
+                                                  ['area'],
+                                              subtitleIcon: Icons.phone,
+                                              tileOnTap: () {
+                                                changeScreenAnimated(
+                                                    context,
+                                                    UserDetails(
+                                                      collectionName: "OldUser",
+                                                      userId:
+                                                          showResults[index].id,
+                                                    ));
+                                              },
+                                              counter: "${index + 1}",
+                                            );
+                                          })
+                                      : SearchNoData();
+                                },
+                              );
+                            })
+                        : SearchNoData();
+                  }),
             ),
           ],
         ),
@@ -164,7 +176,7 @@ class _TodayPaymentUsersState extends State<TodayPaymentUsers> {
     );
   }
 
-  _buildRadio({int value, String name}){
+  Widget _buildRadio({required int value, required String name}) {
     return Row(
       children: [
         Radio(
@@ -173,20 +185,25 @@ class _TodayPaymentUsersState extends State<TodayPaymentUsers> {
           groupValue: _radioValue,
           onChanged: _handleRadioValueChange,
         ),
-        CText(msg: name,color: Colors.black,size: 20.0,),
+        CText(
+          msg: name,
+          color: Colors.black,
+          size: 20.0,
+        ),
       ],
     );
   }
 
-  _handleRadioValueChange(int value){
+  void _handleRadioValueChange(int? value) {
+    if (value == null) return;
     setState(() {
-      _radioValue=value;
+      _radioValue = value;
     });
   }
 
   _onSearchChanged(String text) {
     setState(() {
-      searchText=text;
+      searchText = text;
       print(searchText);
     });
     // searchResultsList();
@@ -196,30 +213,53 @@ class _TodayPaymentUsersState extends State<TodayPaymentUsers> {
   _searchResultsList(var snapshots) {
     var showResults = [];
 
-    if(searchText != "") {
-      for(var snapshot in snapshots){
+    if (searchText != "") {
+      for (var snapshot in snapshots) {
         var title;
-        switch(_radioValue){
-          case 0 :
-            {title = TotalCustomersFilterize.fromSnapshot(snapshot).name.toLowerCase();}
+        switch (_radioValue) {
+          case 0:
+            {
+              title = TotalCustomersFilterize.fromSnapshot(snapshot)
+                  .name
+                  .toLowerCase();
+            }
             break;
           case 1:
-            {title = TotalCustomersFilterize.fromSnapshot(snapshot).dishNumber.toLowerCase();}
+            {
+              title = TotalCustomersFilterize.fromSnapshot(snapshot)
+                  .dishNumber
+                  .toLowerCase();
+            }
             break;
           case 2:
-            {title = TotalCustomersFilterize.fromSnapshot(snapshot).mobileNo.toLowerCase();}
+            {
+              title = TotalCustomersFilterize.fromSnapshot(snapshot)
+                  .mobileNo
+                  .toLowerCase();
+            }
             break;
           case 3:
-            {title = TotalCustomersFilterize.fromSnapshot(snapshot).dishType.toLowerCase();}
+            {
+              title = TotalCustomersFilterize.fromSnapshot(snapshot)
+                  .dishType
+                  .toLowerCase();
+            }
             break;
           case 4:
-            {title = TotalCustomersFilterize.fromSnapshot(snapshot).villageName.toLowerCase();}
+            {
+              title = TotalCustomersFilterize.fromSnapshot(snapshot)
+                  .villageName
+                  .toLowerCase();
+            }
             break;
-          default: {_radioValue=0;}
-          break;
+          default:
+            {
+              _radioValue = 0;
+            }
+            break;
         }
 
-        if(title.contains(searchText.toLowerCase())) {
+        if (title.contains(searchText.toLowerCase())) {
           showResults.add(snapshot);
         }
       }

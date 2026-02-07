@@ -1,23 +1,21 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/subHelpers/styles.dart';
 
-
-class CustomAppBar extends StatefulWidget with PreferredSizeWidget {
+class CustomAppBar extends StatefulWidget implements PreferredSizeWidget {
   final IconData prefixIcon;
-  final Function iconOnTap;
-  final Function onChanged;
-  final Function() logoOnTap;
-  final String hintText;
+  final VoidCallback? iconOnTap;
+  final ValueChanged<String>? onChanged;
+  final VoidCallback? logoOnTap;
+  final String? hintText;
 
-  const CustomAppBar({Key key,
+  const CustomAppBar({
+    super.key,
+    required this.prefixIcon,
     this.iconOnTap,
-    this.prefixIcon,
     this.onChanged,
     this.logoOnTap,
     this.hintText,
-
-  }) : super(key: key);
+  });
 
   @override
   _CustomAppBarState createState() => _CustomAppBarState();
@@ -27,7 +25,13 @@ class CustomAppBar extends StatefulWidget with PreferredSizeWidget {
 }
 
 class _CustomAppBarState extends State<CustomAppBar> {
-  TextEditingController search = TextEditingController();
+  final TextEditingController search = TextEditingController();
+
+  @override
+  void dispose() {
+    search.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -41,15 +45,13 @@ class _CustomAppBarState extends State<CustomAppBar> {
             left: 15,
             child: Container(
               decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(.8),
-                borderRadius: BorderRadius.only(
+                  color: Colors.white.withValues(alpha: .8),
+                  borderRadius: BorderRadius.only(
                     bottomLeft: Radius.circular(20.0),
                     bottomRight: Radius.circular(20.0),
                     topRight: Radius.circular(20.0),
                     topLeft: Radius.circular(20.0),
-
-                )
-              ),
+                  )),
               child: Row(
                 children: <Widget>[
                   Material(
@@ -59,7 +61,7 @@ class _CustomAppBarState extends State<CustomAppBar> {
                       child: IconButton(
                         splashColor: Colors.grey,
                         icon: Icon(widget.prefixIcon),
-                        onPressed: ()=> widget.iconOnTap(),
+                        onPressed: widget.iconOnTap,
                       ),
                     ),
                   ),
@@ -69,17 +71,16 @@ class _CustomAppBarState extends State<CustomAppBar> {
                       cursorColor: Colors.black,
                       keyboardType: TextInputType.text,
                       textInputAction: TextInputAction.go,
-                      onChanged: (text)=> widget.onChanged(text),
+                      onChanged: widget.onChanged,
                       decoration: InputDecoration(
                           border: InputBorder.none,
                           contentPadding: EdgeInsets.symmetric(horizontal: 15),
-                          hintText: "${widget.hintText}" ?? "Search",
-                        alignLabelWithHint: true,
-                        hintStyle: TextStyle(
-                          color: kPrimaryColor,
-                          fontFamily: "TamilArima",
-                        )
-                      ),
+                          hintText: widget.hintText ?? "Search",
+                          alignLabelWithHint: true,
+                          hintStyle: TextStyle(
+                            color: kPrimaryColor,
+                            fontFamily: "TamilArima",
+                          )),
                     ),
                   ),
                 ],
@@ -90,11 +91,13 @@ class _CustomAppBarState extends State<CustomAppBar> {
             top: 11,
             right: 20,
             child: InkWell(
-              splashColor: Colors.blueGrey,
-              onTap: (){
-                widget.logoOnTap();
-              },
-                child: Image(image: AssetImage("assets/images/mrslogo.png"),height: 40.0,width: 50.0,)),
+                splashColor: Colors.blueGrey,
+                onTap: widget.logoOnTap,
+                child: Image(
+                  image: AssetImage("assets/images/mrslogo.png"),
+                  height: 40.0,
+                  width: 50.0,
+                )),
           ),
         ],
       ),

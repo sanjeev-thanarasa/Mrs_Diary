@@ -1,6 +1,4 @@
-import 'package:animated_icon_button/animated_icon_button.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:mrs_dth_diary_v1/scr/helpers/dashBoardService.dart';
@@ -16,10 +14,11 @@ class EditDashBoardPayment extends StatefulWidget {
   final String dbId;
   final QueryDocumentSnapshot snapshot;
 
-  const EditDashBoardPayment({Key key,
-    this.snapshot,
-    this.dbId})
-      : super(key: key);
+  const EditDashBoardPayment({
+    super.key,
+    required this.snapshot,
+    required this.dbId,
+  });
 
   @override
   _EditDashBoardPaymentState createState() => _EditDashBoardPaymentState();
@@ -40,11 +39,16 @@ class _EditDashBoardPaymentState extends State<EditDashBoardPayment> {
     super.initState();
   }
 
-  void editInitialize(){
-    _dashBoardService.createAt= widget.snapshot['CREATE_AT'] != null ? widget.snapshot['CREATE_AT'].toDate() : null;
+  void editInitialize() {
+    _dashBoardService.createAt = widget.snapshot['CREATE_AT'] != null
+        ? widget.snapshot['CREATE_AT'].toDate()
+        : null;
 
-    _dashBoardService.createAtController.text=widget.snapshot['CREATE_AT'] != null ? DateFormat('dd-MM-yyyy hh:mm a')
-        .format(widget.snapshot['CREATE_AT'].toDate()): "" ;
+    _dashBoardService.createAtController.text =
+        widget.snapshot['CREATE_AT'] != null
+            ? DateFormat('dd-MM-yyyy hh:mm a')
+                .format(widget.snapshot['CREATE_AT'].toDate())
+            : "";
 
     //_dashBoardService.userNote.text = widget.snapshot['USER_NOTE'];
     //_dashBoardService.rechargePlace.text=widget.snapshot['RECHARGE_PLACE'];
@@ -122,16 +126,13 @@ class _EditDashBoardPaymentState extends State<EditDashBoardPayment> {
       height: MediaQuery.of(context).size.height * 0.28,
       width: double.infinity,
       child: Padding(
-        padding: const EdgeInsets.only(bottom: 10.0,left: 5.0),
+        padding: const EdgeInsets.only(bottom: 10.0, left: 5.0),
         child: Align(
             alignment: Alignment.bottomCenter,
-            child: AnimatedIconButton(
-              duration: Duration(milliseconds: 500),
-              startIcon: Icon(Icons.refresh),
-              endIcon: Icon(Icons.replay),
-              startBackgroundColor: Color(0xff484a49),
+            child: IconButton(
+              icon: const Icon(Icons.refresh),
+              iconSize: 25.0,
               splashRadius: 10.0,
-              size: 25.0,
               onPressed: () => _onRefresh(),
             )),
       ),
@@ -165,13 +166,15 @@ class _EditDashBoardPaymentState extends State<EditDashBoardPayment> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   CRText(
-                    msg1: "எடுத்த பணம் :  " ,
-                    msg2: "Rs. ${_dashBoardService.packageAmount.text}" ,
+                    msg1: "எடுத்த பணம் :  ",
+                    msg2: "Rs. ${_dashBoardService.packageAmount.text}",
                     color1: Colors.blue,
                     color2: Colors.orange,
                   ),
-                  Gap(w: 10,),
-                  buildTikImage(color: Colors.blue,height: 20,width: 20)
+                  Gap(
+                    w: 10,
+                  ),
+                  buildTikImage(color: Colors.blue, height: 20, width: 20)
                 ],
               ),
               Gap(h: 5.0),
@@ -179,14 +182,15 @@ class _EditDashBoardPaymentState extends State<EditDashBoardPayment> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   CRText(
-                    msg1: "கொடுத்த பணம் :  " ,
-                    msg2: "Rs. ${_dashBoardService.paidAmount.text}" ,
+                    msg1: "கொடுத்த பணம் :  ",
+                    msg2: "Rs. ${_dashBoardService.paidAmount.text}",
                     color1: Colors.blue,
                     color2: Colors.orange,
                   ),
-                  Gap(w: 10,),
-
-                  buildTikImage(color: Colors.blue,height: 20,width: 20)
+                  Gap(
+                    w: 10,
+                  ),
+                  buildTikImage(color: Colors.blue, height: 20, width: 20)
                 ],
               ),
               Gap(h: 5.0),
@@ -201,20 +205,25 @@ class _EditDashBoardPaymentState extends State<EditDashBoardPayment> {
                 keyboardType: TextInputType.number,
                 iconButton: true,
                 animatedIconButtonStratIcon: Icons.done,
-                animatedIconButtonEndIcon:
-                Icons.done_all_rounded,
+                animatedIconButtonEndIcon: Icons.done_all_rounded,
                 animatedIconButtonOnTap: () {
-
-                  int recharge = int.parse(_dashBoardService.packageAmount.text.trim()??0);
-                  int paid = int.parse(widget.snapshot['PAID_AMOUNT'].toString() ?? 0);
-                  int newGive = int.parse(_dashBoardService.newPaidAmount.text.trim()??0);
-                  int give = paid+newGive;
+                  final recharge = int.tryParse(
+                          _dashBoardService.packageAmount.text.trim()) ??
+                      0;
+                  final paid =
+                      int.tryParse(widget.snapshot['PAID_AMOUNT'].toString()) ??
+                          0;
+                  final newGive = int.tryParse(
+                          _dashBoardService.newPaidAmount.text.trim()) ??
+                      0;
+                  int give = paid + newGive;
                   _dashBoardService.paidDate = DateTime.now();
 
                   if (recharge > give) {
                     setState(() {
                       _dashBoardService.balanceAmount.clear();
-                      _dashBoardService.pendingAmount.text = (recharge - give).toString();
+                      _dashBoardService.pendingAmount.text =
+                          (recharge - give).toString();
                       _dashBoardService.pending = true;
                       _dashBoardService.balance = false;
                     });
@@ -224,15 +233,16 @@ class _EditDashBoardPaymentState extends State<EditDashBoardPayment> {
                       _dashBoardService.balance = true;
 
                       _dashBoardService.pendingAmount.clear();
-                      _dashBoardService.balanceAmount.text = (give - recharge).toString();
+                      _dashBoardService.balanceAmount.text =
+                          (give - recharge).toString();
                     });
                   } else if (recharge == give) {
                     setState(() {
                       _dashBoardService.pendingAmount.clear();
                       _dashBoardService.balanceAmount.clear();
 
-                      _dashBoardService.pending=false;
-                      _dashBoardService.balance=false;
+                      _dashBoardService.pending = false;
+                      _dashBoardService.balance = false;
                     });
                   }
                 },
@@ -243,11 +253,9 @@ class _EditDashBoardPaymentState extends State<EditDashBoardPayment> {
                   color2: Colors.grey,
                   size1: 16.0,
                   msg1: "கொடுமதி பணம் ",
-
-                  msg2: ":  ${_dashBoardService.pendingAmount.text ?? ''} ",
+                  msg2: ":  ${_dashBoardService.pendingAmount.text} ",
                   color1: Colors.grey,
                 ),
-
               ),
               Visibility(
                 visible: _dashBoardService.balance,
@@ -255,7 +263,7 @@ class _EditDashBoardPaymentState extends State<EditDashBoardPayment> {
                   color1: Colors.grey,
                   size1: 16.0,
                   msg1: "தருமதி பணம் ",
-                  msg2: ":  ${_dashBoardService.balanceAmount.text ?? ''}" ,
+                  msg2: ":  ${_dashBoardService.balanceAmount.text}",
                 ),
               ),
               CustomTextField(
@@ -281,7 +289,8 @@ class _EditDashBoardPaymentState extends State<EditDashBoardPayment> {
                 buttonHeight: 40,
                 btnColor: Colors.blue,
                 buttonPressed: () {
-                 _dashBoardService.updateRecord(dbID: widget.dbId , snapshot: widget.snapshot);
+                  _dashBoardService.updateRecord(
+                      dbID: widget.dbId, snapshot: widget.snapshot);
                 },
               ),
               SizedBox(
@@ -621,54 +630,57 @@ class _EditDashBoardPaymentState extends State<EditDashBoardPayment> {
     //   ),
     // ),
   }
-  buildPaidPendingVisible(){
-    if(_dashBoardService.pendingAmount.text != '' ){
+
+  buildPaidPendingVisible() {
+    if (_dashBoardService.pendingAmount.text != '') {
       return Column(
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               CRText(
-                msg1: "கொடுமதி பணம் :  " ,
-                msg2: "Rs. ${_dashBoardService.pendingAmount.text ?? ''}" ,
+                msg1: "கொடுமதி பணம் :  ",
+                msg2: "Rs. ${_dashBoardService.pendingAmount.text}",
                 color1: Colors.blue,
                 color2: Colors.orange,
               ),
-              Gap(w: 10,),
-
-              buildTikImage(color: Colors.blue,height: 20,width: 20)
+              Gap(
+                w: 10,
+              ),
+              buildTikImage(color: Colors.blue, height: 20, width: 20)
             ],
           ),
           Gap(h: 5.0),
         ],
       );
-    }
-    else if(_dashBoardService.balanceAmount.text != '' ){
+    } else if (_dashBoardService.balanceAmount.text != '') {
       return Column(
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               CRText(
-                msg1: "தருமதி பணம் : " ,
-                msg2: "Rs. ${_dashBoardService.balanceAmount.text ?? ''}" ,
+                msg1: "தருமதி பணம் : ",
+                msg2: "Rs. ${_dashBoardService.balanceAmount.text}",
                 color1: Colors.blue,
                 color2: Colors.red,
               ),
-              Gap(w: 10,),
-
-              buildTikImage(color: Colors.blue,height: 20,width: 20)
+              Gap(
+                w: 10,
+              ),
+              buildTikImage(color: Colors.blue, height: 20, width: 20)
             ],
           ),
           Gap(h: 5.0),
         ],
       );
+    } else {
+      return SizedBox();
     }
-    else{return SizedBox();}
-
   }
 
-  buildTikImage({Color color , double height , double width}){
+  Widget buildTikImage(
+      {required Color color, required double height, required double width}) {
     return Image.asset(
       "assets/images/tik.png",
       height: height,

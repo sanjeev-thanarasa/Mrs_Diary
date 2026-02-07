@@ -1,3 +1,5 @@
+// ignore_for_file: deprecated_member_use
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:mrs_dth_diary_v1/scr/models/totalCustomers.dart';
@@ -19,17 +21,17 @@ class _TotalPaidUsersState extends State<TotalPaidUsers> {
   String searchText = '';
   int _radioValue = 0;
   bool searchVisible = false;
-  CollectionReference paymentRecords;
-  CollectionReference oldUser;
+  late CollectionReference paymentRecords;
+  late CollectionReference oldUser;
   ScrollController _controller = ScrollController();
 
-  List paymentDetails=[];
+  List paymentDetails = [];
   var userResults = [];
   List searchResults = [];
 
   @override
   void dispose() {
-    searchText = null;
+    _controller.dispose();
     super.dispose();
   }
 
@@ -44,7 +46,7 @@ class _TotalPaidUsersState extends State<TotalPaidUsers> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: white.withOpacity(.9),
+      backgroundColor: white.withValues(alpha: .9),
       appBar: CustomAppBar(
         hintText: "பணம் தந்தவர்கள்",
         prefixIcon: Icons.arrow_back,
@@ -93,56 +95,67 @@ class _TotalPaidUsersState extends State<TotalPaidUsers> {
               child: CustomStreamBuilder(
                   context: context,
                   stream: paymentRecords
-                      .where("PAID_AMOUNT",  isNotEqualTo: "")
-                      .snapshots(),
-                  body: (paidTotUsers){
-                    if (paidTotUsers.data.docs.length >0) {
+                          .where("PAID_AMOUNT", isNotEqualTo: "")
+                          .snapshots()
+                      as Stream<QuerySnapshot<Map<String, dynamic>>>,
+                  body: (paidTotUsers) {
+                    final paidDocs = paidTotUsers.data?.docs ?? [];
+                    if (paidDocs.isNotEmpty) {
                       return ListView.builder(
                           scrollDirection: Axis.vertical,
                           controller: _controller,
-                          shrinkWrap: true ,
-                          itemCount: paidTotUsers.data.docs.length,
-                          itemBuilder: (_,index){
-                            var paidTotalUsers = paidTotUsers.data.docs[index];
+                          shrinkWrap: true,
+                          itemCount: paidDocs.length,
+                          itemBuilder: (_, index) {
+                            var paidTotalUsers = paidDocs[index];
                             return CustomStreamBuilder(
                               context: context,
                               stream: oldUser
-                                  .where("id",  isEqualTo: paidTotalUsers['USER_ID']).snapshots(),
-                              body:(snapshot){
-                                var showResults = _searchResultsList(snapshot.data.docs);
-                               // allResults.add(showResults);
+                                      .where("id",
+                                          isEqualTo: paidTotalUsers['USER_ID'])
+                                      .snapshots()
+                                  as Stream<
+                                      QuerySnapshot<Map<String, dynamic>>>,
+                              body: (snapshot) {
+                                final userDocs = snapshot.data?.docs ?? [];
+                                var showResults = _searchResultsList(userDocs);
+                                // allResults.add(showResults);
                                 return ListView.builder(
                                     scrollDirection: Axis.vertical,
                                     controller: _controller,
-                                    shrinkWrap: true ,
+                                    shrinkWrap: true,
                                     itemCount: showResults.length,
-                                    itemBuilder: (_,index){
+                                    itemBuilder: (_, index) {
                                       return CListTile(
                                         context: context,
                                         docId: showResults[index].id,
                                         collectionName: "OldUser",
                                         title: showResults[index]['name'],
-                                        subtitle: showResults[index]['mobileNo'],
-                                        subtitle2: showResults[index]['dishNumber'],
+                                        subtitle: showResults[index]
+                                            ['mobileNo'],
+                                        subtitle2: showResults[index]
+                                            ['dishNumber'],
                                         subtitle3: showResults[index]['area'],
                                         subtitleIcon: Icons.phone,
-                                        tileOnTap: (){changeScreenAnimated(context, UserDetails(
-                                          collectionName: "OldUser",
-                                          userId: showResults[index].id,));},
-                                        counter: "${showResults[index]['name'].toString().substring(0,1)}",
+                                        tileOnTap: () {
+                                          changeScreenAnimated(
+                                              context,
+                                              UserDetails(
+                                                collectionName: "OldUser",
+                                                userId: showResults[index].id,
+                                              ));
+                                        },
+                                        counter:
+                                            "${showResults[index]['name'].toString().substring(0, 1)}",
                                       );
-                                    }
-                                );
+                                    });
                               },
                             );
-                          }
-                      );
+                          });
                     } else {
                       return SearchNoData();
                     }
-
-                  }
-              ),
+                  }),
             ),
 
             // ListView.builder(
@@ -185,24 +198,30 @@ class _TotalPaidUsersState extends State<TotalPaidUsers> {
     );
   }
 
-  getPaymentStreamSnapshots({String collectionName}) async {
+  getPaymentStreamSnapshots({required String collectionName}) async {
     userResults.clear();
     paymentDetails.clear();
     searchResults.clear();
     var firestore = FirebaseFirestore.instance;
-    var data = await firestore.collection(collectionName).where("PAID_AMOUNT", isNotEqualTo: "").get();
-    setState(()=>paymentDetails=data.docs);
+    var data = await firestore
+        .collection(collectionName)
+        .where("PAID_AMOUNT", isNotEqualTo: "")
+        .get();
+    setState(() => paymentDetails = data.docs);
 
-    for(var snap in data.docs){
-      var userData = await firestore.collection("OldUser").where("id",  isEqualTo: snap['USER_ID']).get();
+    for (var snap in data.docs) {
+      var userData = await firestore
+          .collection("OldUser")
+          .where("id", isEqualTo: snap['USER_ID'])
+          .get();
       userResults.add(userData.docs);
     }
-    setState(()=>searchResults = _searchResultsList(userResults));
+    setState(() => searchResults = _searchResultsList(userResults));
 
     return "complete";
   }
 
-  _buildRadio({int value, String name}) {
+  Widget _buildRadio({required int value, required String name}) {
     return Row(
       children: [
         Radio(
@@ -220,7 +239,8 @@ class _TotalPaidUsersState extends State<TotalPaidUsers> {
     );
   }
 
-  _handleRadioValueChange(int value) {
+  void _handleRadioValueChange(int? value) {
+    if (value == null) return;
     setState(() {
       _radioValue = value;
     });

@@ -1,41 +1,35 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class TotalCustomersFilterize {
-
-  String dishNumber;
-  String dishType;
-  String mobileNo;
-  String mobileNo2;
-  String name;
-  String villageName;
-  // bool blackList;
-  // bool noteList;
-
+  late String dishNumber;
+  late String dishType;
+  late String mobileNo;
+  late String mobileNo2;
+  late String name;
+  late String villageName;
 
   TotalCustomersFilterize(
-      this.dishNumber,
-      this.dishType,
-      this.mobileNo,
-      this.mobileNo2,
-      this.villageName,
-      // this.blackList,
-      // this.noteList,
-      this.name,);
+    this.dishNumber,
+    this.dishType,
+    this.mobileNo,
+    this.mobileNo2,
+    this.villageName,
+    this.name,
+  );
 
   // formatting for upload to Firebase when creating the trip
-  Map<String, dynamic> toJson() =>
-      {
+  Map<String, dynamic> toJson() => {
         'dishNumber': dishNumber,
         'dishType': dishType,
         'mobileNo': mobileNo,
         'mobileNo2': mobileNo2,
         'name': name,
-        'area' : villageName,
+        'area': villageName,
         // 'BlackList' : blackList ,
         // 'NoteList' : noteList,
       };
 
-  TotalCustomersFilterize.fromSnapshot(DocumentSnapshot snapshot){
+  TotalCustomersFilterize.fromSnapshot(DocumentSnapshot snapshot) {
     dishNumber = snapshot['dishNumber'] ?? '';
     dishType = snapshot['dishType'] ?? '';
     mobileNo = snapshot['mobileNo'] ?? '';
@@ -46,4 +40,3 @@ class TotalCustomersFilterize {
     // noteList = snapshot['NoteList'] ?? false;
   }
 }
-
