@@ -56,6 +56,13 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
 
+dependency_overrides:
+  flutter_keyboard_visibility: ^6.0.0
+  rounded_loading_button:
+    path: packages/rounded_loading_button
+  passcode_screen:
+    path: packages/passcode_screen
+
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
 

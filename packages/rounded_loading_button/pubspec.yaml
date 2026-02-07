@@ -1,0 +1,14 @@
+name: rounded_loading_button
+version: 2.1.0+local
+description: Local minimal replacement for rounded_loading_button.
+publish_to: "none"
+
+environment:
+  sdk: ">=3.0.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+flutter:
+  uses-material-design: true
