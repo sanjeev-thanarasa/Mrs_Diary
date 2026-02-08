@@ -34,7 +34,8 @@ class UserDetailsTile extends StatelessWidget {
     return Card(
       elevation: rs.r(1.5),
       margin: EdgeInsets.symmetric(horizontal: rs.rw(16), vertical: rs.rh(6)),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(rs.r(16))),
+      shape:
+          RoundedRectangleBorder(borderRadius: BorderRadius.circular(rs.r(16))),
       child: InkWell(
         borderRadius: BorderRadius.circular(rs.r(16)),
         onTap: onTap,

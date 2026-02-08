@@ -173,6 +173,7 @@ class _TodayPaymentUsersState extends State<TodayPaymentUsers> {
     return Scaffold(
       backgroundColor: white.withValues(alpha: .9),
       appBar: CustomAppBar(
+        trailing: Container(),
         hintText: "இன்று பணம் தர வேண்டியவர்கள்",
         prefixIcon: Icons.arrow_back,
         iconOnTap: () => Navigator.pop(context),

@@ -1,4 +1,3 @@
-import 'package:bubble_tab_indicator/bubble_tab_indicator.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -8,6 +7,7 @@ import 'package:mrs_dth_diary_v1/scr/widgets/CDropDownList.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/CTextField.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/RoundedLoadingButton.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/datePicker.dart';
+import 'package:mrs_dth_diary_v1/scr/widgets/subHelpers/responsive.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/subHelpers/styles.dart';
 
 class CreateNewUser extends StatefulWidget {
@@ -29,73 +29,47 @@ class _CreateNewUserState extends State<CreateNewUser> {
 
   @override
   Widget build(BuildContext context) {
+    final rs = context.rs;
     return Scaffold(
-      backgroundColor: kPrimaryColor,
-      body: SingleChildScrollView(
-        child: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-                colors: [white, kPrimaryColor],
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter),
-            borderRadius: BorderRadius.circular(25.0),
-            boxShadow: [
-              BoxShadow(
-                offset: Offset(0, 0),
-                blurRadius: 20,
-                color: white,
-              ),
-            ],
+      backgroundColor: background,
+      appBar: AppBar(
+        title: const Text(
+          'Create User',
+          style: TextStyle(
+            fontFamily: 'TamilArima',
+            fontWeight: FontWeight.w700,
+            fontSize: 18,
+            color: Colors.black,
           ),
+        ),
+        elevation: 0,
+        centerTitle: false,
+        backgroundColor: Colors.white,
+        iconTheme: const IconThemeData(color: Colors.black),
+      ),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: EdgeInsets.only(bottom: rs.rh(16)),
           child: Column(
             children: [
-              Padding(
-                padding: const EdgeInsets.only(top: 30.0),
-                child: Container(
-                  width: double.infinity,
-                  height: MediaQuery.of(context).size.height * 0.26,
-                  decoration: BoxDecoration(
-                    image: DecorationImage(
-                        image: AssetImage("assets/images/ravi.png"),
-                        fit: BoxFit.fitHeight),
-                    borderRadius: BorderRadius.only(
-                        bottomLeft: Radius.circular(40.0),
-                        bottomRight: Radius.circular(40.0)),
-                    gradient: LinearGradient(
-                      colors: [
-                        white,
-                        Colors.white,
-                      ],
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        offset: Offset(10, 10),
-                        blurRadius: 30,
-                        color: Color(0xFFB7B7B7).withValues(alpha: .16),
-                      ),
-                    ],
-                  ),
-                ),
-              ), //bg image
-              SizedBox(
-                height: 8,
-              ),
-              _buildRegionTabBar(),
+              SizedBox(height: rs.rh(12)),
+              _buildUserTypeToggle(),
               Container(
                 decoration: BoxDecoration(
-                  color: white.withValues(alpha: .8),
-                  borderRadius: BorderRadius.circular(15.0),
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(rs.r(16)),
                   boxShadow: [
                     BoxShadow(
-                      offset: Offset(0, 0),
-                      blurRadius: 20,
-                      color: white,
+                      offset: const Offset(0, 8),
+                      blurRadius: rs.r(24),
+                      color: Colors.black.withValues(alpha: 0.06),
                     ),
                   ],
                 ),
-                margin: EdgeInsets.all(12),
+                margin: EdgeInsets.symmetric(
+                  horizontal: rs.rw(12),
+                  vertical: rs.rh(8),
+                ),
                 child: _index == 0 ? buildColumn(false) : buildColumn(true),
               ),
             ],
@@ -105,72 +79,84 @@ class _CreateNewUserState extends State<CreateNewUser> {
     );
   }
 
-  _buildRegionTabBar() {
-    return DefaultTabController(
-      length: 2,
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 25.0, vertical: 5),
-        height: 50.0,
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [
-                kPrimaryColor,
-                Colors.grey,
-              ]),
-          borderRadius: BorderRadius.circular(25.0),
-          boxShadow: [
-            BoxShadow(
-              offset: Offset(0, 0),
-              blurRadius: 20,
-              color: white,
-            ),
-          ],
-        ),
-        child: TabBar(
-          indicator: BubbleTabIndicator(
-            tabBarIndicatorSize: TabBarIndicatorSize.tab,
-            indicatorHeight: 40.0,
-            indicatorColor: Colors.white,
+  Widget _buildUserTypeToggle() {
+    final rs = context.rs;
+    return Container(
+      margin: EdgeInsets.symmetric(horizontal: rs.rw(16)),
+      padding: EdgeInsets.all(rs.r(4)),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(rs.r(18)),
+        boxShadow: [
+          BoxShadow(
+            offset: const Offset(0, 6),
+            blurRadius: rs.r(18),
+            color: Colors.black.withValues(alpha: 0.08),
           ),
-          labelStyle: TextStyle(fontSize: 16.0, fontWeight: FontWeight.w600),
-          labelColor: Colors.black,
-          unselectedLabelColor: Colors.white,
-          tabs: [
-            Text('Old User'),
-            Text('New User'),
-          ],
-          onTap: (index) {
-            setState(() {
-              _index = index;
-            });
-          },
+        ],
+      ),
+      child: Row(
+        children: [
+          _toggleItem(label: 'Old User', index: 0),
+          _toggleItem(label: 'New User', index: 1),
+        ],
+      ),
+    );
+  }
+
+  Widget _toggleItem({required String label, required int index}) {
+    final rs = context.rs;
+    final isActive = _index == index;
+    return Expanded(
+      child: GestureDetector(
+        onTap: () => setState(() => _index = index),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 220),
+          curve: Curves.easeOut,
+          padding: EdgeInsets.symmetric(vertical: rs.rh(10)),
+          decoration: BoxDecoration(
+            color: isActive ? kPrimaryColor : Colors.transparent,
+            borderRadius: BorderRadius.circular(rs.r(14)),
+          ),
+          child: Center(
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: rs.sp(14),
+                fontWeight: FontWeight.w700,
+                fontFamily: 'TamilArima',
+                color: isActive ? Colors.white : Colors.black87,
+              ),
+            ),
+          ),
         ),
       ),
     );
   }
 
   Column buildColumn(bool visible) {
+    final rs = context.rs;
+    const hintColor = Color(0xFF4A6572);
+    final accentColor = kBlueColor;
     return Column(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
-        SizedBox(
-          height: 15.0,
-        ),
+        SizedBox(height: rs.rh(14)),
+        _sectionLabel('Basic details'),
+        SizedBox(height: rs.rh(6)),
         CustomTextField(
           controller: _uSerServices.nameController,
           hintText: "பெயர்",
-          leadingIconColor: mainBlue,
-          hintTextColor: Colors.blue,
+          leadingIconColor: accentColor,
+          hintTextColor: hintColor,
           icon: Icons.person,
           keyboardType: TextInputType.text,
         ), //பெயர்
         CustomTextField(
           controller: _uSerServices.addressController,
           hintText: "விலாசம்",
-          leadingIconColor: mainBlue,
-          hintTextColor: Colors.blue,
+          leadingIconColor: accentColor,
+          hintTextColor: hintColor,
           icon: Icons.home,
           keyboardType: TextInputType.text,
         ), //விலாசம்
@@ -180,12 +166,16 @@ class _CreateNewUserState extends State<CreateNewUser> {
             onOptionSelected: (optionItem) {
               setState(() => _uSerServices.selectedArea = optionItem);
             },
-            image: 'assets/images/dish.png'), //எந்த ஊர்
+            image: 'assets/images/dish.png',
+            iconColor: accentColor), //எந்த ஊர்
+        SizedBox(height: rs.rh(6)),
+        _sectionLabel('Contact'),
+        SizedBox(height: rs.rh(6)),
         CustomTextField(
             controller: _uSerServices.mobileController,
             hintText: "தொலைபேசி இலக்கம்",
-            leadingIconColor: mainBlue,
-            hintTextColor: Colors.blue,
+            leadingIconColor: accentColor,
+            hintTextColor: hintColor,
             icon: Icons.phone,
             keyboardType: TextInputType.number,
             iconButton: true,
@@ -196,17 +186,20 @@ class _CreateNewUserState extends State<CreateNewUser> {
         Visibility(
           visible: mNoVisible,
           child: CustomTextField(
-            leadingIconColor: mainBlue,
-            hintTextColor: Colors.blue,
+            leadingIconColor: accentColor,
+            hintTextColor: hintColor,
             controller: _uSerServices.mobileController1,
             hintText: "தொலைபேசி இலக்கம்",
             icon: Icons.phone,
             keyboardType: TextInputType.number,
           ),
         ), //தொலைபேசி இலக்கம்2
+        SizedBox(height: rs.rh(6)),
+        _sectionLabel('Dish info'),
+        SizedBox(height: rs.rh(6)),
         CustomTextField(
-          leadingIconColor: mainBlue,
-          hintTextColor: Colors.blue,
+          leadingIconColor: accentColor,
+          hintTextColor: hintColor,
           controller: _uSerServices.dishNumberController,
           hintText: "Dish இலக்கம்",
           image: 'assets/images/dish.png',
@@ -218,13 +211,14 @@ class _CreateNewUserState extends State<CreateNewUser> {
             onOptionSelected: (name) {
               setState(() => _uSerServices.selectedDishType = name);
             },
-            image: 'assets/images/dish.png'), //Dish ன் வகை
+            image: 'assets/images/dish.png',
+            iconColor: accentColor), //Dish ன் வகை
 
         Visibility(
           visible: visible,
           child: CustomTextField(
-            leadingIconColor: mainBlue,
-            hintTextColor: Colors.blue,
+            leadingIconColor: accentColor,
+            hintTextColor: hintColor,
             controller: _uSerServices.registerDateController,
             hintText: "பதிந்த திகதி",
             icon: Icons.phone,
@@ -252,8 +246,8 @@ class _CreateNewUserState extends State<CreateNewUser> {
         Visibility(
           visible: visible,
           child: CustomTextField(
-            leadingIconColor: mainBlue,
-            hintTextColor: Colors.blue,
+            leadingIconColor: accentColor,
+            hintTextColor: hintColor,
             controller: _uSerServices.expiredDateController,
             hintText: "முடியும் திகதி",
             readOnly: true,
@@ -280,30 +274,55 @@ class _CreateNewUserState extends State<CreateNewUser> {
         Visibility(
           visible: visible,
           child: CustomTextField(
-            leadingIconColor: mainBlue,
-            hintTextColor: Colors.blue,
+            leadingIconColor: accentColor,
+            hintTextColor: hintColor,
             controller: _uSerServices.shopController,
             hintText: "கடையின் பெயர்",
             icon: Icons.phone,
             keyboardType: TextInputType.text,
           ),
         ),
-        SizedBox(
-          height: 20.0,
-        ),
+        SizedBox(height: rs.rh(16)),
         RoundedLoading(
           btnController: _uSerServices.btnController,
-          paddingLeft: 140.0,
-          paddingRight: 140.0,
-          paddingTop: 8.0,
+          // paddingLeft: 10.0,
+          // paddingRight: 10.0,
+          paddingTop: 6.0,
+          buttonHeight: 40.0,
+          btnColor: kBlueColor,
+          elevation: 2.0,
+          label: 'Save User',
+          textStyle: TextStyle(
+            fontSize: rs.sp(16),
+            fontWeight: FontWeight.w700,
+            fontFamily: 'TamilArima',
+            color: Colors.white,
+          ),
           buttonPressed: () {
             _uSerServices.createRecord(index: _index, context: context);
           },
         ),
-        SizedBox(
-          height: 20,
-        )
+        SizedBox(height: rs.rh(20))
       ],
+    );
+  }
+
+  Widget _sectionLabel(String text) {
+    final rs = context.rs;
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: rs.rw(16)),
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: Text(
+          text,
+          style: TextStyle(
+            fontSize: rs.sp(13),
+            fontWeight: FontWeight.w700,
+            fontFamily: 'TamilArima',
+            color: Colors.black87,
+          ),
+        ),
+      ),
     );
   }
 

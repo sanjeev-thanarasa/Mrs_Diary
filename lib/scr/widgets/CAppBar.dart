@@ -78,14 +78,15 @@ class _CustomAppBarState extends State<CustomAppBar> {
                       onChanged: widget.onChanged,
                       decoration: InputDecoration(
                           border: InputBorder.none,
-                          contentPadding: EdgeInsets.symmetric(
-                            horizontal: rs.rw(15),
-                          ),
+                          // contentPadding: EdgeInsets.symmetric(
+                          //   horizontal: rs.rw(15),
+                          // ),
                           hintText: widget.hintText ?? "Search",
                           alignLabelWithHint: true,
                           hintStyle: TextStyle(
                             color: kPrimaryColor,
                             fontFamily: "TamilArima",
+                            fontSize: rs.r(16.0),
                           )),
                     ),
                   ),

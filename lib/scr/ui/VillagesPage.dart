@@ -289,10 +289,33 @@ class _VillagesListState extends State<VillagesList> {
                 hintText: "Enter Village Name",
                 labelText: "Create New Village",
                 btnText: "CREATE",
-                bthFunction: (text) {
-                  villageProvider.editControllerName.text = text;
-                  String id = Uuid().v1();
-                  villageProvider.uploadVillage(id: id);
+                bthFunction: (text) async {
+                  final name = text.trim();
+                  if (name.isEmpty) {
+                    return;
+                  }
+                  villageProvider.editControllerName.text = name;
+                  final id = Uuid().v1();
+                  final success = await villageProvider.uploadVillage(id: id);
+                  if (!mounted) return;
+                  final messenger = ScaffoldMessenger.of(context);
+                  messenger.hideCurrentSnackBar();
+                  if (success) {
+                    messenger.showSnackBar(
+                      SnackBar(
+                        content: Text('$name village created'),
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                    villageProvider.clear();
+                  } else {
+                    messenger.showSnackBar(
+                      const SnackBar(
+                        content: Text('Failed to create village'),
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                  }
                 },
                 context: context,
               )

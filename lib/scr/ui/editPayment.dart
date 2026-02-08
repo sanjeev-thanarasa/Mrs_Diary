@@ -9,7 +9,6 @@ import 'package:mrs_dth_diary_v1/scr/widgets/SimpleCalc.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/customText.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/datePicker.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/subHelpers/styles.dart';
-import 'package:pull_to_reveal/pull_to_reveal.dart';
 
 class EditPayment extends StatefulWidget {
   final String userId;
@@ -67,50 +66,59 @@ class _EditPaymentState extends State<EditPayment> {
     _paymentServices.balanceAmount.text = widget.snapshot['BALANCE_AMOUNT'];
     _paymentServices.userNote.text = widget.snapshot['USER_NOTE'];
     _paymentServices.userNote2.text = widget.snapshot['USER_NOTE2'];
+    if (_paymentServices.pendingDate != null) {
+      _paymentServices.pendingDateController.text =
+          DateFormat('dd-MM-yyyy hh:mm a')
+              .format(_paymentServices.pendingDate!);
+    }
+    if (_paymentServices.expiredDate != null) {
+      _paymentServices.expiredDateController.text =
+          DateFormat('dd-MM-yyyy hh:mm a')
+              .format(_paymentServices.expiredDate!);
+    }
   }
 
   final TextStyle _style = const TextStyle(
-    fontSize: 16.0,
+    fontSize: 15.0,
     fontFamily: "TamilArima",
-    color: Colors.blue,
+    color: Colors.blueGrey,
   );
   int recharge = 0;
   int paidAmount = 0;
 
   @override
   Widget build(BuildContext context) {
-    bool equal = false;
     recharge = widget.snapshot['AMOUNT'] != ''
         ? int.parse(widget.snapshot['AMOUNT'].trim().toString())
         : 0;
     paidAmount = widget.snapshot['PAID_AMOUNT'] != ''
         ? int.parse(widget.snapshot['PAID_AMOUNT'].trim().toString())
         : 0;
-    setState(() {
-      if (recharge == paidAmount) {
-        setState(() {
-          equal = true;
-        });
-      }
-    });
+    final equal = recharge == paidAmount;
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: background,
       appBar: AppBar(
-        title: CText(
-            msg: "Edit Payment ",
-            color: Colors.white,
-            weight: FontWeight.bold,
-            size: 20.0),
-        elevation: 10.0,
-        centerTitle: true,
-        backgroundColor: Color(0xff6c6a6b),
+        title: const Text(
+          "Edit Payment",
+          style: TextStyle(
+            fontFamily: 'TamilArima',
+            fontWeight: FontWeight.w700,
+            fontSize: 18,
+            color: Colors.black,
+          ),
+        ),
+        elevation: 0,
+        centerTitle: false,
+        backgroundColor: Colors.white,
+        iconTheme: const IconThemeData(color: Colors.black),
         actions: [
           Padding(
             padding: EdgeInsets.only(right: 8.0),
             child: IconButton(
               icon: Icon(
                 Icons.calculate_rounded,
-                size: 30.0,
+                size: 26.0,
+                color: Colors.black87,
               ),
               onPressed: () {
                 showModalBottomSheet<void>(
@@ -125,22 +133,11 @@ class _EditPaymentState extends State<EditPayment> {
           )
         ],
       ),
-      body: PullToRevealTopItemList(
-        startRevealed: true,
-        itemCount: 1,
-        itemBuilder: (BuildContext context, int index) {
-          return _buildContentUI(context, equal);
-        },
-        revealableHeight: 250,
-        revealableBuilder: (BuildContext context, RevealableToggler opener,
-            RevealableToggler closer, BoxConstraints constraints) {
-          return Stack(
-            alignment: Alignment.topLeft,
-            children: <Widget>[
-              _buildBackground(context),
-            ],
-          );
-        },
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+          child: _buildContentUI(context, equal),
+        ),
       ),
     );
   }
@@ -152,63 +149,197 @@ class _EditPaymentState extends State<EditPayment> {
     );
   }
 
-  Widget _buildBackground(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        image: DecorationImage(
-            image: AssetImage("assets/images/money.jpg"), fit: BoxFit.cover),
-        borderRadius: BorderRadius.only(bottomRight: Radius.circular(112)),
-        color: kBlueColor,
-      ),
-      height: MediaQuery.of(context).size.height * 0.28,
-      width: double.infinity,
-      child: Padding(
-        padding: const EdgeInsets.only(bottom: 5),
-        child: Align(
-            alignment: Alignment.bottomCenter,
-            child: IconButton(
-              icon: const Icon(Icons.refresh, color: Colors.white),
-              onPressed: _onRefresh,
-            )),
-      ),
-    );
-  }
-
-  Color _color = Colors.grey;
   bool noteVisible = false;
 
   Widget _buildContentUI(BuildContext context, bool equal) {
-    return Container(
-      width: MediaQuery.of(context).size.width * .7,
-      padding: EdgeInsets.all(10),
-      decoration: BoxDecoration(
-          borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(25.0),
-              bottomRight: Radius.circular(25.0))),
-      child: Column(
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildHeaderCard(equal),
+        const SizedBox(height: 12),
+        _sectionCard(
+          title: "Update payment",
+          child: Column(
             children: [
-              CRText(
-                msg1: "Package Name :  ",
-                msg2: "${widget.snapshot['PACKAGE_NAME']}",
-                color1: Colors.blue,
+              if (!equal)
+                CustomTextField(
+                  controller: _paymentServices.newGiveAmount,
+                  hintText: widget.snapshot['BALANCE_AMOUNT'] != ''
+                      ? "நீங்கள் கொடுத்த பணம்"
+                      : "புதிதாக தந்த பணம்",
+                  hintTextColor: Colors.blueGrey,
+                  icon: Icons.monetization_on,
+                  textStyle: _style,
+                  keyboardType: TextInputType.number,
+                  animatedIconButtonStratIcon: Icons.done,
+                  animatedIconButtonEndIcon: Icons.done_all_rounded,
+                  iconButton: true,
+                  animatedIconButtonOnTap: () {
+                    widget.snapshot['BALANCE_AMOUNT'] != ''
+                        ? calculateBalance()
+                        : calculatePending();
+                  },
+                ),
+              if (_paymentServices.pending) ...[
+                const SizedBox(height: 10),
+                _statusTile(
+                  title: "புதிய தருமதி பணம்",
+                  value: _paymentServices.pendingAmount.text,
+                  color: Colors.blueGrey,
+                ),
+                const SizedBox(height: 10),
+                CustomTextField(
+                  readOnly: true,
+                  controller: _paymentServices.pendingDateController,
+                  hintText: "தருமதி திகதி",
+                  icon: Icons.update,
+                  keyboardType: TextInputType.text,
+                  animatedIconButtonStratIcon: Icons.date_range,
+                  textStyle: _style,
+                  hintTextColor: Colors.blueGrey,
+                  iconButton: true,
+                  animatedIconButtonOnTap: () {
+                    showCupertinoModalPopup(
+                        context: context,
+                        builder: (_) => DatePicker(
+                              onDateTimeChanged: (val) {
+                                setState(() {
+                                  _paymentServices.pendingDate = val;
+                                  _paymentServices.pendingDateController.text =
+                                      DateFormat('dd-MM-yyyy hh:mm a')
+                                          .format(val);
+                                });
+                              },
+                            ));
+                  },
+                ),
+              ],
+              if (_paymentServices.balance) ...[
+                const SizedBox(height: 10),
+                _statusTile(
+                  title: "புதிய கொடுமதி பணம்",
+                  value: _paymentServices.balanceAmount.text,
+                  color: Colors.blueGrey,
+                ),
+              ],
+              const SizedBox(height: 10),
+              CustomTextField(
+                readOnly: true,
+                controller: _paymentServices.expiredDateController,
+                hintText: "முடியும் திகதி",
+                icon: Icons.date_range,
+                keyboardType: TextInputType.text,
+                textStyle: _style,
+                hintTextColor: Colors.blueGrey,
+                animatedIconButtonStratIcon: Icons.date_range,
+                animatedIconButtonEndIcon: Icons.date_range_outlined,
+                animatedIconButtonOnTap: () {
+                  showCupertinoModalPopup(
+                      context: context,
+                      builder: (_) => DatePicker(
+                            onDateTimeChanged: (val) {
+                              setState(() {
+                                _paymentServices.expiredDate = val;
+                                _paymentServices.expiredDateController.text =
+                                    DateFormat('dd-MM-yyyy hh:mm a')
+                                        .format(val);
+                              });
+                            },
+                          ));
+                },
               ),
-              buildTikImage(color: Colors.blue)
             ],
           ),
-          gap(h: 5.0),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+        ),
+        const SizedBox(height: 12),
+        _sectionCard(
+          title: "Notes",
+          child: Column(
             children: [
-              CText(
-                msg: "Create at : ${_paymentServices.createRecordDate.text}",
-                color: Colors.blue,
+              CustomTextField(
+                controller: _paymentServices.userNote,
+                hintText: "குறிப்பு",
+                icon: Icons.note_add,
+                keyboardType: TextInputType.text,
+                textStyle: _style,
+                hintTextColor: Colors.blueGrey,
+                iconButton: true,
+                animatedIconButtonStratIcon: Icons.add_circle_outline_rounded,
+                animatedIconButtonEndIcon:
+                    Icons.indeterminate_check_box_outlined,
+                animatedIconButtonOnTap: () =>
+                    setState(() => noteVisible = !noteVisible),
               ),
-              // buildTikImage(color: _color)
-              GestureDetector(
-                  onTap: () {
+              if (noteVisible)
+                CustomTextField(
+                  controller: _paymentServices.userNote2,
+                  hintText: "குறிப்பு 2",
+                  icon: Icons.note_add_outlined,
+                  textStyle: _style,
+                  keyboardType: TextInputType.text,
+                ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+        RoundedLoading(
+          btnController: _paymentServices.btnController,
+          paddingLeft: 10.0,
+          paddingRight: 10.0,
+          paddingTop: 8.0,
+          buttonHeight: 44,
+          btnColor: kBlueColor,
+          buttonPressed: () {
+            _paymentServices.updatePaymentRecord(snapshot: widget.snapshot);
+          },
+        ),
+        const SizedBox(height: 20),
+      ],
+    );
+  }
+
+  Widget _buildHeaderCard(bool equal) {
+    final pendingOrBalance = widget.snapshot['BALANCE_AMOUNT'] != ''
+        ? widget.snapshot['BALANCE_AMOUNT']
+        : widget.snapshot['PENDING_AMOUNT'];
+
+    return Card(
+      elevation: 1.5,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              widget.snapshot['PACKAGE_NAME'] == ''
+                  ? 'No Name'
+                  : widget.snapshot['PACKAGE_NAME'],
+              style: const TextStyle(
+                fontSize: 18,
+                fontFamily: 'TamilArima',
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Row(
+              children: [
+                const Icon(Icons.event_rounded, size: 16, color: kBlueColor),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    _paymentServices.createRecordDate.text,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontFamily: 'TamilArima2',
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black54,
+                    ),
+                  ),
+                ),
+                IconButton(
+                  tooltip: 'Change date',
+                  onPressed: () {
                     showCupertinoModalPopup(
                         context: context,
                         builder: (_) => DatePicker(
@@ -220,219 +351,145 @@ class _EditPaymentState extends State<EditPayment> {
                                           .format(val);
                                 });
                               },
-                            )).whenComplete(
-                        () => setState(() => _color = Colors.green));
+                            ));
                   },
-                  child: buildTikImage(color: _color))
-            ],
-          ),
-          gap(h: 2.0),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              CText(
-                msg: "Recharge Amount :  ${widget.snapshot['AMOUNT']}",
-                color: Colors.green,
-                size: 20.0,
-              ),
-              buildTikImage(color: Colors.green)
-            ],
-          ),
-          gap(h: 2.0),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              CRText(
-                msg1: "Paid Amount ",
-                msg2: ":  ${widget.snapshot['PAID_AMOUNT']}",
-                color1: Colors.orangeAccent,
-                color2: Colors.orange,
-                size1: 20.0,
-                size2: 20.0,
-              ),
-              buildTikImage(color: Colors.orange)
-            ],
-          ),
-          Visibility(
-            visible: !equal,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                CRText(
-                  msg1: widget.snapshot['BALANCE_AMOUNT'] != ''
-                      ? "பழைய கொடுமதி பணம்"
-                      : "பழைய தருமதி பணம்",
-                  msg2:
-                      ":  ${widget.snapshot['BALANCE_AMOUNT'] != '' ? widget.snapshot['BALANCE_AMOUNT'] : widget.snapshot['PENDING_AMOUNT']}",
-                  color1: Colors.orangeAccent,
-                  color2: Colors.orange,
-                  size1: 20.0,
-                  size2: 20.0,
-                ),
-                buildTikImage(color: Colors.orange)
+                  icon: const Icon(Icons.edit_calendar_rounded),
+                )
               ],
             ),
-          ),
-          gap(h: 3.0),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              CRText(
-                msg1: "Last Paid Date Time  ",
-                msg2: ": ${_paymentServices.createRecordDate.text}",
-                color1: Colors.grey,
-                color2: Colors.black,
+            const Divider(height: 24),
+            Row(
+              children: [
+                _infoChip(
+                  label: 'Recharge',
+                  value: widget.snapshot['AMOUNT'],
+                  color: Colors.green.shade700,
+                ),
+                const SizedBox(width: 8),
+                _infoChip(
+                  label: 'Paid',
+                  value: widget.snapshot['PAID_AMOUNT'],
+                  color: Colors.orange.shade700,
+                ),
+                if (!equal) ...[
+                  const SizedBox(width: 8),
+                  _infoChip(
+                    label: widget.snapshot['BALANCE_AMOUNT'] != ''
+                        ? 'Balance'
+                        : 'Pending',
+                    value: pendingOrBalance,
+                    color: Colors.purple.shade700,
+                  ),
+                ]
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _sectionCard({required String title, required Widget child}) {
+    return Card(
+      elevation: 1.5,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: const TextStyle(
+                fontSize: 14,
+                fontFamily: 'TamilArima',
+                fontWeight: FontWeight.w700,
+                color: Colors.black87,
               ),
-              buildTikImage(color: Colors.black)
-            ],
-          ),
-          Divider(),
-          Visibility(
-            visible: !equal,
-            child: CustomTextField(
-              controller: _paymentServices.newGiveAmount,
-              hintText: widget.snapshot['BALANCE_AMOUNT'] != ''
-                  ? "நீங்கள் கொடுத்த பணம் :  ??? "
-                  : "புதிதாக தந்த பணம் :  ??? ",
-              icon: Icons.monetization_on,
-              textStyle: _style,
-              keyboardType: TextInputType.number,
-              animatedIconButtonStratIcon: Icons.done,
-              animatedIconButtonEndIcon: Icons.done_all_rounded,
-              iconButton: true,
-              animatedIconButtonOnTap: () {
-                widget.snapshot['BALANCE_AMOUNT'] != ''
-                    ? calculateBalance()
-                    : calculatePending();
-              },
+            ),
+            const SizedBox(height: 10),
+            child,
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _statusTile({
+    required String title,
+    required String value,
+    required Color color,
+  }) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withValues(alpha: 0.35)),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.payments_rounded, color: color, size: 18),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              title,
+              style: TextStyle(
+                fontFamily: 'TamilArima2',
+                fontWeight: FontWeight.w700,
+                color: color,
+              ),
             ),
           ),
-          Visibility(
-            visible: _paymentServices.pending,
-            child: CRText(
-              color2: Colors.blue,
-              size1: 16.0,
-              msg1: "புதிய தருமதி பணம் ",
-              msg2:
-                  ":  ${_paymentServices.pendingAmount.text != '' ? _paymentServices.pendingAmount.text : widget.snapshot['PENDING_AMOUNT']}",
-              color1: Colors.orange,
+          Text(
+            'Rs.$value',
+            style: TextStyle(
+              fontFamily: 'TamilArima',
+              fontWeight: FontWeight.w800,
+              color: color,
             ),
           ),
-          Visibility(
-            visible: _paymentServices.balance,
-            child: CRText(
-              color1: Colors.blue,
-              color2: Colors.green,
-              size1: 16.0,
-              msg1: "புதிய கொடுமதி பணம் :",
-              msg2:
-                  "  ${_paymentServices.balanceAmount.text != '' ? _paymentServices.balanceAmount.text : widget.snapshot['BALANCE_AMOUNT']}",
-            ),
-          ),
-          gap(h: 10),
-          Visibility(
-            visible: _paymentServices.pending,
-            child: CustomTextField(
-              readOnly: true,
-              controller: _paymentServices.pendingDateController,
-              hintText: _paymentServices.pendingDate != null
-                  ? "தருமதி திகதி :   ${DateFormat('dd-MM-yyyy hh:mm a').format(_paymentServices.pendingDate!)}"
-                  : "தருமதி திகதி :   No Pending Date",
-              icon: Icons.update,
-              keyboardType: TextInputType.number,
-              animatedIconButtonStratIcon: Icons.date_range,
-              textStyle: _style,
-              iconButton: true,
-              animatedIconButtonOnTap: () {
-                showCupertinoModalPopup(
-                    context: context,
-                    builder: (_) => DatePicker(
-                          onDateTimeChanged: (val) {
-                            setState(() {
-                              _paymentServices.pendingDate = val;
-                              _paymentServices.pendingDateController.text =
-                                  DateFormat('dd-MM-yyyy hh:mm a').format(val);
-                            });
-                          },
-                        ));
-              },
-            ),
-          ),
-          CustomTextField(
-            readOnly: true,
-            controller: _paymentServices.expiredDateController,
-            hintText: _paymentServices.expiredDate != null
-                ? "முடியும் திகதி :   ${DateFormat('dd-MM-yyyy hh:mm a').format(_paymentServices.expiredDate!)}"
-                : "முடியும் திகதி :   No Expired Date",
-            icon: Icons.date_range,
-            keyboardType: TextInputType.text,
-            textStyle: _style,
-            iconButton: true,
-            animatedIconButtonStratIcon: Icons.date_range,
-            animatedIconButtonEndIcon: Icons.date_range_outlined,
-            animatedIconButtonOnTap: () {
-              showCupertinoModalPopup(
-                  context: context,
-                  builder: (_) => DatePicker(
-                        onDateTimeChanged: (val) {
-                          setState(() {
-                            _paymentServices.expiredDate = val;
-                            _paymentServices.expiredDateController.text =
-                                DateFormat('dd-MM-yyyy hh:mm a').format(val);
-                          });
-                        },
-                      ));
-            },
-          ),
-          CustomTextField(
-              controller: _paymentServices.userNote,
-              hintText: "குறிப்பு :   ${widget.snapshot['USER_NOTE']}",
-              icon: Icons.note_add,
-              keyboardType: TextInputType.text,
-              textStyle: _style,
-              iconButton: true,
-              animatedIconButtonStratIcon: Icons.add_circle_outline_rounded,
-              animatedIconButtonEndIcon: Icons.indeterminate_check_box_outlined,
-              animatedIconButtonOnTap: () =>
-                  setState(() => noteVisible = !noteVisible)),
-          Visibility(
-            visible: noteVisible,
-            child: CustomTextField(
-              controller: _paymentServices.userNote2,
-              hintText: "குறிப்பு 2 :   ${widget.snapshot['USER_NOTE2']}",
-              icon: Icons.note_add_outlined,
-              textStyle: _style,
-              keyboardType: TextInputType.text,
-            ),
-          ),
-          SizedBox(
-            height: 10.0,
-          ),
-          RoundedLoading(
-            btnController: _paymentServices.btnController,
-            paddingLeft: 10.0,
-            paddingRight: 10.0,
-            paddingTop: 8.0,
-            buttonHeight: 40,
-            btnColor: Colors.blue,
-            buttonPressed: () {
-              _paymentServices.updatePaymentRecord(snapshot: widget.snapshot);
-            },
-          ),
-          SizedBox(
-            height: 20.0,
-          )
         ],
       ),
     );
   }
 
-  Widget buildTikImage({Color? color}) {
-    return Image.asset(
-      "assets/images/tik.png",
-      height: 18,
-      width: 30,
-      color: color,
+  Widget _infoChip({
+    required String label,
+    required String value,
+    required Color color,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 11,
+              fontFamily: 'TamilArima2',
+              fontWeight: FontWeight.w700,
+              color: color,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            value == '' ? '0' : value.toString(),
+            style: TextStyle(
+              fontSize: 13,
+              fontFamily: 'TamilArima',
+              fontWeight: FontWeight.w800,
+              color: color,
+            ),
+          ),
+        ],
+      ),
     );
   }
 

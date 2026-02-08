@@ -4,7 +4,9 @@ import 'package:mrs_dth_diary_v1/scr/widgets/homeCard.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/subHelpers/responsive.dart';
 import 'package:provider/provider.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
+import 'package:uuid/uuid.dart';
 
+import '../widgets/ShowPopUpAlertBox.dart';
 import 'CreateNewUserPage.dart';
 import 'todayPaymentNotifications.dart';
 import 'VillagesPage.dart';
@@ -132,6 +134,53 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  void _showCreateVillageDialog(VillageProvider villageProvider) {
+    showDialog(
+        context: context,
+        builder: (context) {
+          return SimpleDialog(
+            elevation: 0.0,
+            backgroundColor: Colors.transparent,
+            children: <Widget>[
+              PopUpBox(
+                hintText: "Enter Village Name",
+                labelText: "Create New Village",
+                btnText: "CREATE",
+                bthFunction: (text) async {
+                  final name = text.trim();
+                  if (name.isEmpty) {
+                    return;
+                  }
+                  villageProvider.editControllerName.text = name;
+                  final id = Uuid().v1();
+                  final success = await villageProvider.uploadVillage(id: id);
+                  if (!mounted) return;
+                  final messenger = ScaffoldMessenger.of(context);
+                  messenger.hideCurrentSnackBar();
+                  if (success) {
+                    messenger.showSnackBar(
+                      SnackBar(
+                        content: Text('$name village created'),
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                    villageProvider.clear();
+                  } else {
+                    messenger.showSnackBar(
+                      const SnackBar(
+                        content: Text('Failed to create village'),
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                  }
+                },
+                context: context,
+              )
+            ],
+          );
+        });
+  }
+
   void _showCreateMenu(BuildContext context) {
     showModalBottomSheet<void>(
       context: context,
@@ -149,10 +198,7 @@ class _HomePageState extends State<HomePage> {
                 title: const Text('Create village'),
                 onTap: () {
                   Navigator.pop(context);
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => VillagesList()),
-                  );
+                  _showCreateVillageDialog(context.read<VillageProvider>());
                 },
               ),
               ListTile(
@@ -344,7 +390,10 @@ class _NotificationButton extends StatelessWidget {
               color: Colors.white.withValues(alpha: 0.18),
               borderRadius: BorderRadius.circular(rs.r(14)),
               border: Border.all(
-                color: Colors.white.withValues(alpha: 0.25),
+                color: Theme.of(context)
+                    .colorScheme
+                    .primary
+                    .withValues(alpha: 0.4),
               ),
             ),
             child: Icon(

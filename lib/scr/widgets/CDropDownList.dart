@@ -135,7 +135,7 @@ class _SelectDropListState extends State<SelectDropList>
                             child: Text(
                               widget.itemSelected,
                               style: const TextStyle(
-                                color: Colors.black87,
+                                color: Colors.blueGrey,
                                 fontSize: 15.5,
                                 fontFamily: 'TamilArima',
                                 fontWeight: FontWeight.w600,

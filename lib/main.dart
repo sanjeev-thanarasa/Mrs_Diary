@@ -9,6 +9,7 @@ import 'package:mrs_dth_diary_v1/scr/helpers/passcode_storage.dart';
 import 'package:mrs_dth_diary_v1/scr/ui/homePage.dart';
 import 'package:provider/provider.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/subHelpers/responsive.dart';
+import 'package:pull_to_refresh/pull_to_refresh.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -23,11 +24,34 @@ void main() async {
           builder: (context, child) {
             final mediaQuery = MediaQuery.of(context);
             final scale = ResponsiveScale(mediaQuery.size).textScale();
-            return MediaQuery(
+            final themedChild = MediaQuery(
               data: mediaQuery.copyWith(
                 textScaler: TextScaler.linear(scale),
               ),
               child: child ?? const SizedBox.shrink(),
+            );
+            return RefreshConfiguration(
+              headerBuilder: () => WaterDropHeader(
+                waterDropColor: Theme.of(context).colorScheme.primary,
+                idleIcon: Icon(
+                  Icons.refresh_rounded,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                complete: Icon(
+                  Icons.check_circle_rounded,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+              ),
+              footerBuilder: () => ClassicFooter(
+                loadingText: 'Loading...',
+                idleText: 'Pull to load more',
+                canLoadingText: 'Release to load',
+                noDataText: 'No more data',
+              ),
+              child: ScrollConfiguration(
+                behavior: const _AppScrollBehavior(),
+                child: themedChild,
+              ),
             );
           },
           theme: ThemeData(
@@ -74,6 +98,15 @@ void main() async {
             ),
           ),
           home: const MyApp())));
+}
+
+class _AppScrollBehavior extends MaterialScrollBehavior {
+  const _AppScrollBehavior();
+
+  @override
+  ScrollPhysics getScrollPhysics(BuildContext context) {
+    return const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics());
+  }
 }
 
 class MyApp extends StatelessWidget {

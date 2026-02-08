@@ -40,7 +40,7 @@ class _RoundedLoadingState extends State<RoundedLoading> {
           right: widget.paddingRight,
           left: widget.paddingLeft),
       child: RoundedLoadingButton(
-        width: 100.0,
+        // width: 100.0,
         height: widget.buttonHeight ?? 50.0,
         child: Padding(
           padding: const EdgeInsets.all(10.0),

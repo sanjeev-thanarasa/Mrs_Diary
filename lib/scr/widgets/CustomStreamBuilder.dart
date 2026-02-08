@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:mrs_dth_diary_v1/scr/widgets/subHelpers/responsive.dart';
 import 'customText.dart';
 import 'loading.dart';
 
@@ -18,15 +19,25 @@ class CustomStreamBuilder extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final rs = context.rs;
+    final colorScheme = Theme.of(context).colorScheme;
     return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
       stream: stream,
       builder: (context, snapshot) {
         if (snapshot.hasError) {
-          return const Center(
-            child: CText(
-              msg: "Something went wrong!!!",
-              color: Colors.black,
-              size: 30.0,
+          return Padding(
+            padding: const EdgeInsets.only(top: 16.0),
+            child: Center(
+              child: Text(
+                'Something went wrong!!!',
+                style: TextStyle(
+                  fontSize: rs.sp(16),
+                  fontWeight: FontWeight.w600,
+                  color: colorScheme.onSurfaceVariant,
+                  fontFamily: 'TamilArima2',
+                ),
+                textAlign: TextAlign.center,
+              ),
             ),
           );
         }
@@ -40,11 +51,19 @@ class CustomStreamBuilder extends StatelessWidget {
         }
 
         if (snapshot.data!.docs.isEmpty) {
-          return const Center(
-            child: CText(
-              msg: "No Records Found!!!",
-              color: Colors.black,
-              size: 30.0,
+          return Padding(
+            padding: const EdgeInsets.only(top: 16.0),
+            child: Center(
+              child: Text(
+                'No results found. Try a different keyword',
+                style: TextStyle(
+                  fontSize: rs.sp(16),
+                  fontWeight: FontWeight.w600,
+                  color: colorScheme.onSurfaceVariant,
+                  fontFamily: 'TamilArima2',
+                ),
+                textAlign: TextAlign.center,
+              ),
             ),
           );
         }
