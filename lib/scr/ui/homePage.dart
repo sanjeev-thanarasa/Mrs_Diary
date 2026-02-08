@@ -8,6 +8,7 @@ import 'package:uuid/uuid.dart';
 
 import '../widgets/ShowPopUpAlertBox.dart';
 import 'CreateNewUserPage.dart';
+import 'searchUsers.dart';
 import 'todayPaymentNotifications.dart';
 import 'VillagesPage.dart';
 import 'settings.dart';
@@ -36,17 +37,19 @@ class _HomePageState extends State<HomePage> {
           index: _selectedIndex,
           children: [
             Home(),
-            const SearchPlaceholder(),
+            const SearchUsersScreen(),
             const RecordsPlaceholder(),
             const SettingsScreen(),
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: colorScheme.primary,
-        onPressed: () => _showCreateMenu(context),
-        child: const Icon(Icons.add, color: Colors.white),
-      ),
+      floatingActionButton: _selectedIndex == 0
+          ? FloatingActionButton(
+              backgroundColor: colorScheme.primary,
+              onPressed: () => _showCreateMenu(context),
+              child: const Icon(Icons.add, color: Colors.white),
+            )
+          : null,
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       bottomNavigationBar: SafeArea(
         child: Padding(

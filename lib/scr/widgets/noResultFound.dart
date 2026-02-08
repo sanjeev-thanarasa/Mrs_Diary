@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/subHelpers/responsive.dart';
 
 class SearchNoData extends StatelessWidget {
+  const SearchNoData({super.key});
+
   @override
   Widget build(BuildContext context) {
     final rs = context.rs;
