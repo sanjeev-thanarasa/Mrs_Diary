@@ -6,10 +6,10 @@ import 'package:intl/intl.dart';
 import 'package:mrs_dth_diary_v1/scr/models/totalCustomers.dart';
 import 'package:mrs_dth_diary_v1/scr/ui/userDetails.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/CAppBar.dart';
-import 'package:mrs_dth_diary_v1/scr/widgets/CustomListTile.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/customText.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/loading.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/noResultFound.dart';
+import 'package:mrs_dth_diary_v1/scr/widgets/userDetailsTile.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/subHelpers/screen_navigation.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/subHelpers/styles.dart';
 
@@ -237,16 +237,12 @@ class _TodayPaymentUsersState extends State<TodayPaymentUsers> {
         }
 
         final data = showResults[index].user;
-        return CListTile(
-          context: context,
-          docId: data.id,
-          collectionName: "OldUser",
-          title: data['name'],
-          subtitle: data['mobileNo'],
-          subtitle2: data['dishNumber'],
-          subtitle3: data['area'],
-          subtitleIcon: Icons.phone,
-          tileOnTap: () {
+        return UserDetailsTile(
+          name: data['name'],
+          dishNumber: data['dishNumber'],
+          mobileNo: data['mobileNo'],
+          villageName: data['area'],
+          onTap: () {
             changeScreenAnimated(
                 context,
                 UserDetails(
@@ -254,7 +250,6 @@ class _TodayPaymentUsersState extends State<TodayPaymentUsers> {
                   userId: data.id,
                 ));
           },
-          counter: "${index + 1}",
         );
       },
     );

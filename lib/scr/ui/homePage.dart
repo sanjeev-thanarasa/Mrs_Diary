@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
 
 import 'CreateNewUserPage.dart';
+import 'todayPaymentNotifications.dart';
 import 'VillagesPage.dart';
 import 'settings.dart';
 
@@ -229,6 +230,7 @@ class _HomeState extends State<Home> {
   @override
   Widget build(BuildContext context) {
     final rs = context.rs;
+    final todayCount = context.watch<VillageProvider>().todayPaymentCount;
     return SmartRefresher(
       controller: _refreshController,
       onRefresh: _onRefresh,
@@ -276,7 +278,7 @@ class _HomeState extends State<Home> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'My Diary',
+                          'MRS Diary',
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: rs.sp(28),
@@ -287,11 +289,23 @@ class _HomeState extends State<Home> {
                           'Track customers and payments',
                           style: TextStyle(
                             color: Colors.white.withValues(alpha: 0.9),
-                            fontSize: rs.sp(14),
+                            fontSize: rs.sp(15),
                           ),
                         ),
                       ],
                     ),
+                  ),
+                  SizedBox(width: rs.rw(8)),
+                  _NotificationButton(
+                    count: todayCount,
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const TodayPaymentNotifications(),
+                        ),
+                      );
+                    },
                   ),
                 ],
               ),
@@ -301,6 +315,75 @@ class _HomeState extends State<Home> {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _NotificationButton extends StatelessWidget {
+  const _NotificationButton({
+    required this.count,
+    required this.onTap,
+  });
+
+  final int count;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final rs = context.rs;
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        InkWell(
+          borderRadius: BorderRadius.circular(rs.r(14)),
+          onTap: onTap,
+          child: Container(
+            height: rs.r(44),
+            width: rs.r(44),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.18),
+              borderRadius: BorderRadius.circular(rs.r(14)),
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.25),
+              ),
+            ),
+            child: Icon(
+              Icons.notifications_active_rounded,
+              color: Colors.white,
+              size: rs.r(24),
+            ),
+          ),
+        ),
+        if (count > 0)
+          Positioned(
+            top: rs.rh(-4),
+            right: rs.rw(-4),
+            child: Container(
+              padding: EdgeInsets.symmetric(
+                horizontal: rs.rw(6),
+                vertical: rs.rh(2),
+              ),
+              decoration: BoxDecoration(
+                color: Colors.redAccent,
+                borderRadius: BorderRadius.circular(rs.r(12)),
+                border: Border.all(color: Colors.white, width: rs.r(1.5)),
+              ),
+              constraints: BoxConstraints(
+                minWidth: rs.r(18),
+                minHeight: rs.r(18),
+              ),
+              child: Text(
+                count > 99 ? '99+' : '$count',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: rs.sp(10),
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ),
+      ],
     );
   }
 }

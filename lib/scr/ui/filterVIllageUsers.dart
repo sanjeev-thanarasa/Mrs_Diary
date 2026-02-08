@@ -10,6 +10,7 @@ import 'package:mrs_dth_diary_v1/scr/widgets/CAppBar.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/customText.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/loading.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/noResultFound.dart';
+import 'package:mrs_dth_diary_v1/scr/widgets/userDetailsTile.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/subHelpers/screen_navigation.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/subHelpers/styles.dart';
 
@@ -158,7 +159,7 @@ class _FilterVillageUserState extends State<FilterVillageUser> {
                                       ),
                                     ],
                                   ),
-                                  child: _VillageUserTile(
+                                  child: UserDetailsTile(
                                     name: data['name'] ?? '',
                                     dishNumber: data['dishNumber'] ?? '',
                                     mobileNo: data['mobileNo'] ?? '',
@@ -331,113 +332,6 @@ class _FilterVillageUserState extends State<FilterVillageUser> {
         .collection(collectionName)
         .doc(userId)
         .delete();
-  }
-}
-
-class _VillageUserTile extends StatelessWidget {
-  final String name;
-  final String dishNumber;
-  final String mobileNo;
-  final String villageName;
-  final VoidCallback onTap;
-
-  const _VillageUserTile({
-    required this.name,
-    required this.dishNumber,
-    required this.mobileNo,
-    required this.villageName,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return Card(
-      elevation: 1.5,
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(16),
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(14),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Icon(Icons.person_rounded,
-                      color: colorScheme.primary, size: 20),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      name,
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                        color: colorScheme.onSurface,
-                        fontFamily: 'TamilArima',
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 10),
-              Row(
-                children: [
-                  Icon(Icons.tv_rounded, color: colorScheme.primary, size: 18),
-                  const SizedBox(width: 6),
-                  Expanded(
-                    child: Text(
-                      dishNumber,
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: colorScheme.onSurface,
-                        fontFamily: 'Lobster',
-                      ),
-                    ),
-                  ),
-                  Icon(Icons.phone_rounded,
-                      color: colorScheme.primary, size: 18),
-                  const SizedBox(width: 6),
-                  Text(
-                    mobileNo,
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: colorScheme.onSurface,
-                      fontFamily: 'Lobster',
-                    ),
-                  ),
-                ],
-              ),
-              if (villageName.isNotEmpty) ...[
-                const SizedBox(height: 10),
-                Row(
-                  children: [
-                    Icon(Icons.location_on_rounded,
-                        color: colorScheme.primary, size: 18),
-                    const SizedBox(width: 6),
-                    Expanded(
-                      child: Text(
-                        villageName,
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: colorScheme.onSurfaceVariant,
-                          fontFamily: 'TamilArima2',
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ],
-          ),
-        ),
-      ),
-    );
   }
 }
 
