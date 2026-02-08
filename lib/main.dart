@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:passcode_screen/passcode_screen.dart';
 import 'package:mrs_dth_diary_v1/scr/providers/village.dart';
 import 'package:mrs_dth_diary_v1/scr/helpers/passcode_storage.dart';
+import 'package:mrs_dth_diary_v1/scr/helpers/app_settings.dart';
 import 'package:mrs_dth_diary_v1/scr/ui/homePage.dart';
 import 'package:provider/provider.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/subHelpers/responsive.dart';
@@ -17,13 +18,69 @@ void main() async {
     DeviceOrientation.portraitUp,
   ]);
   await Firebase.initializeApp();
-  runApp(MultiProvider(
-      providers: [
-        ChangeNotifierProvider.value(value: VillageProvider.initialize()),
-      ],
-      child: MaterialApp(
+  runApp(MultiProvider(providers: [
+    ChangeNotifierProvider.value(value: VillageProvider.initialize()),
+    ChangeNotifierProvider(create: (_) => AppSettings()..load()),
+  ], child: const _AppShell()));
+}
+
+class _AppShell extends StatelessWidget {
+  const _AppShell();
+
+  ThemeData _buildTheme(Brightness brightness) {
+    final base =
+        brightness == Brightness.light ? ThemeData.light() : ThemeData.dark();
+    return base.copyWith(
+      useMaterial3: true,
+      colorScheme: ColorScheme.fromSeed(
+        seedColor: Colors.blue,
+        brightness: brightness,
+      ),
+      textTheme: base.textTheme
+          .apply(
+            fontFamily: 'TamilArima',
+          )
+          .copyWith(
+            bodySmall: const TextStyle(fontFamily: 'TamilArima2'),
+            bodyMedium: const TextStyle(fontFamily: 'TamilArima2'),
+            bodyLarge: const TextStyle(fontFamily: 'TamilArima'),
+            labelSmall: const TextStyle(fontFamily: 'Lobster'),
+            labelMedium: const TextStyle(fontFamily: 'Lobster'),
+            labelLarge: const TextStyle(fontFamily: 'Lobster'),
+          ),
+      primaryTextTheme: base.primaryTextTheme
+          .apply(
+            fontFamily: 'TamilArima',
+          )
+          .copyWith(
+            bodySmall: const TextStyle(fontFamily: 'TamilArima2'),
+            bodyMedium: const TextStyle(fontFamily: 'TamilArima2'),
+            bodyLarge: const TextStyle(fontFamily: 'TamilArima'),
+            labelSmall: const TextStyle(fontFamily: 'Lobster'),
+            labelMedium: const TextStyle(fontFamily: 'Lobster'),
+            labelLarge: const TextStyle(fontFamily: 'Lobster'),
+          ),
+      pageTransitionsTheme: const PageTransitionsTheme(
+        builders: <TargetPlatform, PageTransitionsBuilder>{
+          TargetPlatform.android: ZoomPageTransitionsBuilder(),
+        },
+      ),
+      appBarTheme: const AppBarTheme(
+        centerTitle: false,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<AppSettings>(
+      builder: (context, settings, child) {
+        return MaterialApp(
           debugShowCheckedModeBanner: false,
           title: 'MRS Diary ^1.0.1',
+          locale: settings.locale,
           builder: (context, child) {
             final mediaQuery = MediaQuery.of(context);
             final scale = ResponsiveScale(mediaQuery.size).textScale();
@@ -57,50 +114,14 @@ void main() async {
               ),
             );
           },
-          theme: ThemeData(
-            useMaterial3: true,
-            colorScheme: ColorScheme.fromSeed(
-              seedColor: Colors.blue,
-              brightness: Brightness.light,
-            ),
-            textTheme: ThemeData.light()
-                .textTheme
-                .apply(
-                  fontFamily: 'TamilArima',
-                )
-                .copyWith(
-                  bodySmall: const TextStyle(fontFamily: 'TamilArima2'),
-                  bodyMedium: const TextStyle(fontFamily: 'TamilArima2'),
-                  bodyLarge: const TextStyle(fontFamily: 'TamilArima'),
-                  labelSmall: const TextStyle(fontFamily: 'Lobster'),
-                  labelMedium: const TextStyle(fontFamily: 'Lobster'),
-                  labelLarge: const TextStyle(fontFamily: 'Lobster'),
-                ),
-            primaryTextTheme: ThemeData.light()
-                .primaryTextTheme
-                .apply(
-                  fontFamily: 'TamilArima',
-                )
-                .copyWith(
-                  bodySmall: const TextStyle(fontFamily: 'TamilArima2'),
-                  bodyMedium: const TextStyle(fontFamily: 'TamilArima2'),
-                  bodyLarge: const TextStyle(fontFamily: 'TamilArima'),
-                  labelSmall: const TextStyle(fontFamily: 'Lobster'),
-                  labelMedium: const TextStyle(fontFamily: 'Lobster'),
-                  labelLarge: const TextStyle(fontFamily: 'Lobster'),
-                ),
-            pageTransitionsTheme: const PageTransitionsTheme(
-              builders: <TargetPlatform, PageTransitionsBuilder>{
-                TargetPlatform.android: ZoomPageTransitionsBuilder(),
-              },
-            ),
-            appBarTheme: const AppBarTheme(
-              centerTitle: false,
-              elevation: 0,
-              scrolledUnderElevation: 0,
-            ),
-          ),
-          home: const MyApp())));
+          theme: _buildTheme(Brightness.light),
+          darkTheme: _buildTheme(Brightness.dark),
+          themeMode: settings.themeMode,
+          home: const MyApp(),
+        );
+      },
+    );
+  }
 }
 
 class _AppScrollBehavior extends MaterialScrollBehavior {
@@ -122,14 +143,17 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
     SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
-      statusBarIconBrightness: Brightness.dark,
-      statusBarBrightness:
-          Platform.isAndroid ? Brightness.dark : Brightness.light,
-      systemNavigationBarColor: Colors.white,
+      statusBarIconBrightness:
+          brightness == Brightness.dark ? Brightness.light : Brightness.dark,
+      statusBarBrightness: Platform.isAndroid ? brightness : Brightness.light,
+      systemNavigationBarColor:
+          brightness == Brightness.dark ? Colors.black : Colors.white,
       systemNavigationBarDividerColor: Colors.grey,
-      systemNavigationBarIconBrightness: Brightness.dark,
+      systemNavigationBarIconBrightness:
+          brightness == Brightness.dark ? Brightness.light : Brightness.dark,
     ));
     return const AppRoot();
   }

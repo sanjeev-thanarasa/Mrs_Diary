@@ -1,7 +1,12 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:mrs_dth_diary_v1/scr/helpers/app_settings.dart';
 import 'package:mrs_dth_diary_v1/scr/helpers/passcode_storage.dart';
-import 'package:mrs_dth_diary_v1/scr/ui/DashBoard/DashBoard.dart';
+import 'package:mrs_dth_diary_v1/scr/ui/DashBoard/MyAccountsScreen.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/customText.dart';
+import 'package:mrs_dth_diary_v1/scr/widgets/subHelpers/styles.dart';
+import 'package:provider/provider.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -181,6 +186,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
       return const Center(child: CircularProgressIndicator());
     }
 
+    final appSettings = context.watch<AppSettings>();
+
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
@@ -219,25 +226,234 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
         const SizedBox(height: 12),
         Card(
-          child: ListTile(
-            leading: const Icon(Icons.palette_outlined),
-            title: const Text('Theme'),
-            subtitle: const Text('Modern blue iOS-inspired style'),
+          child: Column(
+            children: [
+              ListTile(
+                leading: const Icon(Icons.translate_rounded),
+                title: const Text('Language'),
+                subtitle: Text(
+                  appSettings.locale.languageCode == 'ta' ? 'Tamil' : 'English',
+                ),
+                onTap: () => _showLanguagePicker(context, appSettings),
+              ),
+              ListTile(
+                leading: const Icon(Icons.dark_mode_outlined),
+                title: const Text('Dark mode'),
+                subtitle: Text(
+                  appSettings.isDarkMode
+                      ? 'Dark mode enabled'
+                      : 'Light mode enabled',
+                ),
+                trailing: Switch.adaptive(
+                  value: appSettings.isDarkMode,
+                  onChanged: (value) => appSettings.setDarkMode(value),
+                ),
+              ),
+            ],
           ),
         ),
         const SizedBox(height: 12),
         Card(
           child: ListTile(
             leading: const Icon(Icons.account_balance_wallet_outlined),
-            title: const Text('எனது கணக்கு விபரங்கள்'),
-            subtitle: const Text('My accounts'),
+            title: const Text('My accounts details'),
+            subtitle: const Text('View topup summary and payments'),
             onTap: () {
               Navigator.of(context).push(
                 MaterialPageRoute(
-                  builder: (_) => DashBoard(),
+                  builder: (_) => MyAccountsScreen(),
                 ),
               );
             },
+          ),
+        ),
+        const SizedBox(height: 12),
+        Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                kPrimaryLightColor,
+                kPrimaryLightColor.withValues(alpha: 0.7)
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: kPrimaryColor.withValues(alpha: 0.18),
+                blurRadius: 12,
+                offset: const Offset(0, 6),
+              ),
+            ],
+          ),
+          child: ListTile(
+            leading: CircleAvatar(
+              backgroundColor: white,
+              child: const Icon(Icons.psychology_rounded, color: kPrimaryColor),
+            ),
+            title: const Text(
+              'Application developed by',
+              style: TextStyle(fontWeight: FontWeight.w700),
+            ),
+            subtitle: const Text('SANJEEV THANANRASA'),
+            trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 16),
+            onTap: () => _showDeveloperDialog(context),
+          ),
+        ),
+        const SizedBox(height: 12),
+        Card(
+          child: ListTile(
+            leading: const Icon(Icons.exit_to_app_rounded),
+            title: const Text('Exit'),
+            subtitle: const Text('Close the app'),
+            onTap: () => _confirmExit(context),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _showLanguagePicker(
+    BuildContext context,
+    AppSettings settings,
+  ) async {
+    final current = settings.locale.languageCode;
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (context) {
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: Icon(
+                  current == 'ta'
+                      ? Icons.radio_button_checked
+                      : Icons.radio_button_unchecked,
+                ),
+                title: const Text('தமிழ்'),
+                onTap: () {
+                  settings.setLanguageCode('ta');
+                  Navigator.pop(context);
+                },
+              ),
+              ListTile(
+                leading: Icon(
+                  current == 'en'
+                      ? Icons.radio_button_checked
+                      : Icons.radio_button_unchecked,
+                ),
+                title: const Text('English'),
+                onTap: () {
+                  settings.setLanguageCode('en');
+                  Navigator.pop(context);
+                },
+              ),
+              const SizedBox(height: 12),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _confirmExit(BuildContext context) async {
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Exit'),
+        content: const Text('Do you want to close the app?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Exit'),
+          ),
+        ],
+      ),
+    );
+
+    if (result == true) {
+      if (Platform.isAndroid) {
+        SystemNavigator.pop();
+      }
+    }
+  }
+
+  Future<void> _showDeveloperDialog(BuildContext context) async {
+    await showDialog<void>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          contentPadding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(16),
+                child: Image.asset(
+                  'assets/images/smart_pvt_ltd.png',
+                  height: 120,
+                  width: 120,
+                  fit: BoxFit.cover,
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Sanjeev Thananrasa',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: kIndigoDark,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                'Software Engineer',
+                style: TextStyle(color: kIndigoLight),
+              ),
+              const SizedBox(height: 14),
+              _buildContactRow(Icons.phone_outlined, '+94 77 970 2687'),
+              const SizedBox(height: 8),
+              _buildContactRow(
+                  Icons.email_outlined, 'sanjeev.thanarasa@gmail.com'),
+              const SizedBox(height: 8),
+              _buildContactRow(
+                  Icons.location_on_outlined, 'Colombo, Sri Lanka'),
+            ],
+          ),
+          actionsAlignment: MainAxisAlignment.center,
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Close'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildContactRow(IconData icon, String value) {
+    return Row(
+      children: [
+        Icon(icon, size: 18, color: kPrimaryColor),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            value,
+            style: const TextStyle(
+              fontWeight: FontWeight.w600,
+              color: kIndigoDark,
+            ),
           ),
         ),
       ],

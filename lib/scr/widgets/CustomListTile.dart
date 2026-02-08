@@ -21,6 +21,8 @@ class CListTile extends StatefulWidget {
   final IconData subtitleIcon;
   final String? counter;
   final String? pendingAmount;
+  final VoidCallback? onEdit;
+  final VoidCallback? onDelete;
 
   const CListTile({
     super.key,
@@ -37,6 +39,8 @@ class CListTile extends StatefulWidget {
     required this.subtitleIcon,
     this.counter,
     this.pendingAmount,
+    this.onEdit,
+    this.onDelete,
   });
 
   @override
@@ -47,153 +51,186 @@ class _CListTileState extends State<CListTile> {
   @override
   Widget build(BuildContext context) {
     final rs = context.rs;
+    final colorScheme = Theme.of(context).colorScheme;
     return Slidable(
       endActionPane: ActionPane(
         motion: const DrawerMotion(),
         children: [
           SlidableAction(
-            onPressed: (_) => showAlertDialog(
-              context: context,
-              title: "Delete",
-              content: "இந்த பதிவை நீக்க விரும்புகிறீர்களா ?",
-            ),
-            backgroundColor: Colors.transparent,
+            onPressed: (_) {
+              if (widget.onEdit != null) {
+                widget.onEdit!.call();
+              } else if (widget.tileOnTap != null) {
+                widget.tileOnTap!.call();
+              }
+            },
+            backgroundColor: kPrimaryColor,
+            foregroundColor: white,
+            icon: Icons.edit_rounded,
+            label: "Edit",
+            borderRadius: BorderRadius.circular(rs.r(16)),
+          ),
+          SlidableAction(
+            onPressed: (_) => _handleDelete(context),
+            backgroundColor: red,
             foregroundColor: white,
             icon: Icons.delete_rounded,
-            label: "",
+            label: "Delete",
+            borderRadius: BorderRadius.circular(rs.r(16)),
           ),
         ],
       ),
       child: GestureDetector(
         onTap: widget.tileOnTap,
-        child: Card(
-          shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.all(Radius.circular(rs.r(20)))),
-          elevation: rs.r(8),
-          child: ClipRRect(
-            borderRadius: BorderRadius.all(Radius.circular(rs.r(20))),
-            child: ListTile(
-              leading: Stack(
-                children: <Widget>[
-                  ClipRRect(
-                    borderRadius: BorderRadius.all(Radius.circular(rs.r(16))),
-                    child: Image.asset(
-                      widget.image ?? "assets/images/unnamed.png",
-                      height: rs.r(56),
-                      width: rs.r(56),
-                      fit: BoxFit.fill,
-                    ),
-                  ),
-                  Positioned(
-                    bottom: 0,
-                    right: rs.rw(2),
-                    child: Container(
-                      padding: EdgeInsets.all(rs.r(2)),
-                      child: CircleAvatar(
-                        radius: rs.r(6),
-                        backgroundColor:
-                            widget.subCircleColor ?? Colors.transparent,
-                      ),
-                    ),
-                  )
-                ],
+        child: Container(
+          decoration: BoxDecoration(
+            color: white,
+            borderRadius: BorderRadius.circular(rs.r(18)),
+            border: Border.all(color: colorScheme.outlineVariant),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.04),
+                blurRadius: rs.r(12),
+                offset: Offset(0, rs.r(6)),
               ),
-              title: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  CText(
-                    msg: widget.title,
-                    color: kIndigoDark,
-                    size: widget.collectionName == "Villages" ? 18 : 16,
-                    weight: FontWeight.w600,
-                  ),
-                  CText(
-                    msg: widget.pendingAmount ?? "",
-                    color: kIndigoDark,
-                    size: 18,
-                    weight: FontWeight.w600,
-                  ),
-                  Row(
-                    children: [
-                      Row(
+            ],
+          ),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(rs.r(18)),
+              onTap: widget.tileOnTap,
+              child: Padding(
+                padding: EdgeInsets.all(rs.r(14)),
+                child: Row(
+                  children: [
+                    _buildLeading(rs),
+                    SizedBox(width: rs.rw(12)),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Image.asset(
-                            "assets/images/dish.png",
-                            height: rs.r(20),
-                            width: rs.r(20),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: CText(
+                                  msg: widget.title,
+                                  color: kIndigoDark,
+                                  size: widget.collectionName == "Villages"
+                                      ? 18
+                                      : 16,
+                                  weight: FontWeight.w700,
+                                ),
+                              ),
+                              if (widget.pendingAmount != null &&
+                                  widget.pendingAmount!.isNotEmpty)
+                                _buildAmountChip(widget.pendingAmount!),
+                            ],
                           ),
-                          CSText(
-                            msg: widget.subtitle2 ?? "",
-                            color: kBlueColor,
-                            size: 20,
-                            weight: FontWeight.w600,
+                          SizedBox(height: rs.rh(6)),
+                          Row(
+                            children: [
+                              Icon(
+                                widget.subtitleIcon,
+                                color: kBlueColor,
+                                size: rs.r(12),
+                              ),
+                              SizedBox(width: rs.rw(4)),
+                              Expanded(
+                                child: CText(
+                                  msg: widget.subtitle,
+                                  size: 13,
+                                  weight: FontWeight.w600,
+                                  color: kIndigoLight,
+                                ),
+                              ),
+                              if (widget.subtitle3 != null &&
+                                  widget.subtitle3!.isNotEmpty)
+                                Row(
+                                  children: [
+                                    Icon(
+                                      Icons.people_alt_rounded,
+                                      size: rs.r(13),
+                                      color: kPrimaryColor,
+                                    ),
+                                    Gap(w: rs.rw(3.0)),
+                                    CText(
+                                      msg: widget.subtitle3 ?? "",
+                                      size: 13,
+                                      weight: FontWeight.w600,
+                                      color: kPrimaryColor,
+                                    ),
+                                  ],
+                                ),
+                            ],
                           ),
                         ],
                       ),
-                    ],
-                  )
-                ],
+                    ),
+                    Icon(
+                      Icons.chevron_right_rounded,
+                      color: kIndigoLight,
+                      size: rs.r(22),
+                    ),
+                  ],
+                ),
               ),
-              subtitle: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    children: [
-                      Icon(
-                        widget.subtitleIcon,
-                        color: kBlueColor,
-                        size: rs.r(12),
-                      ),
-                      SizedBox(
-                        width: rs.rw(3),
-                      ),
-                      CText(
-                        msg: widget.subtitle,
-                        size: 13,
-                        weight: FontWeight.w600,
-                      ),
-                    ],
-                  ),
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.people_alt_rounded,
-                        size: rs.r(13),
-                        color: kPrimaryColor,
-                      ),
-                      Gap(
-                        w: rs.rw(3.0),
-                      ),
-                      CText(
-                        msg: widget.subtitle3 ?? "",
-                        size: 13,
-                        weight: FontWeight.w600,
-                        color: kPrimaryColor,
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-              // trailing: Container(
-              //   decoration: BoxDecoration(
-              //       color: mainBlue,
-              //       borderRadius: BorderRadius.only(
-              //         topLeft: Radius.circular(5),
-              //         bottomLeft: Radius.circular(5),
-              //       )),
-              //   width: 4.0,
-              //   height: 50.0,
-              //   child: Ink(
-              //     child: Icon(
-              //       Icons.arrow_left,
-              //       color: kBlueColor,
-              //       size: 35,
-              //     ),
-              //   ),
-              // ),
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildLeading(ResponsiveScale rs) {
+    if (widget.image != null && widget.image!.isNotEmpty) {
+      return ClipRRect(
+        borderRadius: BorderRadius.all(Radius.circular(rs.r(16))),
+        child: Image.asset(
+          widget.image!,
+          height: rs.r(56),
+          width: rs.r(56),
+          fit: BoxFit.cover,
+        ),
+      );
+    }
+
+    if (widget.counter != null && widget.counter!.isNotEmpty) {
+      return CircleAvatar(
+        radius: rs.r(24),
+        backgroundColor: kPrimaryLightColor,
+        child: CText(
+          msg: widget.counter ?? "",
+          color: kIndigoDark,
+          size: 14,
+          weight: FontWeight.w700,
+        ),
+      );
+    }
+
+    return CircleAvatar(
+      radius: rs.r(24),
+      backgroundColor: kPrimaryLightColor,
+      child: Icon(
+        Icons.account_balance_wallet_outlined,
+        color: kIndigoDark,
+        size: rs.r(20),
+      ),
+    );
+  }
+
+  Widget _buildAmountChip(String amount) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: kPrimaryLightColor,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: CText(
+        msg: amount,
+        color: kIndigoDark,
+        size: 12,
+        weight: FontWeight.w700,
       ),
     );
   }
@@ -231,6 +268,19 @@ class _CListTileState extends State<CListTile> {
           ),
         ],
       ),
+    );
+  }
+
+  void _handleDelete(BuildContext context) {
+    if (widget.onDelete != null) {
+      widget.onDelete!.call();
+      return;
+    }
+
+    showAlertDialog(
+      context: context,
+      title: "Delete",
+      content: "இந்த பதிவை நீக்க விரும்புகிறீர்களா ?",
     );
   }
 }

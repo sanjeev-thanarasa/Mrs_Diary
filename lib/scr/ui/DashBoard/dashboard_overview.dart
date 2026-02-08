@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/homeCard.dart';
 
-class DashboardOverview extends StatelessWidget {
-  const DashboardOverview({super.key});
+class MyAccountsOverview extends StatelessWidget {
+  const MyAccountsOverview({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -12,14 +12,14 @@ class DashboardOverview extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'டாஷ்போர்டு',
+            'எனது கணக்கு விபரங்கள்',
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                   fontWeight: FontWeight.w700,
                 ),
           ),
           const SizedBox(height: 6),
           Text(
-            'முக்கிய விவரங்கள் ஒரே இடத்தில்',
+            'Topup பதிவுகள் மற்றும் கட்டண விவரங்கள்',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),

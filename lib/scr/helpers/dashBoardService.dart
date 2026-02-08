@@ -60,13 +60,16 @@ class DashBoardService {
 
   void updateRecord(
       {required String dbID, required QueryDocumentSnapshot snapshot}) async {
+    final existingPaid = _parseAmount(snapshot['PAID_AMOUNT']);
+    final newPaid = _parseAmount(newPaidAmount.text);
+    final totalPaid = newPaidAmount.text.trim().isEmpty
+        ? existingPaid
+        : existingPaid + newPaid;
     addRecord = {
       "BALANCE_AMOUNT": balanceAmount.text == ''
           ? snapshot['BALANCE_AMOUNT'] ?? ''
           : balanceAmount.text,
-      "PAID_AMOUNT": newPaidAmount.text == ''
-          ? snapshot['PAID_AMOUNT'] ?? ''
-          : newPaidAmount.text,
+      "PAID_AMOUNT": totalPaid == 0 ? '' : totalPaid.toString(),
       "PENDING_AMOUNT": pendingAmount.text == ''
           ? snapshot['PENDING_AMOUNT'] ?? ''
           : pendingAmount.text,
@@ -88,6 +91,18 @@ class DashBoardService {
         clearRecords();
       });
     });
+  }
+
+  double _parseAmount(dynamic value) {
+    if (value == null) return 0;
+    if (value is num) return value.toDouble();
+    final text = value
+        .toString()
+        .replaceAll('Rs.', '')
+        .replaceAll('Rs', '')
+        .replaceAll(',', '')
+        .trim();
+    return double.tryParse(text) ?? 0;
   }
 
   void clearRecords() {

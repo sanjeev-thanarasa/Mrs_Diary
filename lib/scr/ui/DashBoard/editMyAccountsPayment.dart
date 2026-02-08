@@ -8,23 +8,22 @@ import 'package:mrs_dth_diary_v1/scr/widgets/SimpleCalc.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/customText.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/subHelpers/gap.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/subHelpers/styles.dart';
-import 'package:pull_to_reveal/pull_to_reveal.dart';
 
-class EditDashBoardPayment extends StatefulWidget {
+class EditMyAccountsPayment extends StatefulWidget {
   final String dbId;
   final QueryDocumentSnapshot snapshot;
 
-  const EditDashBoardPayment({
+  const EditMyAccountsPayment({
     super.key,
     required this.snapshot,
     required this.dbId,
   });
 
   @override
-  _EditDashBoardPaymentState createState() => _EditDashBoardPaymentState();
+  _EditMyAccountsPaymentState createState() => _EditMyAccountsPaymentState();
 }
 
-class _EditDashBoardPaymentState extends State<EditDashBoardPayment> {
+class _EditMyAccountsPaymentState extends State<EditMyAccountsPayment> {
   DashBoardService _dashBoardService = DashBoardService();
 
   @override
@@ -66,16 +65,15 @@ class _EditDashBoardPaymentState extends State<EditDashBoardPayment> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: background,
       appBar: AppBar(
-        title: CText(
-            msg: "Edit DashBoard Payment",
-            color: Colors.white,
-            weight: FontWeight.bold,
-            size: 20.0),
-        elevation: 10.0,
-        centerTitle: true,
-        backgroundColor: Color(0xff6c6a6b),
+        backgroundColor: white,
+        elevation: 0,
+        foregroundColor: kIndigoDark,
+        title: const Text(
+          "Edit Topup",
+          style: TextStyle(fontWeight: FontWeight.w700, fontSize: 18),
+        ),
         actions: [
           Padding(
             padding: EdgeInsets.only(right: 8.0),
@@ -97,46 +95,77 @@ class _EditDashBoardPaymentState extends State<EditDashBoardPayment> {
           )
         ],
       ),
-      body: PullToRevealTopItemList(
-        startRevealed: true,
-        itemCount: 1,
-        itemBuilder: (BuildContext context, int index) {
-          return _buildContentUI(context);
-        },
-        revealableHeight: 250,
-        revealableBuilder: (BuildContext context, RevealableToggler opener,
-            RevealableToggler closer, BoxConstraints constraints) {
-          return Stack(
-            alignment: Alignment.topLeft,
-            children: <Widget>[
-              _buildBackground(context),
-            ],
-          );
-        },
+      body: ListView(
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+        children: [
+          _buildHeaderCard(),
+          const SizedBox(height: 16),
+          _buildContentUI(context),
+        ],
       ),
     );
   }
 
-  Widget _buildBackground(BuildContext context) {
+  Widget _buildHeaderCard() {
     return Container(
-      decoration: BoxDecoration(
-        image: DecorationImage(
-            image: AssetImage("assets/images/money.jpg"), fit: BoxFit.cover),
-        borderRadius: BorderRadius.only(bottomRight: Radius.circular(112)),
-        color: kBlueColor,
-      ),
-      height: MediaQuery.of(context).size.height * 0.28,
       width: double.infinity,
-      child: Padding(
-        padding: const EdgeInsets.only(bottom: 10.0, left: 5.0),
-        child: Align(
-            alignment: Alignment.bottomCenter,
-            child: IconButton(
-              icon: const Icon(Icons.refresh),
-              iconSize: 25.0,
-              splashRadius: 10.0,
-              onPressed: () => _onRefresh(),
-            )),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(18),
+        gradient: LinearGradient(
+          colors: [kPrimaryColor, kPrimaryColor.withValues(alpha: 0.8)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: kPrimaryColor.withValues(alpha: 0.25),
+            blurRadius: 16,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: white.withValues(alpha: 0.18),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: const Icon(Icons.edit_note, color: white, size: 28),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  "Edit Record",
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: white,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  _dashBoardService.createAtController.text,
+                  style: const TextStyle(color: white, fontSize: 13),
+                ),
+              ],
+            ),
+          ),
+          OutlinedButton.icon(
+            style: OutlinedButton.styleFrom(
+              foregroundColor: white,
+              side: BorderSide(color: white.withValues(alpha: 0.6)),
+            ),
+            onPressed: _onRefresh,
+            icon: const Icon(Icons.refresh, size: 16),
+            label: const Text("Reset"),
+          ),
+        ],
       ),
     );
   }
