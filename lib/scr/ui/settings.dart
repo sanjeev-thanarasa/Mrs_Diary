@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:mrs_dth_diary_v1/scr/helpers/app_settings.dart';
 import 'package:mrs_dth_diary_v1/scr/helpers/passcode_storage.dart';
 import 'package:mrs_dth_diary_v1/scr/ui/DashBoard/MyAccountsScreen.dart';
+import 'package:mrs_dth_diary_v1/scr/ui/records_screen.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/customText.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/subHelpers/styles.dart';
 import 'package:provider/provider.dart';
@@ -264,6 +265,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
               Navigator.of(context).push(
                 MaterialPageRoute(
                   builder: (_) => MyAccountsScreen(),
+                ),
+              );
+            },
+          ),
+        ),
+        const SizedBox(height: 12),
+        Card(
+          child: ListTile(
+            leading: const Icon(Icons.assessment_outlined),
+            title: const Text('Records & Reports'),
+            subtitle:
+                const Text('Monthly, daily reports and transaction history'),
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => const RecordsScreen(),
                 ),
               );
             },

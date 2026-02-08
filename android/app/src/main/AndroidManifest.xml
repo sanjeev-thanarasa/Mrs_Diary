@@ -2,7 +2,7 @@
     package="com.sms.mrs_dth_diary_v1">
     <uses-permission android:name="android.permission.INTERNET" />
    <application
-        android:label="mrs_dth_diary_v1"
+        android:label="MRS DIARY"
         android:icon="@mipmap/icon">
         <activity
             android:name=".MainActivity"

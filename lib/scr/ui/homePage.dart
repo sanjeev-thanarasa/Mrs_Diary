@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mrs_dth_diary_v1/scr/providers/village.dart';
+import 'package:mrs_dth_diary_v1/scr/ui/notes_screen.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/homeCard.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/subHelpers/responsive.dart';
 import 'package:provider/provider.dart';
@@ -37,7 +38,7 @@ class _HomePageState extends State<HomePage> {
           children: [
             Home(),
             const SearchUsersScreen(),
-            const RecordsPlaceholder(),
+            const NotesScreen(),
             const SettingsScreen(),
           ],
         ),
@@ -117,9 +118,9 @@ class _HomePageState extends State<HomePage> {
                       label: 'Search',
                     ),
                     NavigationDestination(
-                      icon: Icon(Icons.receipt_long_outlined),
-                      selectedIcon: Icon(Icons.receipt_long_rounded),
-                      label: 'Records',
+                      icon: Icon(Icons.note_alt_outlined),
+                      selectedIcon: Icon(Icons.note_alt_rounded),
+                      label: 'Notes',
                     ),
                     NavigationDestination(
                       icon: Icon(Icons.settings_outlined),
