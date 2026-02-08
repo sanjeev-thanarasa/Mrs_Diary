@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/subHelpers/styles.dart';
+import 'package:mrs_dth_diary_v1/scr/widgets/subHelpers/responsive.dart';
 
 class CustomAppBar extends StatefulWidget implements PreferredSizeWidget {
   final IconData prefixIcon;
@@ -37,29 +38,30 @@ class _CustomAppBarState extends State<CustomAppBar> {
 
   @override
   Widget build(BuildContext context) {
+    final rs = context.rs;
     return SafeArea(
       maintainBottomViewPadding: true,
       child: Stack(
         children: <Widget>[
           Positioned(
-            top: 10,
-            right: 15,
-            left: 15,
+            top: rs.rh(10),
+            right: rs.rw(15),
+            left: rs.rw(15),
             child: Container(
               decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: .8),
                   borderRadius: BorderRadius.only(
-                    bottomLeft: Radius.circular(20.0),
-                    bottomRight: Radius.circular(20.0),
-                    topRight: Radius.circular(20.0),
-                    topLeft: Radius.circular(20.0),
+                    bottomLeft: Radius.circular(rs.r(20.0)),
+                    bottomRight: Radius.circular(rs.r(20.0)),
+                    topRight: Radius.circular(rs.r(20.0)),
+                    topLeft: Radius.circular(rs.r(20.0)),
                   )),
               child: Row(
                 children: <Widget>[
                   Material(
                     type: MaterialType.transparency,
                     child: Padding(
-                      padding: const EdgeInsets.only(left: 8.0),
+                      padding: EdgeInsets.only(left: rs.rw(8.0)),
                       child: IconButton(
                         splashColor: Colors.grey,
                         icon: Icon(widget.prefixIcon),
@@ -76,7 +78,9 @@ class _CustomAppBarState extends State<CustomAppBar> {
                       onChanged: widget.onChanged,
                       decoration: InputDecoration(
                           border: InputBorder.none,
-                          contentPadding: EdgeInsets.symmetric(horizontal: 15),
+                          contentPadding: EdgeInsets.symmetric(
+                            horizontal: rs.rw(15),
+                          ),
                           hintText: widget.hintText ?? "Search",
                           alignLabelWithHint: true,
                           hintStyle: TextStyle(
@@ -93,15 +97,18 @@ class _CustomAppBarState extends State<CustomAppBar> {
             child: Align(
               alignment: Alignment.centerRight,
               child: Padding(
-                padding: const EdgeInsets.only(right: 20, top: 10),
+                padding: EdgeInsets.only(
+                  right: rs.rw(20),
+                  top: rs.rh(10),
+                ),
                 child: widget.trailing ??
                     InkWell(
                         splashColor: Colors.blueGrey,
                         onTap: widget.logoOnTap,
                         child: Image(
                           image: AssetImage("assets/images/mrslogo.png"),
-                          height: 40.0,
-                          width: 50.0,
+                          height: rs.r(40.0),
+                          width: rs.r(50.0),
                         )),
               ),
             ),

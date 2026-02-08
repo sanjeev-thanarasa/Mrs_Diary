@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:mrs_dth_diary_v1/scr/helpers/operations.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/subHelpers/gap.dart';
+import 'package:mrs_dth_diary_v1/scr/widgets/subHelpers/responsive.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/subHelpers/styles.dart';
 import 'customText.dart';
 
@@ -45,6 +46,7 @@ class CListTile extends StatefulWidget {
 class _CListTileState extends State<CListTile> {
   @override
   Widget build(BuildContext context) {
+    final rs = context.rs;
     return Slidable(
       endActionPane: ActionPane(
         motion: const DrawerMotion(),
@@ -66,29 +68,29 @@ class _CListTileState extends State<CListTile> {
         onTap: widget.tileOnTap,
         child: Card(
           shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.all(Radius.circular(20))),
-          elevation: 8,
+              borderRadius: BorderRadius.all(Radius.circular(rs.r(20)))),
+          elevation: rs.r(8),
           child: ClipRRect(
-            borderRadius: BorderRadius.all(Radius.circular(20)),
+            borderRadius: BorderRadius.all(Radius.circular(rs.r(20))),
             child: ListTile(
               leading: Stack(
                 children: <Widget>[
                   ClipRRect(
-                    borderRadius: BorderRadius.all(Radius.circular(16)),
+                    borderRadius: BorderRadius.all(Radius.circular(rs.r(16))),
                     child: Image.asset(
                       widget.image ?? "assets/images/unnamed.png",
-                      height: 56,
-                      width: 56,
+                      height: rs.r(56),
+                      width: rs.r(56),
                       fit: BoxFit.fill,
                     ),
                   ),
                   Positioned(
                     bottom: 0,
-                    right: 2,
+                    right: rs.rw(2),
                     child: Container(
-                      padding: EdgeInsets.all(2),
+                      padding: EdgeInsets.all(rs.r(2)),
                       child: CircleAvatar(
-                        radius: 6,
+                        radius: rs.r(6),
                         backgroundColor:
                             widget.subCircleColor ?? Colors.transparent,
                       ),
@@ -117,8 +119,8 @@ class _CListTileState extends State<CListTile> {
                         children: [
                           Image.asset(
                             "assets/images/dish.png",
-                            height: 20,
-                            width: 20,
+                            height: rs.r(20),
+                            width: rs.r(20),
                           ),
                           CSText(
                             msg: widget.subtitle2 ?? "",
@@ -140,10 +142,10 @@ class _CListTileState extends State<CListTile> {
                       Icon(
                         widget.subtitleIcon,
                         color: kBlueColor,
-                        size: 12,
+                        size: rs.r(12),
                       ),
                       SizedBox(
-                        width: 3,
+                        width: rs.rw(3),
                       ),
                       CText(
                         msg: widget.subtitle,
@@ -156,11 +158,11 @@ class _CListTileState extends State<CListTile> {
                     children: [
                       Icon(
                         Icons.people_alt_rounded,
-                        size: 13,
+                        size: rs.r(13),
                         color: kPrimaryColor,
                       ),
                       Gap(
-                        w: 3.0,
+                        w: rs.rw(3.0),
                       ),
                       CText(
                         msg: widget.subtitle3 ?? "",

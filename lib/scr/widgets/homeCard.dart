@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 
 import 'customText.dart';
 import 'loading.dart';
+import 'subHelpers/responsive.dart';
 
 class HomeCard extends StatefulWidget {
   final BuildContext? context;
@@ -24,21 +25,30 @@ class _HomeCardState extends State<HomeCard> {
   @override
   Widget build(BuildContext context) {
     final villageProvider = Provider.of<VillageProvider>(context);
-    windowWidth = MediaQuery.of(context).size.width;
-    windowHeight = MediaQuery.of(context).size.height;
+    final size = MediaQuery.sizeOf(context);
+    windowWidth = size.width;
+    windowHeight = size.height;
+    final rs = context.rs;
+    final isLandscape = size.width > size.height;
+    final crossAxisCount = size.width >= 900
+        ? 4
+        : size.width >= 600
+            ? 3
+            : 2;
+    final aspectRatio = isLandscape ? 1.3 : 1.05;
     if (villageProvider.isLoading) {
       return const LoadingShimmerGrid();
     }
     return GridView.builder(
       controller: _scrollController,
       shrinkWrap: true,
-      padding: const EdgeInsets.only(top: 0),
+      padding: EdgeInsets.only(top: rs.rh(0)),
       physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        mainAxisSpacing: 12,
-        crossAxisSpacing: 12,
-        childAspectRatio: 1.05,
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: crossAxisCount,
+        mainAxisSpacing: rs.rh(12),
+        crossAxisSpacing: rs.rw(12),
+        childAspectRatio: aspectRatio,
       ),
       itemCount: homeProductList.length,
       itemBuilder: (context, index) {
@@ -95,16 +105,18 @@ class _DashboardTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final rs = context.rs;
     return Card(
-      elevation: 0.8,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      elevation: rs.r(0.8),
+      shape:
+          RoundedRectangleBorder(borderRadius: BorderRadius.circular(rs.r(20))),
       child: InkWell(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(rs.r(20)),
         onTap: onTap,
         child: Container(
-          padding: const EdgeInsets.all(14),
+          padding: EdgeInsets.all(rs.r(14)),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(rs.r(20)),
             border: Border.all(color: colorScheme.outlineVariant),
             gradient: LinearGradient(
               colors: [
@@ -122,12 +134,12 @@ class _DashboardTile extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Container(
-                    height: 48,
-                    width: 48,
-                    padding: const EdgeInsets.all(6),
+                    height: rs.r(48),
+                    width: rs.r(48),
+                    padding: EdgeInsets.all(rs.r(6)),
                     decoration: BoxDecoration(
                       color: colorScheme.primary.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(14),
+                      borderRadius: BorderRadius.circular(rs.r(14)),
                     ),
                     child: Image.asset(
                       image,
@@ -136,20 +148,20 @@ class _DashboardTile extends StatelessWidget {
                   ),
                   if (count > 0)
                     Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 4,
+                      padding: EdgeInsets.symmetric(
+                        horizontal: rs.rw(10),
+                        vertical: rs.rh(4),
                       ),
                       decoration: BoxDecoration(
                         color: colorScheme.primary,
-                        borderRadius: BorderRadius.circular(20),
+                        borderRadius: BorderRadius.circular(rs.r(20)),
                       ),
                       child: Text(
                         '$count',
                         style: TextStyle(
                           color: colorScheme.onPrimary,
                           fontWeight: FontWeight.w700,
-                          fontSize: 12,
+                          fontSize: rs.sp(12),
                         ),
                       ),
                     )
@@ -157,6 +169,7 @@ class _DashboardTile extends StatelessWidget {
                     Icon(
                       Icons.check_circle_rounded,
                       color: colorScheme.primary.withValues(alpha: 0.4),
+                      size: rs.r(22),
                     ),
                 ],
               ),
@@ -169,7 +182,7 @@ class _DashboardTile extends StatelessWidget {
                       fontWeight: FontWeight.w700,
                     ),
               ),
-              const SizedBox(height: 4),
+              SizedBox(height: rs.rh(4)),
               Text(
                 'விரிவாக பார்க்க',
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(

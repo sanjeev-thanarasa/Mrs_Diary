@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/subHelpers/styles.dart';
+import 'package:mrs_dth_diary_v1/scr/widgets/subHelpers/responsive.dart';
 
 class CustomTextField extends StatefulWidget {
   final IconData? icon;
@@ -41,47 +42,51 @@ class _CustomTextFieldState extends State<CustomTextField> {
   @override
   Widget build(BuildContext context) {
     final accent = widget.leadingIconColor ?? mainBlue;
+    final rs = context.rs;
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12.0),
+        borderRadius: BorderRadius.circular(rs.r(12.0)),
         border: Border.all(color: accent.withValues(alpha: 0.35), width: 1.0),
         boxShadow: [
           BoxShadow(
-            blurRadius: 10,
+            blurRadius: rs.r(10),
             color: Colors.black.withValues(alpha: 0.04),
-            offset: const Offset(0, 6),
+            offset: Offset(0, rs.rh(6)),
           )
         ],
       ),
-      margin: const EdgeInsets.symmetric(vertical: 6.0),
-      padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 2.0),
+      margin: EdgeInsets.symmetric(vertical: rs.rh(6.0)),
+      padding: EdgeInsets.symmetric(
+        horizontal: rs.rw(12.0),
+        vertical: rs.rh(2.0),
+      ),
       child: Row(
         children: <Widget>[
           Container(
-            width: 36,
-            height: 36,
+            width: rs.r(36),
+            height: rs.r(36),
             decoration: BoxDecoration(
               color: accent.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(rs.r(10)),
             ),
             child: Center(
               child: widget.image != null
                   ? Image(
                       image: AssetImage(widget.image!),
                       fit: BoxFit.cover,
-                      height: 20,
-                      width: 20,
+                      height: rs.r(20),
+                      width: rs.r(20),
                       color: accent,
                     )
                   : Icon(
                       widget.icon ?? Icons.text_fields,
                       color: accent,
-                      size: 20,
+                      size: rs.r(20),
                     ),
             ),
           ),
-          const SizedBox(width: 10),
+          SizedBox(width: rs.rw(10)),
           Expanded(
             child: TextField(
               keyboardType: widget.keyboardType,
@@ -112,7 +117,7 @@ class _CustomTextFieldState extends State<CustomTextField> {
             IconButton(
               icon: Icon(
                 widget.animatedIconButtonStratIcon ?? Icons.add,
-                size: 20,
+                size: rs.r(20),
                 color: accent,
               ),
               onPressed: widget.animatedIconButtonOnTap,

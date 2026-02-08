@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mrs_dth_diary_v1/scr/providers/village.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/homeCard.dart';
+import 'package:mrs_dth_diary_v1/scr/widgets/subHelpers/responsive.dart';
 import 'package:provider/provider.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
 
@@ -25,6 +26,7 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final rs = context.rs;
     return Scaffold(
       body: SafeArea(
         child: IndexedStack(
@@ -45,32 +47,37 @@ class _HomePageState extends State<HomePage> {
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       bottomNavigationBar: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+          padding: EdgeInsets.fromLTRB(
+            rs.rw(16),
+            0,
+            rs.rw(16),
+            rs.rh(12),
+          ),
           child: Container(
             decoration: BoxDecoration(
               color: colorScheme.surface,
-              borderRadius: BorderRadius.circular(24),
+              borderRadius: BorderRadius.circular(rs.r(24)),
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withValues(alpha: 0.08),
-                  blurRadius: 20,
-                  offset: const Offset(0, 8),
+                  blurRadius: rs.r(20),
+                  offset: Offset(0, rs.rh(8)),
                 ),
               ],
             ),
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(24),
+              borderRadius: BorderRadius.circular(rs.r(24)),
               child: NavigationBarTheme(
                 data: NavigationBarThemeData(
-                  height: 64,
+                  height: rs.rh(64),
                   backgroundColor: colorScheme.surface,
                   indicatorColor: colorScheme.primary.withValues(alpha: 0.14),
                   indicatorShape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(rs.r(16)),
                   ),
                   labelTextStyle: WidgetStateProperty.resolveWith(
                     (states) => TextStyle(
-                      fontSize: 12,
+                      fontSize: rs.sp(12),
                       fontWeight: states.contains(WidgetState.selected)
                           ? FontWeight.w600
                           : FontWeight.w500,
@@ -81,7 +88,7 @@ class _HomePageState extends State<HomePage> {
                   ),
                   iconTheme: WidgetStateProperty.resolveWith(
                     (states) => IconThemeData(
-                      size: 24,
+                      size: rs.r(24),
                       color: states.contains(WidgetState.selected)
                           ? colorScheme.primary
                           : colorScheme.onSurfaceVariant,
@@ -221,6 +228,7 @@ class _HomeState extends State<Home> {
 
   @override
   Widget build(BuildContext context) {
+    final rs = context.rs;
     return SmartRefresher(
       controller: _refreshController,
       onRefresh: _onRefresh,
@@ -230,7 +238,10 @@ class _HomeState extends State<Home> {
         child: Column(
           children: [
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+              padding: EdgeInsets.symmetric(
+                horizontal: rs.rw(16),
+                vertical: rs.rh(20),
+              ),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
@@ -240,35 +251,35 @@ class _HomeState extends State<Home> {
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
-                borderRadius: const BorderRadius.only(
-                  bottomRight: Radius.circular(28.0),
-                  bottomLeft: Radius.circular(28.0),
+                borderRadius: BorderRadius.only(
+                  bottomRight: Radius.circular(rs.r(28.0)),
+                  bottomLeft: Radius.circular(rs.r(28.0)),
                 ),
               ),
               child: Row(
                 children: [
                   Container(
-                    padding: const EdgeInsets.all(10),
+                    padding: EdgeInsets.all(rs.r(10)),
                     decoration: BoxDecoration(
                       color: Colors.white.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(rs.r(16)),
                     ),
                     child: Image.asset(
                       'assets/images/diary.png',
-                      height: 64,
-                      width: 64,
+                      height: rs.r(64),
+                      width: rs.r(64),
                     ),
                   ),
-                  const SizedBox(width: 16),
+                  SizedBox(width: rs.rw(16)),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
+                        Text(
                           'My Diary',
                           style: TextStyle(
                             color: Colors.white,
-                            fontSize: 28,
+                            fontSize: rs.sp(28),
                             fontWeight: FontWeight.w700,
                           ),
                         ),
@@ -276,7 +287,7 @@ class _HomeState extends State<Home> {
                           'Track customers and payments',
                           style: TextStyle(
                             color: Colors.white.withValues(alpha: 0.9),
-                            fontSize: 14,
+                            fontSize: rs.sp(14),
                           ),
                         ),
                       ],
@@ -285,7 +296,7 @@ class _HomeState extends State<Home> {
                 ],
               ),
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: rs.rh(12)),
             HomeCard(context: context),
           ],
         ),

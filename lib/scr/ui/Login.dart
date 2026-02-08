@@ -6,6 +6,7 @@ import 'package:mrs_dth_diary_v1/scr/widgets/customText.dart';
 import 'package:passcode_screen/circle.dart';
 import 'package:passcode_screen/keyboard.dart';
 import 'package:passcode_screen/passcode_screen.dart';
+import 'package:mrs_dth_diary_v1/scr/widgets/subHelpers/responsive.dart';
 
 import 'Welcome.dart';
 
@@ -27,12 +28,13 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     Size size = MediaQuery.of(context).size;
+    final rs = context.rs;
     return Scaffold(
       body: SingleChildScrollView(
         child: Column(
           children: [
             Container(
-              height: MediaQuery.of(context).size.height * 0.4,
+              height: size.height * 0.4,
               child: FadeInImage(
                 placeholder: AssetImage(
                   "assets/images/diary.png",
@@ -45,14 +47,14 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             ),
             SizedBox(
-              height: 30.0,
+              height: rs.rh(30.0),
             ),
             SvgPicture.asset(
               "assets/icons/chat.svg",
               height: size.height * 0.40,
             ),
             SizedBox(
-              height: 30.0,
+              height: rs.rh(30.0),
             ),
             Center(
               child: RoundedButton(

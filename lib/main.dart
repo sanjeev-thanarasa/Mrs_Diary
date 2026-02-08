@@ -8,6 +8,7 @@ import 'package:mrs_dth_diary_v1/scr/providers/village.dart';
 import 'package:mrs_dth_diary_v1/scr/helpers/passcode_storage.dart';
 import 'package:mrs_dth_diary_v1/scr/ui/homePage.dart';
 import 'package:provider/provider.dart';
+import 'package:mrs_dth_diary_v1/scr/widgets/subHelpers/responsive.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -19,6 +20,16 @@ void main() async {
       child: MaterialApp(
           debugShowCheckedModeBanner: false,
           title: 'MRS Diary ^1.0.1',
+          builder: (context, child) {
+            final mediaQuery = MediaQuery.of(context);
+            final scale = ResponsiveScale(mediaQuery.size).textScale();
+            return MediaQuery(
+              data: mediaQuery.copyWith(
+                textScaler: TextScaler.linear(scale),
+              ),
+              child: child ?? const SizedBox.shrink(),
+            );
+          },
           theme: ThemeData(
             useMaterial3: true,
             colorScheme: ColorScheme.fromSeed(

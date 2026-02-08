@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/subHelpers/styles.dart';
+import 'package:mrs_dth_diary_v1/scr/widgets/subHelpers/responsive.dart';
 
 class RoundedButton extends StatelessWidget {
   final String text;
@@ -17,17 +18,21 @@ class RoundedButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     Size size = MediaQuery.of(context).size;
+    final rs = context.rs;
     return Container(
-      margin: EdgeInsets.symmetric(vertical: 10),
+      margin: EdgeInsets.symmetric(vertical: rs.rh(10)),
       width: size.width * 0.8,
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(29),
+        borderRadius: BorderRadius.circular(rs.r(29)),
         child: TextButton(
           style: TextButton.styleFrom(
-            padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 35),
+            padding: EdgeInsets.symmetric(
+              vertical: rs.rh(15),
+              horizontal: rs.rw(35),
+            ),
             backgroundColor: color,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(29),
+              borderRadius: BorderRadius.circular(rs.r(29)),
             ),
           ),
           onPressed: press,
