@@ -193,7 +193,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
       children: [
         const Text(
           'Settings',
-          style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
+          style: TextStyle(
+              fontSize: 26, fontWeight: FontWeight.bold, color: kIndigoDark),
         ),
         const SizedBox(height: 16),
         Card(
@@ -234,7 +235,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 subtitle: Text(
                   appSettings.locale.languageCode == 'ta' ? 'Tamil' : 'English',
                 ),
-                onTap: () => _showLanguagePicker(context, appSettings),
+                onTap: () => _showComingSoonAlert(context, 'Language'),
               ),
               ListTile(
                 leading: const Icon(Icons.dark_mode_outlined),
@@ -246,7 +247,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
                 trailing: Switch.adaptive(
                   value: appSettings.isDarkMode,
-                  onChanged: (value) => appSettings.setDarkMode(value),
+                  onChanged: (value) =>
+                      _showComingSoonAlert(context, 'Dark mode'),
                 ),
               ),
             ],
@@ -256,7 +258,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         Card(
           child: ListTile(
             leading: const Icon(Icons.account_balance_wallet_outlined),
-            title: const Text('My accounts details'),
+            title: const Text('எனது கணக்கு விவரங்கள்'),
             subtitle: const Text('View topup summary and payments'),
             onTap: () {
               Navigator.of(context).push(
@@ -293,7 +295,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               child: const Icon(Icons.psychology_rounded, color: kPrimaryColor),
             ),
             title: const Text(
-              'Application developed by',
+              'Developed by',
               style: TextStyle(fontWeight: FontWeight.w700),
             ),
             subtitle: const Text('SANJEEV THANANRASA'),
@@ -314,49 +316,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Future<void> _showLanguagePicker(
-    BuildContext context,
-    AppSettings settings,
-  ) async {
-    final current = settings.locale.languageCode;
-    await showModalBottomSheet<void>(
+  Future<void> _showComingSoonAlert(
+      BuildContext context, String feature) async {
+    await showDialog<void>(
       context: context,
-      showDragHandle: true,
-      builder: (context) {
-        return Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                leading: Icon(
-                  current == 'ta'
-                      ? Icons.radio_button_checked
-                      : Icons.radio_button_unchecked,
-                ),
-                title: const Text('தமிழ்'),
-                onTap: () {
-                  settings.setLanguageCode('ta');
-                  Navigator.pop(context);
-                },
-              ),
-              ListTile(
-                leading: Icon(
-                  current == 'en'
-                      ? Icons.radio_button_checked
-                      : Icons.radio_button_unchecked,
-                ),
-                title: const Text('English'),
-                onTap: () {
-                  settings.setLanguageCode('en');
-                  Navigator.pop(context);
-                },
-              ),
-              const SizedBox(height: 12),
-            ],
+      builder: (context) => AlertDialog(
+        title: const Text('Coming Soon'),
+        content: Text(
+          'The $feature feature will be available soon.',
+          style: const TextStyle(color: kIndigoDark),
+        ),
+        actions: [
+          FilledButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('OK'),
           ),
-        );
-      },
+        ],
+      ),
     );
   }
 
@@ -365,7 +341,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Exit'),
-        content: const Text('Do you want to close the app?'),
+        content: const Text(
+          'Do you want to close the app?',
+          style: TextStyle(fontFamily: 'TamilArima2', color: Colors.blueGrey),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
