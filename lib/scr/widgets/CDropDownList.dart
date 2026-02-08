@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mrs_dth_diary_v1/scr/models/dropDownModel.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/subHelpers/styles.dart';
-import 'customText.dart';
 
 class SelectDropList extends StatefulWidget {
   final String itemSelected;

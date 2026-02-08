@@ -5,7 +5,6 @@ import 'package:mrs_dth_diary_v1/scr/helpers/paymentService.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/CTextField.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/RoundedLoadingButton.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/SimpleCalc.dart';
-import 'package:mrs_dth_diary_v1/scr/widgets/customText.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/datePicker.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/subHelpers/styles.dart';
 

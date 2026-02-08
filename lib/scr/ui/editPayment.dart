@@ -6,7 +6,6 @@ import 'package:mrs_dth_diary_v1/scr/helpers/paymentService.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/CTextField.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/RoundedLoadingButton.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/SimpleCalc.dart';
-import 'package:mrs_dth_diary_v1/scr/widgets/customText.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/datePicker.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/subHelpers/styles.dart';
 
@@ -44,10 +43,10 @@ class _EditPaymentState extends State<EditPayment> {
     super.initState();
   }
 
-  void _onRefresh() {
-    _paymentServices.clearRecords();
-    _paymentServices.btnController.reset();
-  }
+  // void _onRefresh() {
+  //   _paymentServices.clearRecords();
+  //   _paymentServices.btnController.reset();
+  // }
 
   void editInitialize() {
     _paymentServices.createDate = widget.snapshot['CREATE_AT'] != null

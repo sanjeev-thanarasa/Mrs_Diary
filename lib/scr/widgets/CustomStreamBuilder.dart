@@ -1,7 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/subHelpers/responsive.dart';
-import 'customText.dart';
 import 'loading.dart';
 
 class CustomStreamBuilder extends StatelessWidget {

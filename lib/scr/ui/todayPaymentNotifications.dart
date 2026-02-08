@@ -165,9 +165,10 @@ class _TodayPaymentNotificationsState extends State<TodayPaymentNotifications> {
     return Scaffold(
       backgroundColor: white.withValues(alpha: 0.95),
       appBar: AppBar(
-        title: const Text(
+        titleSpacing: 11,
+        title: Text(
           "Today's payment notifications",
-          style: TextStyle(fontWeight: FontWeight.w700),
+          style: TextStyle(fontWeight: FontWeight.w700, color: Colors.black87),
         ),
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,

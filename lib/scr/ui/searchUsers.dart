@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:mrs_dth_diary_v1/scr/helpers/createUser.dart';
 import 'package:mrs_dth_diary_v1/scr/models/dropDownModel.dart';
 import 'package:mrs_dth_diary_v1/scr/ui/userDetails.dart';
-import 'package:mrs_dth_diary_v1/scr/widgets/CAppBar.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/CDropDownList.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/CTextField.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/noResultFound.dart';

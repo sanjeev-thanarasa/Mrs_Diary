@@ -3,7 +3,6 @@ import 'package:mrs_dth_diary_v1/scr/helpers/homeProductList.dart';
 import 'package:mrs_dth_diary_v1/scr/providers/village.dart';
 import 'package:provider/provider.dart';
 
-import 'customText.dart';
 import 'loading.dart';
 import 'subHelpers/responsive.dart';
 
@@ -106,91 +105,97 @@ class _DashboardTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final rs = context.rs;
-    return Card(
-      elevation: rs.r(0.8),
-      shape:
-          RoundedRectangleBorder(borderRadius: BorderRadius.circular(rs.r(20))),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(rs.r(20)),
-        onTap: onTap,
-        child: Container(
-          padding: EdgeInsets.all(rs.r(14)),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(rs.r(20)),
-            border: Border.all(color: colorScheme.outlineVariant),
-            gradient: LinearGradient(
-              colors: [
-                colorScheme.surface,
-                colorScheme.surfaceVariant.withValues(alpha: 0.6),
-              ],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Container(
-                    height: rs.r(48),
-                    width: rs.r(48),
-                    padding: EdgeInsets.all(rs.r(6)),
-                    decoration: BoxDecoration(
-                      color: colorScheme.primary.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(rs.r(14)),
-                    ),
-                    child: Image.asset(
-                      image,
-                      fit: BoxFit.contain,
-                    ),
-                  ),
-                  if (count > 0)
-                    Container(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: rs.rw(10),
-                        vertical: rs.rh(4),
-                      ),
-                      decoration: BoxDecoration(
-                        color: colorScheme.primary,
-                        borderRadius: BorderRadius.circular(rs.r(20)),
-                      ),
-                      child: Text(
-                        '$count',
-                        style: TextStyle(
-                          color: colorScheme.onPrimary,
-                          fontWeight: FontWeight.w700,
-                          fontSize: rs.sp(12),
-                        ),
-                      ),
-                    )
-                  else
-                    Icon(
-                      Icons.check_circle_rounded,
-                      color: colorScheme.primary.withValues(alpha: 0.4),
-                      size: rs.r(22),
-                    ),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(1.0, 0, 1.0, 0),
+      child: Card(
+        elevation: rs.r(0.8),
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(rs.r(20))),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(rs.r(20)),
+          onTap: onTap,
+          child: Container(
+            padding: EdgeInsets.all(rs.r(14)),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(rs.r(20)),
+              border: Border.all(color: colorScheme.outlineVariant),
+              gradient: LinearGradient(
+                colors: [
+                  colorScheme.surface,
+                  colorScheme.surfaceVariant.withValues(alpha: 0.6),
                 ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
-              const Spacer(),
-              Text(
-                title,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w700,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Container(
+                      height: rs.r(58),
+                      width: rs.r(58),
+                      padding: EdgeInsets.all(rs.r(5)),
+                      decoration: BoxDecoration(
+                        color: colorScheme.primary.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(rs.r(14)),
+                      ),
+                      child: Image.asset(
+                        image,
+                        fit: BoxFit.cover,
+                      ),
                     ),
-              ),
-              SizedBox(height: rs.rh(4)),
-              Text(
-                'விரிவாக பார்க்க',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: colorScheme.primary,
-                      fontWeight: FontWeight.w600,
-                    ),
-              ),
-            ],
+                    if (count >= 0)
+                      Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: rs.rw(10),
+                          vertical: rs.rh(4),
+                        ),
+                        decoration: BoxDecoration(
+                          color: colorScheme.primary,
+                          borderRadius: BorderRadius.circular(rs.r(20)),
+                        ),
+                        child: Text(
+                          '$count',
+                          style: TextStyle(
+                            color: colorScheme.onPrimary,
+                            fontWeight: FontWeight.w700,
+                            fontSize: rs.sp(13),
+                          ),
+                        ),
+                      )
+                    else
+                      Icon(
+                        Icons.error_outline_rounded,
+                        color: colorScheme.primary.withValues(alpha: 0.4),
+                        size: rs.r(22),
+                      ),
+                  ],
+                ),
+                const Spacer(),
+                Text(
+                  title,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        fontSize: rs.sp(16),
+                      ),
+                ),
+                SizedBox(height: rs.rh(4)),
+                Text(
+                  'விரிவாக பார்க்க',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: colorScheme.primary,
+                        // fontWeight: FontWeight.w600,
+                        fontSize: rs.sp(11),
+                        fontFamily: 'TamilArima',
+                      ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
