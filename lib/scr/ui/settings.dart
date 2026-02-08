@@ -16,14 +16,26 @@ class SettingsScreen extends StatefulWidget {
   State<SettingsScreen> createState() => _SettingsScreenState();
 }
 
-class _SettingsScreenState extends State<SettingsScreen> {
+class _SettingsScreenState extends State<SettingsScreen>
+    with SingleTickerProviderStateMixin {
   bool _passcodeEnabled = false;
   bool _loading = true;
+  late final AnimationController _shimmerController;
 
   @override
   void initState() {
     super.initState();
+    _shimmerController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    )..repeat();
     _loadSettings();
+  }
+
+  @override
+  void dispose() {
+    _shimmerController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadSettings() async {
@@ -395,11 +407,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
             children: [
               ClipRRect(
                 borderRadius: BorderRadius.circular(16),
-                child: Image.asset(
+                child: _buildShimmerImage(
                   'assets/images/smart_pvt_ltd.png',
                   height: 120,
                   width: 120,
-                  fit: BoxFit.cover,
                 ),
               ),
               const SizedBox(height: 16),
@@ -453,6 +464,65 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildShimmerImage(
+    String assetPath, {
+    required double height,
+    required double width,
+  }) {
+    return SizedBox(
+      height: height,
+      width: width,
+      child: Image.asset(
+        assetPath,
+        height: height,
+        width: width,
+        fit: BoxFit.cover,
+        frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
+          if (wasSynchronouslyLoaded || frame != null) {
+            return child;
+          }
+          return _buildShimmerBox(height: height, width: width);
+        },
+      ),
+    );
+  }
+
+  Widget _buildShimmerBox({required double height, required double width}) {
+    return AnimatedBuilder(
+      animation: _shimmerController,
+      builder: (context, child) {
+        final shimmerPosition = _shimmerController.value * 2 - 1;
+        return Container(
+          height: height,
+          width: width,
+          decoration: BoxDecoration(
+            color: kPrimaryLightColor.withValues(alpha: 0.25),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(16),
+            child: ShaderMask(
+              shaderCallback: (rect) {
+                return LinearGradient(
+                  colors: [
+                    kPrimaryLightColor.withValues(alpha: 0.2),
+                    white.withValues(alpha: 0.9),
+                    kPrimaryLightColor.withValues(alpha: 0.2),
+                  ],
+                  stops: const [0.0, 0.5, 1.0],
+                  begin: Alignment(-1.0 + shimmerPosition, -1.0),
+                  end: Alignment(1.0 + shimmerPosition, 1.0),
+                ).createShader(rect);
+              },
+              blendMode: BlendMode.srcATop,
+              child: Container(color: white.withValues(alpha: 0.6)),
+            ),
+          ),
+        );
+      },
     );
   }
 }
