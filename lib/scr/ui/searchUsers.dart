@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:mrs_dth_diary_v1/scr/helpers/createUser.dart';
 import 'package:mrs_dth_diary_v1/scr/models/dropDownModel.dart';
 import 'package:mrs_dth_diary_v1/scr/ui/userDetails.dart';
+import 'package:mrs_dth_diary_v1/scr/widgets/CAppBar.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/CDropDownList.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/CTextField.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/noResultFound.dart';
@@ -62,41 +63,44 @@ class _SearchUsersScreenState extends State<SearchUsersScreen> {
     final colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
       backgroundColor: background,
-      appBar: AppBar(
-        title: const Text(
-          '  Search Users Details',
-          style: TextStyle(
-            fontFamily: 'TamilArima',
-            fontWeight: FontWeight.w700,
-            fontSize: 18,
-            color: Colors.black,
-          ),
-        ),
-        elevation: 0,
-        centerTitle: false,
-        backgroundColor: Colors.white,
-        iconTheme: const IconThemeData(color: Colors.black),
-        actions: [
-          IconButton(
-            icon: Icon(
-              Icons.filter_alt,
-              color: colorScheme.primary,
+      body: SafeArea(
+        child: Column(
+          children: [
+            Padding(
+              padding: EdgeInsets.fromLTRB(
+                rs.rw(16),
+                rs.rh(12),
+                rs.rw(16),
+                0,
+              ),
+              child: Row(
+                children: [
+                  Expanded(child: _buildSearchBar(colorScheme)),
+                  SizedBox(width: rs.rw(10)),
+                  Container(
+                    height: rs.r(44),
+                    width: rs.r(44),
+                    decoration: BoxDecoration(
+                      color: colorScheme.primary,
+                      borderRadius: BorderRadius.circular(rs.r(14)),
+                    ),
+                    child: IconButton(
+                      icon: const Icon(
+                        Icons.filter_alt_rounded,
+                        color: Colors.white,
+                      ),
+                      onPressed: _openFiltersSheet,
+                    ),
+                  ),
+                ],
+              ),
             ),
-            onPressed: () => _openFiltersSheet(),
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          Padding(
-            padding: EdgeInsets.fromLTRB(rs.rw(16), rs.rh(12), rs.rw(16), 0),
-            child: _buildSearchBar(colorScheme),
-          ),
-          SizedBox(height: rs.rh(8)),
-          Expanded(
-            child: _buildResultsList(),
-          ),
-        ],
+            SizedBox(height: rs.rh(12)),
+            Expanded(
+              child: _buildResultsList(),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -104,7 +108,7 @@ class _SearchUsersScreenState extends State<SearchUsersScreen> {
   Widget _buildSearchBar(ColorScheme colorScheme) {
     final rs = context.rs;
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: rs.rw(12), vertical: rs.rh(8)),
+      padding: EdgeInsets.symmetric(horizontal: rs.rw(12), vertical: rs.rh(2)),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(rs.r(16)),
@@ -127,8 +131,9 @@ class _SearchUsersScreenState extends State<SearchUsersScreen> {
               controller: _queryController,
               onChanged: (_) => setState(() {}),
               decoration: const InputDecoration(
-                  border: InputBorder.none,
-                  hintText: 'Search by name, mobile, dish, village...'),
+                border: InputBorder.none,
+                hintText: 'Search users...',
+              ),
             ),
           ),
           if (_queryController.text.isNotEmpty)
@@ -246,13 +251,19 @@ class _SearchUsersScreenState extends State<SearchUsersScreen> {
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
         TextButton.icon(
-          onPressed: _clearFilters,
+          onPressed: () {
+            _clearFilters();
+            setState(() {});
+          },
           icon: const Icon(Icons.refresh_rounded),
           label: const Text('Clear'),
         ),
         SizedBox(width: rs.rw(8)),
         ElevatedButton.icon(
-          onPressed: () => Navigator.of(context).maybePop(),
+          onPressed: () {
+            setState(() {});
+            Navigator.of(context).maybePop();
+          },
           icon: const Icon(Icons.check_circle_rounded),
           label: const Text('Apply'),
           style: ElevatedButton.styleFrom(

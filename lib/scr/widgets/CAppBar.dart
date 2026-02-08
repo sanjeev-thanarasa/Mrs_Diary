@@ -9,6 +9,7 @@ class CustomAppBar extends StatefulWidget implements PreferredSizeWidget {
   final VoidCallback? logoOnTap;
   final Widget? trailing;
   final String? hintText;
+  final TextStyle? hintStyle;
 
   const CustomAppBar({
     super.key,
@@ -18,6 +19,7 @@ class CustomAppBar extends StatefulWidget implements PreferredSizeWidget {
     this.logoOnTap,
     this.trailing,
     this.hintText,
+    this.hintStyle,
   });
 
   @override
@@ -63,7 +65,7 @@ class _CustomAppBarState extends State<CustomAppBar> {
                     child: Padding(
                       padding: EdgeInsets.only(left: rs.rw(8.0)),
                       child: IconButton(
-                        splashColor: Colors.grey,
+                        splashColor: Colors.blueGrey,
                         icon: Icon(widget.prefixIcon),
                         onPressed: widget.iconOnTap,
                       ),
@@ -83,11 +85,12 @@ class _CustomAppBarState extends State<CustomAppBar> {
                           // ),
                           hintText: widget.hintText ?? "Search",
                           alignLabelWithHint: true,
-                          hintStyle: TextStyle(
-                            color: kPrimaryColor,
-                            fontFamily: "TamilArima",
-                            fontSize: rs.r(16.0),
-                          )),
+                          hintStyle: widget.hintStyle ??
+                              TextStyle(
+                                color: kPrimaryColor,
+                                fontFamily: "TamilArima",
+                                fontSize: rs.r(16.0),
+                              )),
                     ),
                   ),
                 ],
