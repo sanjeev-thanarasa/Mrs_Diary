@@ -1,23 +1,21 @@
 import 'package:flutter/material.dart';
 
 const Color primary = Colors.deepOrange;
-const  red = Colors.red;
-const  blue = Colors.blue;
+const red = Colors.red;
+const blue = Colors.blue;
 const Color white = Colors.white;
 const Color black = Colors.black;
 const Color green = Colors.green;
 const Color orange = Colors.orange;
 const Color purple = Color(0xff2a0d60);
 
-const kPrimaryColor = Color(0xFF6F35A5);
+const kPrimaryColor = Color(0xFF256FFF);
 
-
-const kPrimaryLightColor = Color(0xFFF1E6FF);
+const kPrimaryLightColor = Color(0xFFDDE8FF);
 Color lightGreen = Color.fromRGBO(49, 87, 110, 1.0);
 Color mainBlue = Color(0xFF2633C5);
 Color darkGreen = Color(0xff457039);
 Color palettesPink = Color(0xFFF1E6FF);
-
 
 const Color nearlyWhite = Color(0xFFFAFAFA);
 const Color background = Color(0xFFF2F3F8);
@@ -42,5 +40,3 @@ const Color beachRed = Color(0xff256fff);
 const Color kBlueLight = Color(0xff3ecdff);
 const Color kIndigoDark = Color(0xff2c3550);
 const Color kIndigoLight = Color(0xff7080b3);
-
-

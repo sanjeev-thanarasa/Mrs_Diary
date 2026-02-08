@@ -24,6 +24,11 @@ class VillageServices {
         return villages;
       });
 
+  Future<int> getVillageCount() async {
+    final snapshot = await _firestore.collection(collection).count().get();
+    return snapshot.count ?? 0;
+  }
+
   Future<List<VillageModel>> searchVillage({required String name}) {
     String searchKey = name[0].toUpperCase() + name.substring(1);
     return _firestore

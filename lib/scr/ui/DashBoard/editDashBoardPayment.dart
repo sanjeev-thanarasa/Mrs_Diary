@@ -86,6 +86,8 @@ class _EditDashBoardPaymentState extends State<EditDashBoardPayment> {
               ),
               onPressed: () {
                 showModalBottomSheet<void>(
+                    isScrollControlled: true,
+                    useSafeArea: true,
                     context: context,
                     builder: (BuildContext context) {
                       return SimpleCalc();

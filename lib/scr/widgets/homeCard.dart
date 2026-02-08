@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:mrs_dth_diary_v1/scr/helpers/homeProductList.dart';
 import 'package:mrs_dth_diary_v1/scr/providers/village.dart';
-import 'package:mrs_dth_diary_v1/scr/widgets/subHelpers/styles.dart';
 import 'package:provider/provider.dart';
 
 import 'customText.dart';
+import 'loading.dart';
 
 class HomeCard extends StatefulWidget {
   final BuildContext? context;
@@ -26,49 +26,31 @@ class _HomeCardState extends State<HomeCard> {
     final villageProvider = Provider.of<VillageProvider>(context);
     windowWidth = MediaQuery.of(context).size.width;
     windowHeight = MediaQuery.of(context).size.height;
-    return Container(
-        margin: EdgeInsets.only(top: 10.0),
-        child: ListView(
-            controller: _scrollController,
-            padding: EdgeInsets.only(top: 0),
-            shrinkWrap: true,
-            children: _children(villageProvider)));
-  }
-
-  List<Widget> _children(
-    VillageProvider villageProvider,
-  ) {
-    final list = <Widget>[];
-
-    for (var item in homeProductList)
-      list.add(
-        Container(
-          margin: EdgeInsets.only(left: 10, right: 10, top: 2, bottom: 2),
-          child: Card(
-            child: Padding(
-              padding: const EdgeInsets.only(top: 2, bottom: 2),
-              child: _TransitionListTile(
-                leadingImage: item.image,
-                title: CText(
-                  msg: "   ${item.text}",
-                  color: kPrimaryColor,
-                  size: 20.0,
-                  textAlign: TextAlign.center,
-                  fontFamily: "TamilArima",
-                ),
-                onTap: () => item.onTapCard(context),
-                count: lengthCounter(item.text, villageProvider),
-              ),
-            ),
-          ),
-        ),
-      );
-
-    list.add(SizedBox(
-      height: 15,
-    ));
-
-    return list;
+    if (villageProvider.isLoading) {
+      return const LoadingShimmerGrid();
+    }
+    return GridView.builder(
+      controller: _scrollController,
+      shrinkWrap: true,
+      padding: const EdgeInsets.only(top: 0),
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        mainAxisSpacing: 12,
+        crossAxisSpacing: 12,
+        childAspectRatio: 1.05,
+      ),
+      itemCount: homeProductList.length,
+      itemBuilder: (context, index) {
+        final item = homeProductList[index];
+        return _DashboardTile(
+          title: item.text,
+          image: item.image,
+          count: lengthCounter(item.text, villageProvider),
+          onTap: () => item.onTapCard(context),
+        );
+      },
+    );
   }
 
   lengthCounter(
@@ -76,127 +58,129 @@ class _HomeCardState extends State<HomeCard> {
     VillageProvider villageProvider,
   ) {
     if (title == "கிராமங்கள்") {
-      if (villageProvider.village.isNotEmpty) {
-        return villageProvider.village.length;
-      } else {
-        return 0;
-      }
+      return villageProvider.villageCount;
     } else if (title == "பழைய பயனர்கள்") {
-      if (villageProvider.totalOldCustomersCount.isNotEmpty) {
-        return villageProvider.totalOldCustomersCount.length;
-      } else {
-        return 0;
-      }
+      return villageProvider.totalOldCustomersCount;
     } else if (title == "புதிய பயனர்கள்") {
-      if (villageProvider.totalNewCustomersCount.isNotEmpty) {
-        return villageProvider.totalNewCustomersCount.length;
-      } else {
-        return 0;
-      }
+      return villageProvider.totalNewCustomersCount;
     } else if (title == "இன்று பணம் தர வேண்டியவர்கள்") {
-      if (villageProvider.todayPaymentCount.isNotEmpty) {
-        return villageProvider.todayPaymentCount.length;
-      } else {
-        return 0;
-      }
+      return villageProvider.todayPaymentCount;
     } else if (title == "இன்று Recharge முடியும் நபர்கள்") {
-      if (villageProvider.todayExpiredCount.isNotEmpty) {
-        return villageProvider.todayExpiredCount.length;
-      } else {
-        return 0;
-      }
+      return villageProvider.todayExpiredCount;
     } else if (title == "கொடுமதிகள்") {
-      if (villageProvider.totalBalanceCount.isNotEmpty) {
-        return villageProvider.totalBalanceCount.length;
-      } else {
-        return 0;
-      }
+      return villageProvider.totalBalanceCount;
     } else if (title == "தருமதிகள்") {
-      if (villageProvider.totalPendingCount.isNotEmpty) {
-        return villageProvider.totalPendingCount.length;
-      } else {
-        return 0;
-      }
+      return villageProvider.totalPendingCount;
     } else if (title == "பணம் தந்தவர்கள்") {
-      if (villageProvider.totalPaidCount.isNotEmpty) {
-        return villageProvider.totalPaidCount.length;
-      } else {
-        return 0;
-      }
+      return villageProvider.totalPaidCount;
     } else {
       return 0;
     }
   }
 }
 
-class _TransitionListTile extends StatelessWidget {
-  const _TransitionListTile({
-    this.onTap,
+class _DashboardTile extends StatelessWidget {
+  const _DashboardTile({
     required this.title,
-    required this.leadingImage,
-    this.count = 0,
+    required this.image,
+    required this.count,
+    required this.onTap,
   });
 
-  final VoidCallback? onTap;
-  final Widget title;
-  final String leadingImage;
+  final String title;
+  final String image;
   final int count;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return ListTile(
-      contentPadding: const EdgeInsets.symmetric(
-        horizontal: 15.0,
-      ),
-      leading: Stack(
-        children: [
-          Container(
-            width: 80.0,
-            height: 80.0,
-            decoration: BoxDecoration(
-              image: DecorationImage(
-                  image: AssetImage(leadingImage),
-                  fit: leadingImage == "assets/images/payment.png" ||
-                          leadingImage == "assets/images/balance.png" ||
-                          leadingImage == "assets/images/currency.png"
-                      ? BoxFit.fitHeight
-                      : BoxFit.cover),
-              borderRadius: BorderRadius.circular(20.0),
-              border: Border.all(
-                color: Colors.grey,
-              ),
+    final colorScheme = Theme.of(context).colorScheme;
+    return Card(
+      elevation: 0.8,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(20),
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: colorScheme.outlineVariant),
+            gradient: LinearGradient(
+              colors: [
+                colorScheme.surface,
+                colorScheme.surfaceVariant.withValues(alpha: 0.6),
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
             ),
-            //child: Image.asset(leadingImage,fit: BoxFit.fitHeight,),
           ),
-          Positioned(
-            right: 0,
-            bottom: 0,
-            child: count == 0
-                ? Image.asset(
-                    "assets/images/smily.png",
-                    height: 30,
-                    width: 30,
-                  )
-                : Container(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Container(
+                    height: 48,
+                    width: 48,
+                    padding: const EdgeInsets.all(6),
                     decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(10.0),
-                      color: kPrimaryColor,
+                      color: colorScheme.primary.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(14),
                     ),
-                    height: 15,
-                    width: 40,
-                    child: CText(
-                      msg: "$count",
-                      color: Colors.white,
-                      size: 12.0,
-                      textAlign: TextAlign.center,
-                      weight: FontWeight.bold,
+                    child: Image.asset(
+                      image,
+                      fit: BoxFit.contain,
                     ),
                   ),
-          )
-        ],
+                  if (count > 0)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: colorScheme.primary,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        '$count',
+                        style: TextStyle(
+                          color: colorScheme.onPrimary,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 12,
+                        ),
+                      ),
+                    )
+                  else
+                    Icon(
+                      Icons.check_circle_rounded,
+                      color: colorScheme.primary.withValues(alpha: 0.4),
+                    ),
+                ],
+              ),
+              const Spacer(),
+              Text(
+                title,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'விரிவாக பார்க்க',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: colorScheme.primary,
+                      fontWeight: FontWeight.w600,
+                    ),
+              ),
+            ],
+          ),
+        ),
       ),
-      onTap: onTap,
-      title: title,
     );
   }
 }

@@ -6,6 +6,7 @@ class CustomAppBar extends StatefulWidget implements PreferredSizeWidget {
   final VoidCallback? iconOnTap;
   final ValueChanged<String>? onChanged;
   final VoidCallback? logoOnTap;
+  final Widget? trailing;
   final String? hintText;
 
   const CustomAppBar({
@@ -14,6 +15,7 @@ class CustomAppBar extends StatefulWidget implements PreferredSizeWidget {
     this.iconOnTap,
     this.onChanged,
     this.logoOnTap,
+    this.trailing,
     this.hintText,
   });
 
@@ -87,17 +89,22 @@ class _CustomAppBarState extends State<CustomAppBar> {
               ),
             ),
           ),
-          Positioned(
-            top: 11,
-            right: 20,
-            child: InkWell(
-                splashColor: Colors.blueGrey,
-                onTap: widget.logoOnTap,
-                child: Image(
-                  image: AssetImage("assets/images/mrslogo.png"),
-                  height: 40.0,
-                  width: 50.0,
-                )),
+          Positioned.fill(
+            child: Align(
+              alignment: Alignment.centerRight,
+              child: Padding(
+                padding: const EdgeInsets.only(right: 20, top: 10),
+                child: widget.trailing ??
+                    InkWell(
+                        splashColor: Colors.blueGrey,
+                        onTap: widget.logoOnTap,
+                        child: Image(
+                          image: AssetImage("assets/images/mrslogo.png"),
+                          height: 40.0,
+                          width: 50.0,
+                        )),
+              ),
+            ),
           ),
         ],
       ),

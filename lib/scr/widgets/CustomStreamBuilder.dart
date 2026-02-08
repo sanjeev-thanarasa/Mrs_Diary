@@ -35,7 +35,7 @@ class CustomStreamBuilder extends StatelessWidget {
             !snapshot.hasData) {
           return SizedBox(
             height: MediaQuery.of(context).size.height / 2 + 100,
-            child: const Center(child: LoadingCircle()),
+            child: const LoadingShimmerList(),
           );
         }
 

@@ -60,6 +60,7 @@ class _SelectDropListState extends State<SelectDropList>
 
   @override
   Widget build(BuildContext context) {
+    final accent = widget.iconColor ?? mainBlue;
     return Container(
       child: Column(
         children: <Widget>[
@@ -78,70 +79,76 @@ class _SelectDropListState extends State<SelectDropList>
                     icon: Icon(
                       Icons.arrow_drop_down_outlined,
                       size: widget.iconSize ?? 30.0,
+                      color: accent,
                     ),
                   )
                 : Container(
-                    height: 50.0,
-                    margin: const EdgeInsets.symmetric(
-                        vertical: 5.0, horizontal: 10.0),
-                    decoration: new BoxDecoration(
+                    margin: const EdgeInsets.symmetric(vertical: 6.0),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12.0, vertical: 8.0),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
                       border: Border.all(
-                        color: widget.iconColor ?? mainBlue,
+                        color: accent.withValues(alpha: 0.35),
                         width: 1.0,
                       ),
-                      borderRadius: BorderRadius.circular(10.0),
+                      borderRadius: BorderRadius.circular(12.0),
                       boxShadow: [
                         BoxShadow(
-                            blurRadius: 1,
-                            color: Colors.white,
-                            offset: Offset(0, 2))
+                          blurRadius: 10,
+                          color: Colors.black.withValues(alpha: 0.04),
+                          offset: const Offset(0, 6),
+                        )
                       ],
                     ),
-                    child: new Row(
+                    child: Row(
                       mainAxisSize: MainAxisSize.max,
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: <Widget>[
-                        Padding(
-                            padding: EdgeInsets.symmetric(
-                                vertical: 0.0, horizontal: 15.0),
+                        Container(
+                          width: 36,
+                          height: 36,
+                          decoration: BoxDecoration(
+                            color: accent.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Center(
                             child: widget.image == null
-                                ? const SizedBox(width: 25, height: 30)
+                                ? const SizedBox(width: 20, height: 20)
                                 : Image(
                                     image: AssetImage(widget.image!),
                                     fit: BoxFit.cover,
-                                    height: 30,
-                                    width: 25,
-                                    color: widget.iconColor ?? mainBlue,
-                                  )), //////ICON OR IMAGE////////
-                        Container(
-                          height: 25.0,
-                          width: 1.0,
-                          color: widget.iconColor ?? mainBlue,
-                          margin:
-                              const EdgeInsets.only(left: 00.0, right: 10.0),
-                        ), ///////// | //////////
-                        SizedBox(
-                          width: 10,
-                        ),
-                        Expanded(
-                            child: GestureDetector(
-                          onTap: () {
-                            this.isShow = !this.isShow;
-                            _runExpandCheck();
-                            setState(() {});
-                          },
-                          child: CText(
-                              msg: widget.itemSelected,
-                              color: Colors.blue,
-                              size: 16),
-                        )),
-                        Align(
-                          alignment: Alignment(1, 0),
-                          child: Icon(
-                            isShow ? Icons.arrow_drop_down : Icons.arrow_right,
-                            color: Colors.black,
-                            size: 40,
+                                    height: 20,
+                                    width: 20,
+                                    color: accent,
+                                  ),
                           ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: () {
+                              this.isShow = !this.isShow;
+                              _runExpandCheck();
+                              setState(() {});
+                            },
+                            child: Text(
+                              widget.itemSelected,
+                              style: const TextStyle(
+                                color: Colors.black87,
+                                fontSize: 15.5,
+                                fontFamily: 'TamilArima',
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ),
+                        Icon(
+                          isShow
+                              ? Icons.keyboard_arrow_down_rounded
+                              : Icons.keyboard_arrow_right_rounded,
+                          color: Colors.black54,
+                          size: 28,
                         ),
                       ],
                     ),

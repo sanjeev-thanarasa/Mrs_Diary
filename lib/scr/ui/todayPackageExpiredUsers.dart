@@ -7,8 +7,8 @@ import 'package:mrs_dth_diary_v1/scr/models/totalCustomers.dart';
 import 'package:mrs_dth_diary_v1/scr/ui/userDetails.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/CAppBar.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/CustomListTile.dart';
-import 'package:mrs_dth_diary_v1/scr/widgets/CustomStreamBuilder.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/customText.dart';
+import 'package:mrs_dth_diary_v1/scr/widgets/loading.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/noResultFound.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/subHelpers/screen_navigation.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/subHelpers/styles.dart';
@@ -31,7 +31,14 @@ class _TodayPackageExpiredUsersState extends State<TodayPackageExpiredUsers> {
       "${DateFormat('yyyyMMdd').format(DateTime.now())}T235959";
   late CollectionReference paymentRecords;
   late CollectionReference oldUser;
-  ScrollController _controller = ScrollController();
+  final ScrollController _controller = ScrollController();
+
+  final List<_UserEntry> _entries = [];
+  QueryDocumentSnapshot<Object?>? _lastPaymentDoc;
+  bool _isLoading = true;
+  bool _isLoadingMore = false;
+  bool _hasMore = true;
+  final int _pageSize = 50;
 
   @override
   void dispose() {
@@ -46,12 +53,118 @@ class _TodayPackageExpiredUsersState extends State<TodayPackageExpiredUsers> {
     paymentRecords = FirebaseFirestore.instance.collection("PaymentRecords");
     oldUser = FirebaseFirestore.instance.collection("OldUser");
 
+    _controller.addListener(_onScroll);
+    _fetchInitial();
+
     print(formattedDateStart +
         "Started Date >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
     print(formattedDateEnd +
         "Ended Date >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
 
     super.initState();
+  }
+
+  void _onScroll() {
+    if (_controller.position.pixels >=
+            _controller.position.maxScrollExtent - 200 &&
+        !_isLoadingMore &&
+        _hasMore) {
+      _fetchMore();
+    }
+  }
+
+  Future<void> _fetchInitial() async {
+    setState(() {
+      _isLoading = true;
+      _hasMore = true;
+      _entries.clear();
+      _lastPaymentDoc = null;
+    });
+
+    final query = paymentRecords
+        .where("EXPIRED_AT", isGreaterThan: _dateTodayStart)
+        .where("EXPIRED_AT", isLessThanOrEqualTo: _dateTodayEnd)
+        .orderBy("EXPIRED_AT")
+        .limit(_pageSize);
+
+    final snapshot = await query.get();
+    if (!mounted) return;
+
+    await _appendEntries(snapshot.docs);
+    _lastPaymentDoc = snapshot.docs.isNotEmpty ? snapshot.docs.last : null;
+    _hasMore = snapshot.docs.length == _pageSize;
+
+    setState(() {
+      _isLoading = false;
+    });
+  }
+
+  Future<void> _fetchMore() async {
+    if (_lastPaymentDoc == null) return;
+    setState(() {
+      _isLoadingMore = true;
+    });
+
+    final query = paymentRecords
+        .where("EXPIRED_AT", isGreaterThan: _dateTodayStart)
+        .where("EXPIRED_AT", isLessThanOrEqualTo: _dateTodayEnd)
+        .orderBy("EXPIRED_AT")
+        .startAfterDocument(_lastPaymentDoc!)
+        .limit(_pageSize);
+
+    final snapshot = await query.get();
+    if (!mounted) return;
+
+    await _appendEntries(snapshot.docs);
+    if (snapshot.docs.isNotEmpty) {
+      _lastPaymentDoc = snapshot.docs.last;
+    }
+    _hasMore = snapshot.docs.length == _pageSize;
+
+    setState(() {
+      _isLoadingMore = false;
+    });
+  }
+
+  Future<void> _appendEntries(
+      List<QueryDocumentSnapshot<Object?>> paymentDocs) async {
+    if (paymentDocs.isEmpty) return;
+
+    final ids = paymentDocs
+        .map((doc) => (doc.data() as Map<String, dynamic>)["USER_ID"])
+        .whereType<String>()
+        .toSet()
+        .toList();
+
+    final userMap = await _fetchUsersByIds(ids);
+
+    for (final payment in paymentDocs) {
+      final paymentData = payment.data() as Map<String, dynamic>;
+      final userId = paymentData["USER_ID"];
+      final userDoc = userId is String ? userMap[userId] : null;
+      if (userDoc != null) {
+        _entries.add(_UserEntry(userDoc));
+      }
+    }
+  }
+
+  Future<Map<String, QueryDocumentSnapshot<Object?>>> _fetchUsersByIds(
+      List<String> ids) async {
+    final Map<String, QueryDocumentSnapshot<Object?>> result = {};
+    const chunkSize = 10;
+    for (var i = 0; i < ids.length; i += chunkSize) {
+      final chunk = ids.sublist(
+          i, i + chunkSize > ids.length ? ids.length : i + chunkSize);
+      final snapshot = await oldUser.where('id', whereIn: chunk).get();
+      for (final doc in snapshot.docs) {
+        final data = doc.data() as Map<String, dynamic>;
+        final id = data['id'];
+        if (id is String) {
+          result[id] = doc;
+        }
+      }
+    }
+    return result;
   }
 
   @override
@@ -65,113 +178,84 @@ class _TodayPackageExpiredUsersState extends State<TodayPackageExpiredUsers> {
         onChanged: (text) => _onSearchChanged(text),
         logoOnTap: () => setState(() => searchVisible = !searchVisible),
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            Visibility(
-              visible: searchVisible,
-              child: Expanded(
-                  flex: 0,
-                  child: Padding(
-                    padding: const EdgeInsets.only(top: 15.0, bottom: 15.0),
-                    child: Column(
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                          children: [
-                            _buildRadio(value: 0, name: "Name"),
-                            _buildRadio(value: 1, name: "DishNumber"),
-                          ],
-                        ),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                          children: [
-                            _buildRadio(value: 2, name: "Mobile No"),
-                            _buildRadio(value: 3, name: "Dish Type"),
-                          ],
-                        ),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            _buildRadio(value: 2, name: "Village"),
-                          ],
-                        ),
-                      ],
-                    ),
-                  )),
+      body: Column(
+        children: [
+          Visibility(
+            visible: searchVisible,
+            child: Padding(
+              padding: const EdgeInsets.only(top: 15.0, bottom: 15.0),
+              child: Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      _buildRadio(value: 0, name: "Name"),
+                      _buildRadio(value: 1, name: "DishNumber"),
+                    ],
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      _buildRadio(value: 2, name: "Mobile No"),
+                      _buildRadio(value: 3, name: "Dish Type"),
+                    ],
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      _buildRadio(value: 2, name: "Village"),
+                    ],
+                  ),
+                ],
+              ),
             ),
-            Padding(
-              padding: const EdgeInsets.only(top: 15.0),
-              child: CustomStreamBuilder(
-                  context: context,
-                  stream: paymentRecords
-                      .where("EXPIRED_AT", isGreaterThan: _dateTodayStart)
-                      .where("EXPIRED_AT", isLessThanOrEqualTo: _dateTodayEnd)
-                      .snapshots() as Stream<QuerySnapshot<Map<String, dynamic>>>,
-                  body: (todayExpiredTotUsers) {
-                    final paymentDocs = todayExpiredTotUsers.data?.docs ?? [];
-                    return paymentDocs.isNotEmpty
-                        ? ListView.builder(
-                            scrollDirection: Axis.vertical,
-                            controller: _controller,
-                            shrinkWrap: true,
-                            itemCount: paymentDocs.length,
-                            itemBuilder: (_, index) {
-                              var todayPayTotalUsers = paymentDocs[index];
-                              return CustomStreamBuilder(
-                                context: context,
-                                stream: oldUser
-                                        .where("id",
-                                            isEqualTo:
-                                                todayPayTotalUsers['USER_ID'])
-                                        .snapshots()
-                                    as Stream<
-                                        QuerySnapshot<Map<String, dynamic>>>,
-                                body: (snapshot) {
-                                  final userDocs = snapshot.data?.docs ?? [];
-                                  var showResults =
-                                      _searchResultsList(userDocs);
-                                  return showResults.length > 0
-                                      ? ListView.builder(
-                                          scrollDirection: Axis.vertical,
-                                          controller: _controller,
-                                          shrinkWrap: true,
-                                          itemCount: showResults.length,
-                                          itemBuilder: (_, index) {
-                                            return CListTile(
-                                              context: context,
-                                              docId: showResults[index].id,
-                                              collectionName: "OldUser",
-                                              title: showResults[index]['name'],
-                                              subtitle: showResults[index]
-                                                  ['mobileNo'],
-                                              subtitle2: showResults[index]
-                                                  ['dishNumber'],
-                                              subtitle3: showResults[index]
-                                                  ['area'],
-                                              subtitleIcon: Icons.phone,
-                                              tileOnTap: () {
-                                                changeScreenAnimated(
-                                                    context,
-                                                    UserDetails(
-                                                      collectionName: "OldUser",
-                                                      userId:
-                                                          showResults[index].id,
-                                                    ));
-                                              },
-                                              counter: "${index + 1}",
-                                            );
-                                          })
-                                      : SearchNoData();
-                                },
-                              );
-                            })
-                        : SearchNoData();
-                  }),
-            ),
-          ],
-        ),
+          ),
+          Expanded(
+            child: _isLoading ? const LoadingShimmerList() : _buildList(),
+          ),
+        ],
       ),
+    );
+  }
+
+  Widget _buildList() {
+    final showResults = _searchResultsList(_entries);
+    if (showResults.isEmpty) {
+      return SearchNoData();
+    }
+
+    return ListView.builder(
+      controller: _controller,
+      itemCount: showResults.length + (_isLoadingMore ? 1 : 0),
+      itemBuilder: (_, index) {
+        if (index >= showResults.length) {
+          return const Padding(
+            padding: EdgeInsets.symmetric(vertical: 12),
+            child: LoadingCircle(),
+          );
+        }
+
+        final data = showResults[index].user;
+        return CListTile(
+          context: context,
+          docId: data.id,
+          collectionName: "OldUser",
+          title: data['name'],
+          subtitle: data['mobileNo'],
+          subtitle2: data['dishNumber'],
+          subtitle3: data['area'],
+          subtitleIcon: Icons.phone,
+          tileOnTap: () {
+            changeScreenAnimated(
+                context,
+                UserDetails(
+                  collectionName: "OldUser",
+                  userId: data.id,
+                ));
+          },
+          counter: "${index + 1}",
+        );
+      },
     );
   }
 
@@ -209,11 +293,12 @@ class _TodayPackageExpiredUsersState extends State<TodayPackageExpiredUsers> {
     print(searchText);
   }
 
-  _searchResultsList(var snapshots) {
+  _searchResultsList(List<_UserEntry> entries) {
     var showResults = [];
 
     if (searchText != "") {
-      for (var snapshot in snapshots) {
+      for (var entry in entries) {
+        final snapshot = entry.user;
         var title;
         switch (_radioValue) {
           case 0:
@@ -259,12 +344,18 @@ class _TodayPackageExpiredUsersState extends State<TodayPackageExpiredUsers> {
         }
 
         if (title.contains(searchText.toLowerCase())) {
-          showResults.add(snapshot);
+          showResults.add(entry);
         }
       }
     } else {
-      showResults = List.from(snapshots);
+      showResults = List.from(entries);
     }
     return showResults;
   }
+}
+
+class _UserEntry {
+  final QueryDocumentSnapshot<Object?> user;
+
+  _UserEntry(this.user);
 }

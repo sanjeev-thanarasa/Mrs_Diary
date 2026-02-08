@@ -10,6 +10,9 @@ class RoundedLoading extends StatefulWidget {
   final double paddingRight;
   final double? buttonHeight;
   final Color? btnColor;
+  final String label;
+  final TextStyle? textStyle;
+  final double? elevation;
 
   const RoundedLoading({
     super.key,
@@ -20,6 +23,9 @@ class RoundedLoading extends StatefulWidget {
     this.paddingTop = 0,
     this.btnColor,
     this.buttonHeight,
+    this.label = "Save",
+    this.textStyle,
+    this.elevation,
   });
   @override
   _RoundedLoadingState createState() => _RoundedLoadingState();
@@ -39,14 +45,20 @@ class _RoundedLoadingState extends State<RoundedLoading> {
         child: Padding(
           padding: const EdgeInsets.all(10.0),
           child: Text(
-            "Save",
-            style: TextStyle(fontSize: 20.0, color: Colors.white),
+            widget.label,
+            style: widget.textStyle ??
+                const TextStyle(
+                  fontSize: 16.0,
+                  fontWeight: FontWeight.w700,
+                  fontFamily: 'TamilArima',
+                  color: Colors.white,
+                ),
           ),
         ),
         controller: widget.btnController,
         successColor: Colors.green,
         color: widget.btnColor ?? mainBlue,
-        elevation: 10.0,
+        elevation: widget.elevation ?? 6.0,
         onPressed: widget.buttonPressed,
       ),
     );

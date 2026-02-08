@@ -3,17 +3,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_switch/flutter_switch.dart';
 import 'package:intl/intl.dart';
 import 'package:mrs_dth_diary_v1/scr/helpers/operations.dart';
-import 'package:mrs_dth_diary_v1/scr/widgets/CustomStreamBuilder.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/SimpleCalc.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/customText.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/loading.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/paymentTile.dart';
-import 'package:mrs_dth_diary_v1/scr/widgets/showAlertDialog.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/subHelpers/gap.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/subHelpers/screen_navigation.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/subHelpers/styles.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
-import 'package:pull_to_reveal/pull_to_reveal.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 
 import 'createPayment.dart';
@@ -75,32 +72,33 @@ class _UserDetailsState extends State<UserDetails> {
     return Scaffold(
       key: _key,
       appBar: AppBar(
-        title: CText(
-            msg: "$userName",
-            color: Colors.white,
-            weight: FontWeight.bold,
-            size: 25.0),
-        elevation: 10.0,
-        centerTitle: true,
-        //backgroundColor: Color(0xff6c6a6b),
-        backgroundColor: kPrimaryColor.withValues(alpha: .9),
+        elevation: 0,
+        centerTitle: false,
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black,
+        title: Text(
+          userName.isEmpty ? 'User details' : userName,
+          style: const TextStyle(
+            fontFamily: 'TamilArima',
+            fontWeight: FontWeight.w700,
+            fontSize: 18,
+          ),
+        ),
         actions: [
-          Padding(
-            padding: EdgeInsets.only(right: 8.0),
-            child: IconButton(
-              icon: Icon(
-                Icons.calculate_rounded,
-                size: 30.0,
-              ),
-              onPressed: () {
-                showModalBottomSheet<void>(
-                    context: context,
-                    builder: (BuildContext context) {
-                      return SimpleCalc();
-                    });
-              },
-            ),
-          )
+          IconButton(
+            icon: const Icon(Icons.calculate_rounded),
+            onPressed: () {
+              showModalBottomSheet<void>(
+                context: context,
+                isScrollControlled: true,
+                useSafeArea: true,
+                backgroundColor: Colors.transparent,
+                builder: (BuildContext context) {
+                  return SimpleCalc();
+                },
+              );
+            },
+          ),
         ],
       ),
       backgroundColor: Colors.white,
@@ -109,50 +107,53 @@ class _UserDetailsState extends State<UserDetails> {
         onRefresh: _onRefresh,
         onLoading: _onLoading,
         enablePullDown: true,
-        child: CustomStreamBuilder(
-          context: context,
+        child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
           stream: filterStream(),
-          body: (snapshot) {
-            return PullToRevealTopItemList(
-              startRevealed: true,
-              itemCount: snapshot.data!.docs.length,
-              itemBuilder: (BuildContext context, int index) {
-                var data = snapshot.data!.docs[index];
-                print(data.runtimeType);
-                return PaymentContainerListTile(
-                  snapshot: data,
-                  // context: context,
-                  //   //packageName: _results[index]['PACKAGE_NAME'],
-                  //   //rechargeDate: DateFormat('dd-MM-yyyy hh:mm a').format(_results[index]['CREATE_AT'].toDate()),
-                  //   //rechargeAmount: _results[index]['AMOUNT'],
-                  //   //paidMoney: _results[index]['PAID_AMOUNT'],
-                  //   //pendingMoney: _results[index]['PENDING_AMOUNT'],
-                  //   //pendingDate: _results[index]['PENDING_DATE'],
-                  //   //balanceMoney: _results[index]['BALANCE_AMOUNT'],
-                  //   userNote: _results[index]['USER_NOTE'],
-                  //   userNote2: _results[index]['USER_NOTE2'],
-                  //   //expiredDate: _results[index]['EXPIRED_AT'],
-                  //   id: _results[index].id,
-                );
-              },
-              revealableHeight: 350,
-              revealableBuilder: (BuildContext context,
-                  RevealableToggler opener,
-                  RevealableToggler closer,
-                  BoxConstraints constraints) {
-                return Stack(
-                  alignment: Alignment.topLeft,
-                  children: <Widget>[
-                    Container(),
-                    _buildBackground(context),
-                    Positioned(
-                      child: _buildContentUI(),
-                      top: MediaQuery.of(context).size.height * 0.23,
-                      left: 40,
-                    ),
-                  ],
-                );
-              },
+          builder: (context, snapshot) {
+            if (snapshot.hasError) {
+              return const Center(
+                child: CText(
+                  msg: "Something went wrong!!!",
+                  color: Colors.black,
+                  size: 30.0,
+                ),
+              );
+            }
+
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return SizedBox(
+                height: MediaQuery.of(context).size.height / 2 + 100,
+                child: const Center(child: LoadingCircle()),
+              );
+            }
+
+            final docs = snapshot.data?.docs ?? [];
+
+            return ListView(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+              children: [
+                _buildUserHeaderCard(context),
+                const SizedBox(height: 12),
+                _buildUserQuickActions(context),
+                const SizedBox(height: 12),
+                _buildUserInfoCard(),
+                const SizedBox(height: 12),
+                _buildPaymentSummaryCard(docs),
+                const SizedBox(height: 12),
+                _buildSectionTitle(
+                  title: "Payment history",
+                  subtitle: docs.isEmpty
+                      ? "No payment records yet"
+                      : "${docs.length} records",
+                ),
+                const SizedBox(height: 8),
+                if (docs.isEmpty)
+                  _buildEmptyState()
+                else
+                  ...docs.map(
+                    (doc) => PaymentContainerListTile(snapshot: doc),
+                  ),
+              ],
             );
           },
         ),
@@ -184,66 +185,385 @@ class _UserDetailsState extends State<UserDetails> {
   //   return "complete";
   // }
 
-  Widget _buildBackground(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        image: DecorationImage(
-            image: AssetImage("assets/images/ravi.jpg"), fit: BoxFit.cover),
-        borderRadius: BorderRadius.only(bottomRight: Radius.circular(112)),
-        color: kBlueColor,
+  Widget _buildUserHeaderCard(BuildContext context) {
+    final data = _result.isNotEmpty ? _result[0] : null;
+    final name = data != null ? data['name'] ?? '' : '';
+    final dish = data != null ? data['dishNumber'] ?? '' : '';
+    final area = data != null ? data['area'] ?? '' : '';
+
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            CircleAvatar(
+              radius: 28,
+              backgroundColor: kPrimaryColor.withValues(alpha: 0.12),
+              child: const Icon(Icons.person_rounded, color: kPrimaryColor),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    name,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                      fontFamily: 'TamilArima',
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      const Icon(Icons.tv_rounded, size: 16, color: kBlueColor),
+                      const SizedBox(width: 6),
+                      Text(
+                        dish.toString(),
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontFamily: 'Lobster',
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      const Icon(Icons.location_on_rounded,
+                          size: 16, color: kBlueColor),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          area,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontFamily: 'TamilArima2',
+                            fontWeight: FontWeight.w600,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            IconButton(
+              onPressed: () => buildUserOnTapPopupWindow(),
+              icon: const Icon(Icons.info_outline_rounded),
+            ),
+          ],
+        ),
       ),
-      height: MediaQuery.of(context).size.height * 0.30,
-      width: double.infinity,
     );
   }
 
-  Widget _buildContentUI() {
+  Widget _buildUserQuickActions(BuildContext context) {
     return Row(
-      children: <Widget>[
-        Hero(
-          tag: 1,
-          child: Container(
-            padding: EdgeInsets.all(6),
-            decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.all(Radius.circular(16))),
-            child: GestureDetector(
-              onTap: () => buildUserOnTapPopupWindow(),
-              child: ClipRRect(
-                  borderRadius: BorderRadius.all(Radius.circular(16)),
-                  child: Image.asset(
-                    "assets/images/unnamed.png",
-                    fit: BoxFit.cover,
-                    height: 100,
-                  )),
+      children: [
+        Expanded(
+          child: ElevatedButton.icon(
+            onPressed: () => changeScreenAnimated(
+              context,
+              CreatePayment(userId: widget.userId),
+            ),
+            icon: const Icon(Icons.add_card_rounded),
+            label: const Text(
+              'Add Payment',
+              style: TextStyle(fontFamily: 'TamilArima'),
             ),
           ),
         ),
-        SizedBox(
-          width: 16,
-        ),
-        Container(
-          padding: EdgeInsets.all(6),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            shape: BoxShape.circle,
-          ),
-          child: CircleAvatar(
-            radius: 35,
-            foregroundColor: Colors.white,
-            backgroundColor: kPrimaryColor.withValues(alpha: .8),
-            child: IconButton(
-              icon: const Icon(Icons.add, size: 35.0),
-              splashColor: kBlueColor,
-              onPressed: () => changeScreenAnimated(
+        const SizedBox(width: 12),
+        Expanded(
+          child: OutlinedButton.icon(
+            onPressed: () {
+              changeScreen(
                 context,
-                CreatePayment(userId: widget.userId),
-              ),
+                EditUserDetail(
+                  data: _result,
+                  index: 0,
+                  userId: widget.userId,
+                  collectionName: widget.collectionName,
+                ),
+              );
+            },
+            icon: const Icon(Icons.edit_rounded),
+            label: const Text(
+              'Edit User',
+              style: TextStyle(fontFamily: 'TamilArima'),
             ),
           ),
         ),
       ],
     );
+  }
+
+  Widget _buildUserInfoCard() {
+    final data = _result.isNotEmpty ? _result[0] : null;
+    if (data == null) {
+      return const Center(child: LoadingCircle());
+    }
+
+    final map = _docMap(data);
+
+    return Card(
+      elevation: 1.5,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildInfoRow('Name', _safeField(map, 'name')),
+            _buildInfoRow('Mobile', _safeField(map, 'mobileNo')),
+            if (_safeField(map, 'mobileNo2').isNotEmpty)
+              _buildInfoRow('Mobile 2', _safeField(map, 'mobileNo2')),
+            _buildInfoRow('Dish Number', _safeField(map, 'dishNumber')),
+            _buildInfoRow('Dish Type', _safeField(map, 'dishType')),
+            _buildInfoRow('Area', _safeField(map, 'area')),
+            if (_safeField(map, 'address').isNotEmpty)
+              _buildInfoRow('Address', _safeField(map, 'address')),
+            if (_safeField(map, 'shopName').isNotEmpty)
+              _buildInfoRow('Shop', _safeField(map, 'shopName')),
+            const Divider(height: 24),
+            Row(
+              children: [
+                _buildToggleChip(
+                  label: 'Noted',
+                  value: note,
+                  onChanged: (val) => buildFlutterSwitch(
+                    value: val,
+                    updateField: 'NoteList',
+                    toast: 'Noted',
+                  ),
+                ),
+                const SizedBox(width: 12),
+                _buildToggleChip(
+                  label: 'Black List',
+                  value: black,
+                  onChanged: (val) => buildFlutterSwitch(
+                    value: val,
+                    updateField: 'BlackList',
+                    toast: 'Black',
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildToggleChip({
+    required String label,
+    required bool value,
+    required ValueChanged<bool> onChanged,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: value ? Colors.green.shade50 : Colors.grey.shade200,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        children: [
+          Text(
+            label,
+            style: const TextStyle(
+              fontFamily: 'TamilArima',
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(width: 8),
+          FlutterSwitch(
+            height: 18,
+            width: 34,
+            padding: 3,
+            toggleSize: 14,
+            borderRadius: 12,
+            activeColor: Colors.green,
+            value: value,
+            onToggle: onChanged,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPaymentSummaryCard(
+      List<QueryDocumentSnapshot<Map<String, dynamic>>> docs) {
+    double totalPaid = 0;
+    double totalPending = 0;
+    double totalBalance = 0;
+
+    for (final doc in docs) {
+      final data = doc.data();
+      totalPaid += _toDouble(data['PAID_AMOUNT']);
+      totalPending += _toDouble(data['PENDING_AMOUNT']);
+      totalBalance += _toDouble(data['BALANCE_AMOUNT']);
+    }
+
+    return Card(
+      elevation: 1.5,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Payment summary',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                fontFamily: 'TamilArima',
+              ),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                _buildSummaryTile('Paid', totalPaid, Colors.green),
+                const SizedBox(width: 8),
+                _buildSummaryTile('Pending', totalPending, Colors.orange),
+                const SizedBox(width: 8),
+                _buildSummaryTile('Balance', totalBalance, Colors.redAccent),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSummaryTile(String label, double value, Color color) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Column(
+          children: [
+            Text(
+              value.toStringAsFixed(0),
+              style: TextStyle(
+                fontFamily: 'Lobster',
+                fontWeight: FontWeight.bold,
+                color: color,
+                fontSize: 16,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: const TextStyle(
+                fontFamily: 'TamilArima2',
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSectionTitle({required String title, required String subtitle}) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          title,
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
+            fontFamily: 'TamilArima',
+          ),
+        ),
+        Text(
+          subtitle,
+          style: const TextStyle(
+            fontSize: 12,
+            fontFamily: 'TamilArima2',
+            fontWeight: FontWeight.w600,
+            color: Colors.black54,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade100,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: const Center(
+        child: Text(
+          'No payment records yet',
+          style: TextStyle(
+            fontFamily: 'TamilArima2',
+            fontWeight: FontWeight.w600,
+            color: Colors.black54,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInfoRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 110,
+            child: Text(
+              '$label:',
+              style: const TextStyle(
+                fontFamily: 'TamilArima2',
+                fontWeight: FontWeight.w600,
+                color: Colors.black54,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: const TextStyle(
+                fontFamily: 'TamilArima',
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Map<String, dynamic> _docMap(dynamic doc) {
+    try {
+      return (doc.data() as Map<String, dynamic>?) ?? {};
+    } catch (_) {
+      return {};
+    }
+  }
+
+  String _safeField(Map<String, dynamic> map, String key) {
+    final value = map.containsKey(key) ? map[key] : '';
+    return value == null ? '' : value.toString();
+  }
+
+  double _toDouble(dynamic value) {
+    if (value == null) return 0;
+    if (value is num) return value.toDouble();
+    return double.tryParse(value.toString()) ?? 0;
   }
 
   void buildUserOnTapPopupWindow() {
@@ -253,153 +573,318 @@ class _UserDetailsState extends State<UserDetails> {
       builder: (context) {
         return Dialog(
           backgroundColor: Colors.transparent,
-          insetPadding: const EdgeInsets.all(20),
-          child: Container(
-            width: MediaQuery.of(context).size.width * .7,
-            height: MediaQuery.of(context).size.height * .5,
-            padding: const EdgeInsets.all(10),
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(25.0),
-                bottomRight: Radius.circular(25.0),
-              ),
+          insetPadding:
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: MediaQuery.of(context).size.width * 0.92,
+              maxHeight: MediaQuery.of(context).size.height * 0.78,
             ),
-            child: _result.isNotEmpty
-                ? ListView.builder(
-                    itemCount: _result.length,
-                    itemBuilder: (_, index) {
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
+            child: Container(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.08),
+                    blurRadius: 16,
+                    offset: const Offset(0, 8),
+                  )
+                ],
+              ),
+              child: _result.isNotEmpty
+                  ? Builder(builder: (_) {
+                      final map = _docMap(_result.first);
+                      final avatarUrl = _safeField(map, 'profileImage');
+
+                      return SingleChildScrollView(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                const Icon(Icons.person_rounded,
+                                    color: kPrimaryColor),
+                                const SizedBox(width: 8),
+                                const Text(
+                                  "User details",
+                                  style: TextStyle(
+                                    fontFamily: 'TamilArima',
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                                const Spacer(),
+                                IconButton(
+                                  onPressed: () => Navigator.of(context).pop(),
+                                  icon: const Icon(Icons.close_rounded),
+                                  tooltip: "Close",
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            Center(
+                              child: Column(
                                 children: [
-                                  Image.asset("assets/images/note.png",
-                                      height: 40, width: 40),
-                                  const Gap(h: 5.0),
-                                  buildFlutterSwitch(
+                                  CircleAvatar(
+                                    radius: 42,
+                                    backgroundColor:
+                                        kPrimaryColor.withValues(alpha: 0.12),
+                                    backgroundImage: avatarUrl.isNotEmpty
+                                        ? NetworkImage(avatarUrl)
+                                        : null,
+                                    child: avatarUrl.isEmpty
+                                        ? Image.asset(
+                                            "assets/images/unnamed.png",
+                                            fit: BoxFit.cover,
+                                            height: 70,
+                                          )
+                                        : null,
+                                  ),
+                                  const SizedBox(height: 10),
+                                  Text(
+                                    _safeField(map, 'name').isEmpty
+                                        ? 'User'
+                                        : _safeField(map, 'name'),
+                                    style: const TextStyle(
+                                      fontFamily: 'TamilArima',
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    _safeField(map, 'area').isEmpty
+                                        ? ''
+                                        : _safeField(map, 'area'),
+                                    style: const TextStyle(
+                                      fontFamily: 'TamilArima2',
+                                      color: Colors.black54,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 12),
+                                  SizedBox(
+                                    width: 160,
+                                    height: 40,
+                                    child: ElevatedButton.icon(
+                                      onPressed: () {
+                                        changeScreen(
+                                          context,
+                                          EditUserDetail(
+                                            data: _result,
+                                            index: 0,
+                                            userId: widget.userId,
+                                            collectionName:
+                                                widget.collectionName,
+                                          ),
+                                        );
+                                      },
+                                      icon: const Icon(Icons.edit_rounded),
+                                      label: const Text(
+                                        "Edit User",
+                                        style:
+                                            TextStyle(fontFamily: 'TamilArima'),
+                                      ),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: kPrimaryColor,
+                                        foregroundColor: Colors.white,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(12),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 14),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: _buildToggleCard(
+                                    icon: Icons.edit_note_rounded,
+                                    title: "Note",
                                     value: note,
                                     updateField: "NoteList",
                                     toast: "Noted",
                                   ),
-                                ],
-                              ),
-                              GestureDetector(
-                                onLongPress: () => showAlertDialog(
-                                  context: context,
-                                  title: "",
-                                  content: "Do you want to Edit User Detail ?",
-                                  color: Colors.blue,
-                                  yesColor: Colors.green,
-                                  noColor: Colors.black,
-                                  yesOnPressed: () {
-                                    changeScreen(
-                                      context,
-                                      EditUserDetail(
-                                        data: _result,
-                                        index: index,
-                                        userId: widget.userId,
-                                        collectionName: widget.collectionName,
-                                      ),
-                                    );
-                                  },
                                 ),
-                                child: Padding(
-                                  padding: const EdgeInsets.only(
-                                      left: 10.0, right: 10.0),
-                                  child: CircleAvatar(
-                                    radius: 50.0,
-                                    backgroundColor: Colors.transparent,
-                                    child: Image.asset(
-                                      "assets/images/unnamed.png",
-                                      fit: BoxFit.cover,
-                                      height: 100,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Image.asset("assets/images/bad.png",
-                                      height: 50, width: 50),
-                                  const Gap(h: 5.0),
-                                  buildFlutterSwitch(
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: _buildToggleCard(
+                                    icon: Icons.block_rounded,
+                                    title: "Blacklist",
                                     value: black,
                                     updateField: "BlackList",
                                     toast: "Black",
                                   ),
-                                ],
-                              ),
-                            ],
-                          ),
-                          const Gap(h: 10.0),
-                          buildUserDetail(
-                              text1: "Name: ",
-                              text2: "${_result[index]['name']}"),
-                          buildUserDetail(
-                              text1: "Area: ",
-                              text2: "${_result[index]['area']}"),
-                          buildUserDetail(
-                            text1: "Address: ",
-                            text2: "${_result[index]['address']}",
-                            size: 16.0,
-                            topPadding: 10.0,
-                          ),
-                          const Gap(h: 15.0),
-                          buildUserDetail(
-                            text1: "DishNumber :",
-                            text2: "${_result[0]['dishNumber']}",
-                            anyOtherWidget: CSText(
-                              msg: "${_result[0]['dishNumber']}",
-                              size: 20,
-                              color: Colors.blue,
+                                ),
+                              ],
                             ),
-                          ),
-                          const Gap(h: 3.0),
-                          buildUserDetail(
-                              text1: "Dish Type :",
-                              text2: "${_result[index]['dishType']}"),
-                          const Gap(h: 3.0),
-                          buildUserDetail(
-                              text1: "User Type :",
-                              text2: "${widget.collectionName}"),
-                          const Gap(h: 3.0),
-                          buildUserDetail(
-                              text1: "Shop Name :",
-                              text2: "${_result[index]['shopName']}"),
-                          const Gap(h: 3.0),
-                          buildUserDetail(
-                              text1: "Mobile No :",
-                              text2: "${_result[index]['mobileNo']}"),
-                          const Gap(h: 3.0),
-                          buildUserDetail(
-                              text1: "Mobile No :",
-                              text2: "${_result[index]['mobileNo2']}"),
-                          const Gap(h: 3.0),
-                          buildUserDetail(
-                            text1: "Register Date :",
-                            text2:
-                                "${DateFormat('dd-MM-yyyy').format(_result[index]['registerDate'].toDate())}",
-                          ),
-                          const Gap(h: 3.0),
-                          buildUserDetail(
-                            text1: "Expired Date :",
-                            text2:
-                                "${DateFormat('dd-MM-yyyy').format(_result[index]['expiredDate'].toDate())}",
-                          ),
-                        ],
+                            const SizedBox(height: 12),
+                            _buildInfoSection(map),
+                          ],
+                        ),
                       );
-                    },
-                  )
-                : const Center(child: LoadingCircle()),
+                    })
+                  : const Center(child: LoadingCircle()),
+            ),
           ),
         );
       },
+    );
+  }
+
+  Widget _buildToggleCard({
+    required IconData icon,
+    required String title,
+    required bool value,
+    required String updateField,
+    required String toast,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade50,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: kPrimaryColor),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              title,
+              style: const TextStyle(
+                fontFamily: 'TamilArima',
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          FlutterSwitch(
+            height: 18.0,
+            width: 36.0,
+            padding: 3.0,
+            toggleSize: 14.0,
+            borderRadius: 10.0,
+            activeColor: Colors.green,
+            value: value,
+            onToggle: (val) => _handleToggle(updateField, val, toast),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _handleToggle(String updateField, bool val, String toast) {
+    if (val) {
+      updateSingleProduct(
+              collectionName: widget.collectionName,
+              id: widget.userId,
+              updateField: updateField,
+              updateData: true)
+          .whenComplete(() => showToast(
+                "Successfully Added to $toast List",
+                gravity: ToastGravity.BOTTOM,
+                toastLength: Toast.LENGTH_LONG,
+              ));
+    } else {
+      updateSingleProduct(
+              collectionName: widget.collectionName,
+              id: widget.userId,
+              updateField: updateField,
+              updateData: false)
+          .whenComplete(() => showToast(
+                "Successfully Removed to $toast List",
+                gravity: ToastGravity.BOTTOM,
+                toastLength: Toast.LENGTH_LONG,
+              ));
+    }
+    setState(() {
+      if (updateField == "NoteList") {
+        note = val;
+      } else if (updateField == "BlackList") {
+        black = val;
+      }
+    });
+  }
+
+  Widget _buildInfoSection(Map<String, dynamic> map) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade50,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: Column(
+        children: [
+          _infoRow("Name", _safeField(map, 'name')),
+          _infoRow("Area", _safeField(map, 'area')),
+          if (_safeField(map, 'address').isNotEmpty)
+            _infoRow("Address", _safeField(map, 'address')),
+          _infoRow("Dish Number", _safeField(map, 'dishNumber')),
+          _infoRow("Dish Type", _safeField(map, 'dishType')),
+          _infoRow("User Type", "${widget.collectionName}"),
+          if (_safeField(map, 'shopName').isNotEmpty)
+            _infoRow("Shop", _safeField(map, 'shopName')),
+          _infoRow("Mobile", _safeField(map, 'mobileNo')),
+          if (_safeField(map, 'mobileNo2').isNotEmpty)
+            _infoRow("Mobile 2", _safeField(map, 'mobileNo2')),
+          _infoRow(
+            "Register Date",
+            map['registerDate'] != null
+                ? DateFormat('dd-MM-yyyy').format(map['registerDate'].toDate())
+                : "No Data",
+          ),
+          _infoRow(
+            "Expired Date",
+            map['expiredDate'] != null
+                ? DateFormat('dd-MM-yyyy').format(map['expiredDate'].toDate())
+                : "No Data",
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _infoRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            flex: 4,
+            child: Text(
+              label,
+              style: const TextStyle(
+                fontFamily: 'TamilArima2',
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: Colors.black54,
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            flex: 6,
+            child: Text(
+              value.isEmpty ? "-" : value,
+              textAlign: TextAlign.right,
+              style: const TextStyle(
+                fontFamily: 'TamilArima',
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Colors.black,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -408,27 +893,28 @@ class _UserDetailsState extends State<UserDetails> {
     if (collectionName == 'OldUser') {
       return const SizedBox();
     } else if (collectionName == 'NewUser') {
+      final map = _docMap(_result[index]);
       return Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           buildUserDetail(
             text1: "Shop Name :",
             text2:
-                "${widget.collectionName == "NewUser" ? _result[index]['shopName'] : "No Data"}",
+                "${widget.collectionName == "NewUser" ? _safeField(map, 'shopName') : "No Data"}",
           ),
           const Gap(h: 3.0),
           buildUserDetail(
             text1: "Register Date :",
-            text2: _result[index]['registerDate'] != null
-                ? "${DateFormat('dd-MM-yyyy hh:mm a').format(_result[index]['registerDate'].toDate())}"
+            text2: map['registerDate'] != null
+                ? "${DateFormat('dd-MM-yyyy hh:mm a').format(map['registerDate'].toDate())}"
                 : "No Data",
             size: 16.0,
           ),
           const Gap(h: 3.0),
           buildUserDetail(
             text1: "Expired Date :",
-            text2: _result[index]['expiredDate'] != null
-                ? "${DateFormat('dd-MM-yyyy hh:mm a').format(_result[index]['expiredDate'].toDate())}"
+            text2: map['expiredDate'] != null
+                ? "${DateFormat('dd-MM-yyyy hh:mm a').format(map['expiredDate'].toDate())}"
                 : "No Data",
             size: 16.0,
           ),
@@ -510,9 +996,11 @@ class _UserDetailsState extends State<UserDetails> {
     setState(() {
       _result = data.docs;
       print("LLLLLLLLLLLLLLLLLLLLLLLLLLL" + _result.length.toString());
-      userName = _result[0]['name'];
-      black = _result[0]['BlackList'] ?? false;
-      note = _result[0]['NoteList'] ?? false;
+      if (_result.isNotEmpty) {
+        userName = _result[0]['name'];
+        black = _result[0]['BlackList'] ?? false;
+        note = _result[0]['NoteList'] ?? false;
+      }
     });
     return "Complete";
   }

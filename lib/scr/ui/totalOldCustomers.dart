@@ -6,8 +6,8 @@ import 'package:mrs_dth_diary_v1/scr/models/totalCustomers.dart';
 import 'package:mrs_dth_diary_v1/scr/ui/userDetails.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/CAppBar.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/CustomListTile.dart';
-import 'package:mrs_dth_diary_v1/scr/widgets/CustomStreamBuilder.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/customText.dart';
+import 'package:mrs_dth_diary_v1/scr/widgets/loading.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/noResultFound.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/subHelpers/screen_navigation.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/subHelpers/styles.dart';
@@ -21,8 +21,13 @@ class _TotalOldCustomersState extends State<TotalOldCustomers> {
   String searchText = '';
   int _radioValue = 0;
   bool searchVisible = false;
-  late CollectionReference oldUsers;
-  ScrollController _controller = ScrollController();
+  final ScrollController _controller = ScrollController();
+  final List<QueryDocumentSnapshot<Map<String, dynamic>>> _docs = [];
+  DocumentSnapshot<Map<String, dynamic>>? _lastDoc;
+  bool _isLoading = true;
+  bool _isLoadingMore = false;
+  bool _hasMore = true;
+  final int _pageSize = 50;
 
   @override
   void dispose() {
@@ -32,8 +37,70 @@ class _TotalOldCustomersState extends State<TotalOldCustomers> {
 
   @override
   void initState() {
-    oldUsers = FirebaseFirestore.instance.collection("OldUser");
+    _controller.addListener(_onScroll);
+    _fetchInitial();
     super.initState();
+  }
+
+  void _onScroll() {
+    if (_controller.position.pixels >=
+            _controller.position.maxScrollExtent - 200 &&
+        !_isLoadingMore &&
+        _hasMore) {
+      _fetchMore();
+    }
+  }
+
+  Future<void> _fetchInitial() async {
+    setState(() {
+      _isLoading = true;
+      _hasMore = true;
+      _docs.clear();
+      _lastDoc = null;
+    });
+
+    final query = FirebaseFirestore.instance
+        .collection("OldUser")
+        .orderBy('name')
+        .limit(_pageSize);
+
+    final snapshot = await query.get();
+    if (!mounted) return;
+
+    _docs.addAll(snapshot.docs);
+    _lastDoc = snapshot.docs.isNotEmpty ? snapshot.docs.last : null;
+    _hasMore = snapshot.docs.length == _pageSize;
+
+    setState(() {
+      _isLoading = false;
+    });
+  }
+
+  Future<void> _fetchMore() async {
+    if (_lastDoc == null) return;
+    setState(() {
+      _isLoadingMore = true;
+    });
+
+    final query = FirebaseFirestore.instance
+        .collection("OldUser")
+        .orderBy('name')
+        .startAfterDocument(_lastDoc!)
+        .limit(_pageSize);
+
+    final snapshot = await query.get();
+    if (!mounted) return;
+
+    if (snapshot.docs.isNotEmpty) {
+      _docs.addAll(snapshot.docs);
+      _lastDoc = snapshot.docs.last;
+    }
+
+    _hasMore = snapshot.docs.length == _pageSize;
+
+    setState(() {
+      _isLoadingMore = false;
+    });
   }
 
   @override
@@ -47,84 +114,85 @@ class _TotalOldCustomersState extends State<TotalOldCustomers> {
         onChanged: (text) => _onSearchChanged(text),
         logoOnTap: () => setState(() => searchVisible = !searchVisible),
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            Visibility(
-              visible: searchVisible,
-              child: Expanded(
-                  flex: 0,
-                  child: Padding(
-                    padding: const EdgeInsets.only(top: 15.0, bottom: 15.0),
-                    child: Column(
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                          children: [
-                            _buildRadio(value: 0, name: "Name"),
-                            _buildRadio(value: 1, name: "DishNumber"),
-                          ],
-                        ),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                          children: [
-                            _buildRadio(value: 2, name: "Mobile No"),
-                            _buildRadio(value: 3, name: "Dish Type"),
-                          ],
-                        ),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            _buildRadio(value: 4, name: "Village"),
-                          ],
-                        ),
-                      ],
-                    ),
-                  )),
+      body: Column(
+        children: [
+          Visibility(
+            visible: searchVisible,
+            child: Padding(
+              padding: const EdgeInsets.only(top: 15.0, bottom: 15.0),
+              child: Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      _buildRadio(value: 0, name: "Name"),
+                      _buildRadio(value: 1, name: "DishNumber"),
+                    ],
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      _buildRadio(value: 2, name: "Mobile No"),
+                      _buildRadio(value: 3, name: "Dish Type"),
+                    ],
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      _buildRadio(value: 4, name: "Village"),
+                    ],
+                  ),
+                ],
+              ),
             ),
-            Padding(
-              padding: const EdgeInsets.only(top: 15.0),
-              child: CustomStreamBuilder(
-                  context: context,
-                  stream: oldUsers.orderBy('name').snapshots()
-                      as Stream<QuerySnapshot<Map<String, dynamic>>>,
-                  body: (snapshot) {
-                    final docs = snapshot.data?.docs ?? [];
-                    var showResults = _searchResultsList(docs);
-                    return showResults.length > 0
-                        ? ListView.builder(
-                            scrollDirection: Axis.vertical,
-                            controller: _controller,
-                            shrinkWrap: true,
-                            itemCount: showResults.length,
-                            itemBuilder: (_, index) {
-                              var data = showResults[index];
-                              return CListTile(
-                                context: context,
-                                docId: data.id,
-                                collectionName: "OldUser",
-                                title: data['name'],
-                                subtitle: data['mobileNo'],
-                                subtitle2: data['dishNumber'],
-                                subtitle3: data['area'],
-                                subtitleIcon: Icons.phone,
-                                tileOnTap: () {
-                                  changeScreenAnimated(
-                                      context,
-                                      UserDetails(
-                                        collectionName: "OldUser",
-                                        userId: data.id,
-                                      ));
-                                },
-                                counter: "${index + 1}",
-                              );
-                            })
-                        : SearchNoData();
-                  }),
-            ),
-          ],
-        ),
+          ),
+          Expanded(
+            child: _isLoading ? const LoadingShimmerList() : _buildList(),
+          ),
+        ],
       ),
+    );
+  }
+
+  Widget _buildList() {
+    final showResults = _searchResultsList(_docs);
+
+    if (showResults.isEmpty) {
+      return SearchNoData();
+    }
+
+    return ListView.builder(
+      controller: _controller,
+      itemCount: showResults.length + (_isLoadingMore ? 1 : 0),
+      itemBuilder: (_, index) {
+        if (index >= showResults.length) {
+          return const Padding(
+            padding: EdgeInsets.symmetric(vertical: 12),
+            child: LoadingCircle(),
+          );
+        }
+
+        final data = showResults[index];
+        return CListTile(
+          context: context,
+          docId: data.id,
+          collectionName: "OldUser",
+          title: data['name'],
+          subtitle: data['mobileNo'],
+          subtitle2: data['dishNumber'],
+          subtitle3: data['area'],
+          subtitleIcon: Icons.phone,
+          tileOnTap: () {
+            changeScreenAnimated(
+                context,
+                UserDetails(
+                  collectionName: "OldUser",
+                  userId: data.id,
+                ));
+          },
+          counter: "${index + 1}",
+        );
+      },
     );
   }
 
@@ -162,7 +230,8 @@ class _TotalOldCustomersState extends State<TotalOldCustomers> {
     print(searchText);
   }
 
-  _searchResultsList(var snapshots) {
+  _searchResultsList(
+      List<QueryDocumentSnapshot<Map<String, dynamic>>> snapshots) {
     var showResults = [];
 
     if (searchText != "") {

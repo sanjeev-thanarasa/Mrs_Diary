@@ -2,12 +2,13 @@
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:mrs_dth_diary_v1/scr/models/filterUser.dart';
+import 'package:mrs_dth_diary_v1/scr/ui/editUserDetail.dart';
 import 'package:mrs_dth_diary_v1/scr/ui/userDetails.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/CAppBar.dart';
-import 'package:mrs_dth_diary_v1/scr/widgets/CustomListTile.dart';
-import 'package:mrs_dth_diary_v1/scr/widgets/CustomStreamBuilder.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/customText.dart';
+import 'package:mrs_dth_diary_v1/scr/widgets/loading.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/noResultFound.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/subHelpers/screen_navigation.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/subHelpers/styles.dart';
@@ -85,59 +86,117 @@ class _FilterVillageUserState extends State<FilterVillageUser> {
             ),
             Padding(
               padding: const EdgeInsets.only(top: 15.0),
-              child: CustomStreamBuilder(
-                  context: context,
-                  stream: stream(),
-                  body: (snapshot) {
-                    final docs = snapshot.data?.docs ?? [];
-                    var showResults = _searchResultsList(docs);
-                    return showResults.length > 0
-                        ? ListView.builder(
-                            scrollDirection: Axis.vertical,
-                            controller: _controller,
-                            shrinkWrap: true,
-                            itemCount: showResults.length,
-                            itemBuilder: (_, index) {
-                              return CListTile(
-                                context: context,
-                                docId: showResults[index].id,
-                                collectionName: "OldUser",
-                                title: showResults[index]['name'],
-                                subtitle: showResults[index]['mobileNo'],
-                                subtitle2: showResults[index]['dishNumber'],
-                                subtitle3: showResults[index]['area'],
-                                subtitleIcon: Icons.phone,
-                                tileOnTap: () {
-                                  changeScreenAnimated(
-                                      context,
-                                      UserDetails(
-                                        collectionName: "OldUser",
-                                        userId: showResults[index].id,
-                                      ));
-                                },
-                                counter: "${index + 1}",
-                              );
-                            })
-                        : SearchNoData();
-                  }),
+              child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                stream: _oldUsersStream(),
+                builder: (context, oldSnapshot) {
+                  if (oldSnapshot.connectionState == ConnectionState.waiting) {
+                    return const LoadingShimmerList();
+                  }
+
+                  final oldDocs = oldSnapshot.data?.docs ?? [];
+
+                  return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                    stream: _newUsersStream(),
+                    builder: (context, newSnapshot) {
+                      if (newSnapshot.connectionState ==
+                          ConnectionState.waiting) {
+                        return const LoadingShimmerList();
+                      }
+
+                      final newDocs = newSnapshot.data?.docs ?? [];
+                      final allDocs = [...oldDocs, ...newDocs];
+                      final showResults = _searchResultsList(allDocs);
+
+                      return showResults.isNotEmpty
+                          ? ListView.builder(
+                              scrollDirection: Axis.vertical,
+                              controller: _controller,
+                              shrinkWrap: true,
+                              itemCount: showResults.length,
+                              itemBuilder: (_, index) {
+                                final data = showResults[index];
+                                final collectionName = data.reference.parent.id;
+                                return Slidable(
+                                  key: ValueKey(data.id),
+                                  endActionPane: ActionPane(
+                                    motion: const DrawerMotion(),
+                                    children: [
+                                      SlidableAction(
+                                        onPressed: (_) {
+                                          changeScreenAnimated(
+                                            context,
+                                            EditUserDetail(
+                                              userId: data.id,
+                                              data: [data],
+                                              index: 0,
+                                              collectionName: collectionName,
+                                            ),
+                                          );
+                                        },
+                                        borderRadius: BorderRadius.only(
+                                          topLeft: Radius.circular(14),
+                                          bottomLeft: Radius.circular(14),
+                                        ),
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 12, vertical: 8),
+                                        backgroundColor: kPrimaryColor,
+                                        foregroundColor: Colors.white,
+                                        icon: Icons.edit_rounded,
+                                        label: 'Edit',
+                                      ),
+                                      SlidableAction(
+                                        onPressed: (_) => _confirmDelete(
+                                          context,
+                                          userId: data.id,
+                                          collectionName: collectionName,
+                                          name: data['name'] ?? '',
+                                        ),
+                                        backgroundColor: Colors.redAccent,
+                                        foregroundColor: Colors.white,
+                                        icon: Icons.delete_rounded,
+                                        label: 'Delete',
+                                      ),
+                                    ],
+                                  ),
+                                  child: _VillageUserTile(
+                                    name: data['name'] ?? '',
+                                    dishNumber: data['dishNumber'] ?? '',
+                                    mobileNo: data['mobileNo'] ?? '',
+                                    villageName: data['area'] ?? '',
+                                    onTap: () {
+                                      changeScreenAnimated(
+                                          context,
+                                          UserDetails(
+                                            collectionName: collectionName,
+                                            userId: data.id,
+                                          ));
+                                    },
+                                  ),
+                                );
+                              })
+                          : SearchNoData();
+                    },
+                  );
+                },
+              ),
             ),
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: Colors.red,
-        shape: _CustomBorder(),
-        child: pushMe,
-        onPressed: () {
-          setState(() {
-            pushMe = CText(
-              size: 20.0,
-              color: Colors.white,
-              msg: counter,
-            );
-          });
-        },
-      ),
+      // floatingActionButton: FloatingActionButton(
+      //   backgroundColor: Colors.red,
+      //   shape: _CustomBorder(),
+      //   child: pushMe,
+      //   onPressed: () {
+      //     setState(() {
+      //       pushMe = CText(
+      //         size: 20.0,
+      //         color: Colors.white,
+      //         msg: counter,
+      //       );
+      //     });
+      //   },
+      // ),
     );
   }
 
@@ -220,13 +279,165 @@ class _FilterVillageUserState extends State<FilterVillageUser> {
     return showResults;
   }
 
-  Stream<QuerySnapshot<Map<String, dynamic>>> stream() async* {
-    var firestore = FirebaseFirestore.instance;
-    var _stream = firestore
+  Stream<QuerySnapshot<Map<String, dynamic>>> _oldUsersStream() {
+    return FirebaseFirestore.instance
         .collection("OldUser")
-        .where('area', isEqualTo: widget.villageName)
+        .where('area', isEqualTo: widget.villageName.trim())
         .snapshots();
-    yield* _stream;
+  }
+
+  Stream<QuerySnapshot<Map<String, dynamic>>> _newUsersStream() {
+    return FirebaseFirestore.instance
+        .collection("NewUser")
+        .where('area', isEqualTo: widget.villageName.trim())
+        .snapshots();
+  }
+
+  Future<void> _confirmDelete(
+    BuildContext context, {
+    required String userId,
+    required String collectionName,
+    required String name,
+  }) async {
+    final shouldDelete = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text(
+          'Delete user?',
+          style: TextStyle(fontFamily: 'TamilArima'),
+        ),
+        content: Text(
+          name.isEmpty
+              ? 'Are you sure you want to delete this user?'
+              : 'Delete $name from $collectionName?',
+          style: const TextStyle(fontFamily: 'TamilArima2'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (shouldDelete != true) return;
+    await FirebaseFirestore.instance
+        .collection(collectionName)
+        .doc(userId)
+        .delete();
+  }
+}
+
+class _VillageUserTile extends StatelessWidget {
+  final String name;
+  final String dishNumber;
+  final String mobileNo;
+  final String villageName;
+  final VoidCallback onTap;
+
+  const _VillageUserTile({
+    required this.name,
+    required this.dishNumber,
+    required this.mobileNo,
+    required this.villageName,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Card(
+      elevation: 1.5,
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.person_rounded,
+                      color: colorScheme.primary, size: 20),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      name,
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: colorScheme.onSurface,
+                        fontFamily: 'TamilArima',
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  Icon(Icons.tv_rounded, color: colorScheme.primary, size: 18),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      dishNumber,
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: colorScheme.onSurface,
+                        fontFamily: 'Lobster',
+                      ),
+                    ),
+                  ),
+                  Icon(Icons.phone_rounded,
+                      color: colorScheme.primary, size: 18),
+                  const SizedBox(width: 6),
+                  Text(
+                    mobileNo,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: colorScheme.onSurface,
+                      fontFamily: 'Lobster',
+                    ),
+                  ),
+                ],
+              ),
+              if (villageName.isNotEmpty) ...[
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    Icon(Icons.location_on_rounded,
+                        color: colorScheme.primary, size: 18),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        villageName,
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: colorScheme.onSurfaceVariant,
+                          fontFamily: 'TamilArima2',
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
 

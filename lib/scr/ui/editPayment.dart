@@ -114,6 +114,8 @@ class _EditPaymentState extends State<EditPayment> {
               ),
               onPressed: () {
                 showModalBottomSheet<void>(
+                    isScrollControlled: true,
+                    useSafeArea: true,
                     context: context,
                     builder: (BuildContext context) {
                       return SimpleCalc();

@@ -1,134 +1,235 @@
 import 'package:flutter/material.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/subHelpers/styles.dart';
 
-import 'customText.dart';
-
 class SimpleCalc extends StatefulWidget {
+  const SimpleCalc({super.key});
+
   @override
   _SimpleCalcState createState() => _SimpleCalcState();
 }
 
 class _SimpleCalcState extends State<SimpleCalc> {
-  List content = [
-    "1",
-    "2",
-    "3",
-    "+",
-    "4",
-    "5",
-    "6",
-    "-",
+  final List<String> content = [
+    "AC",
+    "C",
+    "/",
+    "*",
     "7",
     "8",
     "9",
-    "*",
-    "C",
+    "-",
+    "4",
+    "5",
+    "6",
+    "+",
+    "1",
+    "2",
+    "3",
+    "=",
     "0",
     ".",
-    "/",
-    "AC",
-    "="
   ];
   double result = 0;
-  CustomStk obj = CustomStk();
+  final CustomStk obj = CustomStk();
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(10.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              ConstrainedBox(
-                constraints: new BoxConstraints(
-                  minHeight: 200,
-                  maxHeight: 250,
-                ),
-                child: Container(
-                  alignment: Alignment.bottomRight,
+    final expression = obj.getExpr();
+    final resultText = _formatNumber(result);
+
+    return SafeArea(
+      child: Material(
+        color: Colors.white,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: SizedBox(
+          height: MediaQuery.of(context).size.height * 0.9,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+            child: Column(
+              children: [
+                Container(
+                  height: 5,
+                  width: 48,
                   decoration: BoxDecoration(
-                      color: kBlueColor,
-                      borderRadius: BorderRadius.circular(5.0),
-                      boxShadow: [
-                        BoxShadow(
-                            color: Colors.grey,
-                            offset: Offset(5.0, 5.0),
-                            blurRadius: 10.0)
-                      ]),
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.max,
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        _buildText(result.toString(), 45.0, Colors.white),
-                        _buildText(obj.getExpr(), 30.0, Colors.white54),
-                      ],
-                    ),
+                    color: Colors.black12,
+                    borderRadius: BorderRadius.circular(20),
                   ),
                 ),
-              ),
-              SizedBox(
-                height: 5.0,
-              ),
-              Container(
-                height: 250.0,
-                child: Column(children: List.generate(5, (i) => _buildRows(i))),
-              ),
-            ],
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    const Icon(Icons.calculate_rounded, color: kPrimaryColor),
+                    const SizedBox(width: 8),
+                    const Text(
+                      "Calculator",
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        fontFamily: 'TamilArima',
+                      ),
+                    ),
+                    const Spacer(),
+                    IconButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      icon: const Icon(Icons.close_rounded),
+                      tooltip: "Close",
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: kPrimaryColor.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(16),
+                    border:
+                        Border.all(color: kPrimaryColor.withValues(alpha: 0.2)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        expression.isEmpty ? " " : expression,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontFamily: 'TamilArima',
+                          color: Colors.black54,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        resultText,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 32,
+                          fontFamily: 'Lobster',
+                          fontWeight: FontWeight.w700,
+                          color: Colors.black,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Expanded(
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      const crossAxisCount = 4;
+                      final rows = (content.length / crossAxisCount).ceil();
+                      const spacing = 10.0;
+                      final itemWidth = (constraints.maxWidth -
+                              spacing * (crossAxisCount - 1)) /
+                          crossAxisCount;
+                      final itemHeight =
+                          (constraints.maxHeight - spacing * (rows - 1)) / rows;
+                      final aspectRatio =
+                          itemHeight > 0 ? itemWidth / itemHeight : 1.0;
+
+                      return GridView.builder(
+                        physics: const NeverScrollableScrollPhysics(),
+                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: crossAxisCount,
+                          mainAxisSpacing: spacing,
+                          crossAxisSpacing: spacing,
+                          childAspectRatio: aspectRatio,
+                        ),
+                        itemCount: content.length,
+                        itemBuilder: (context, index) =>
+                            _buildKey(content[index]),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  _buildText(text, size, color) {
-    return CText(
-      msg: text,
-      size: size,
-      color: color,
-    );
+  String _formatNumber(double value) {
+    final text = value.toString();
+    if (text.contains('.')) {
+      return text.replaceAll(RegExp(r'0*$'), '').replaceAll(RegExp(r'\.$'), '');
+    }
+    return text;
   }
 
-  _buildRows(i) {
-    if (i != 4)
-      return Expanded(
-        child: Row(children: List.generate(4, (j) => _buildBtn(j, i * 4))),
-      );
-    else
-      return Expanded(
-        child: Row(children: List.generate(2, (i) => _buildBtn(16, i))),
-      );
-  }
+  Widget _buildKey(String text) {
+    final bool isOperator = ["+", "-", "*", "/"].contains(text);
+    final bool isEqual = text == "=";
+    final bool isClear = text == "AC" || text == "C";
 
-  _buildBtn(i, count) {
-    String text = content[i + count];
-    return Expanded(
-      child: SizedBox.expand(
-          child: OutlinedButton(
-        style: OutlinedButton.styleFrom(
-          side: const BorderSide(color: Colors.grey),
+    Color background;
+    Color foreground;
+    BorderSide border;
+    double elevation = 0;
+
+    if (isEqual) {
+      background = kPrimaryColor;
+      foreground = Colors.white;
+      border = const BorderSide(color: kPrimaryColor);
+      elevation = 1;
+    } else if (isOperator) {
+      background = kBlueColor;
+      foreground = Colors.white;
+      border = const BorderSide(color: kBlueColor);
+      elevation = 1;
+    } else if (isClear) {
+      background = Colors.red.withValues(alpha: 0.1);
+      foreground = Colors.red.shade700;
+      border = BorderSide(color: Colors.red.withValues(alpha: 0.3));
+    } else {
+      background = Colors.white;
+      foreground = Colors.black87;
+      border = BorderSide(color: Colors.grey.shade300);
+    }
+
+    return ElevatedButton(
+      style: ElevatedButton.styleFrom(
+        elevation: elevation,
+        backgroundColor: background,
+        foregroundColor: foreground,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+          side: border,
         ),
-        child: _buildText(text, 27.0, Colors.blueGrey),
-        onPressed: () {
-          setState(() {
-            if (text == "C") {
-              result = obj.pop();
-            } else if (text == "AC") {
-              obj.clear();
-              result = 0.0;
-            } else if (text == "=") {
-              result = obj.result;
-              obj.clear();
-              obj.cstStk.add(result.toString());
-            } else
-              result = obj.push(text);
-          });
-        },
-      )),
+        padding: EdgeInsets.zero,
+      ),
+      onPressed: () => _handleInput(text),
+      child: Text(
+        text,
+        style: const TextStyle(
+          fontSize: 20,
+          fontWeight: FontWeight.w700,
+          fontFamily: 'TamilArima',
+        ),
+      ),
     );
+  }
+
+  void _handleInput(String text) {
+    setState(() {
+      if (text == "C") {
+        result = obj.pop();
+      } else if (text == "AC") {
+        obj.clear();
+        result = 0.0;
+      } else if (text == "=") {
+        result = obj.result;
+        obj.clear();
+        obj.cstStk.add(result.toString());
+      } else {
+        result = obj.push(text);
+      }
+    });
   }
 }
 

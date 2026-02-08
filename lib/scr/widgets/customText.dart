@@ -27,6 +27,8 @@ class CText extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final resolvedFont =
+        _resolveFontFamily(msg, size: size, fontFamily: fontFamily);
     return textStroke
         ? Text(
             msg,
@@ -35,7 +37,7 @@ class CText extends StatelessWidget {
                 fontSize: size ?? 16,
                 color: color ?? Colors.black,
                 fontWeight: weight ?? FontWeight.normal,
-                fontFamily: fontFamily ?? "TamilArima2"),
+                fontFamily: resolvedFont),
           )
         : Text(
             msg,
@@ -43,7 +45,7 @@ class CText extends StatelessWidget {
                 fontSize: size ?? 16,
                 color: color ?? Colors.black,
                 fontWeight: weight ?? FontWeight.normal,
-                fontFamily: fontFamily ?? "TamilArima2"),
+                fontFamily: resolvedFont),
             semanticsLabel: semanticsLabel,
             textAlign: textAlign,
           );
@@ -95,13 +97,15 @@ class CSText extends StatelessWidget {
   });
   @override
   Widget build(BuildContext context) {
+    final resolvedFont =
+        _resolveFontFamily(msg, size: size, fontFamily: fontFamily);
     return SelectableText(
       msg,
       style: TextStyle(
           fontSize: size ?? 16,
           color: color ?? Colors.black,
           fontWeight: weight ?? FontWeight.normal,
-          fontFamily: fontFamily ?? "TamilArima2"),
+          fontFamily: resolvedFont),
       textAlign: textAlign,
     );
   }
@@ -138,6 +142,10 @@ class CRText extends StatelessWidget {
   });
   @override
   Widget build(BuildContext context) {
+    final resolvedFont1 =
+        _resolveFontFamily(msg1, size: size1, fontFamily: fontFamily1);
+    final resolvedFont2 =
+        _resolveFontFamily(msg2, size: size2, fontFamily: fontFamily2);
     return Text.rich(
       TextSpan(
         children: [
@@ -147,7 +155,7 @@ class CRText extends StatelessWidget {
                 fontSize: size1 ?? 16,
                 color: color1 ?? Colors.black,
                 fontWeight: weight1 ?? FontWeight.normal,
-                fontFamily: fontFamily1 ?? "TamilArima2"),
+                fontFamily: resolvedFont1),
             semanticsLabel: semanticsLabel1,
           ),
           TextSpan(
@@ -156,11 +164,30 @@ class CRText extends StatelessWidget {
                 fontSize: size2 ?? 16,
                 color: color2 ?? Colors.black,
                 fontWeight: weight2 ?? FontWeight.normal,
-                fontFamily: fontFamily2 ?? "TamilArima2"),
+                fontFamily: resolvedFont2),
             semanticsLabel: semanticsLabel2,
           ),
         ],
       ),
     );
   }
+}
+
+String _resolveFontFamily(String msg, {double? size, String? fontFamily}) {
+  if (fontFamily != null && fontFamily.isNotEmpty) {
+    return fontFamily;
+  }
+
+  final trimmed = msg.trim();
+  final isNumeric =
+      trimmed.isNotEmpty && RegExp(r'^[0-9]+([.,][0-9]+)?$').hasMatch(trimmed);
+  if (isNumeric) {
+    return "Lobster";
+  }
+
+  if (size != null && size <= 13) {
+    return "TamilArima2";
+  }
+
+  return "TamilArima";
 }

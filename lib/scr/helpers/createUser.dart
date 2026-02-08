@@ -22,6 +22,8 @@ class USerServices {
   TextEditingController expiredDateController = TextEditingController();
   TextEditingController createAtDateController = TextEditingController();
 
+  String? profileImageUrl;
+
   DateTime? registerDate;
   DateTime? expiredDate;
   DateTime? createAt;
@@ -57,6 +59,7 @@ class USerServices {
       "mobileNo2": mobileController1.text,
       "dishNumber": dishNumberController.text,
       "dishType": selectedDishType,
+      "profileImageUrl": profileImageUrl,
       "createAt": DateTime.now(),
       "NoteList": false,
       "BlackList": false,
@@ -71,6 +74,7 @@ class USerServices {
       "dishNumber": dishNumberController.text,
       "dishType": selectedDishType,
       "shopName": shopController.text,
+      "profileImageUrl": profileImageUrl,
       "createAt": DateTime.now(),
       "registerDate": registerDate,
       "expiredDate": expiredDate,
@@ -110,6 +114,7 @@ class USerServices {
     required String userId,
     required String collectionName,
   }) async {
+    final now = DateTime.now();
     if (collectionName == 'NewUser') {
       addNewUser = {
         "id": userId,
@@ -121,7 +126,8 @@ class USerServices {
         "dishNumber": dishNumberController.text,
         "dishType": selectedDishType,
         "shopName": shopController.text,
-        "createAt": createAt,
+        "profileImageUrl": profileImageUrl,
+        "createAt": now,
         "registerDate": registerDate,
         "expiredDate": expiredDate,
       };
@@ -134,6 +140,7 @@ class USerServices {
           btnController.success();
           CToast.show(message: "Added Successfully");
           clearRecords();
+          Navigator.maybePop(context);
         });
       });
     } else if (collectionName == 'OldUser') {
@@ -146,7 +153,8 @@ class USerServices {
         "mobileNo2": mobileController1.text,
         "dishNumber": dishNumberController.text,
         "dishType": selectedDishType,
-        "createAt": createAt,
+        "profileImageUrl": profileImageUrl,
+        "createAt": now,
       };
       Timer(Duration(milliseconds: 200), () {
         databaseReference
@@ -157,6 +165,7 @@ class USerServices {
           btnController.success();
           CToast.show(message: "Added Successfully");
           clearRecords();
+          Navigator.maybePop(context);
         });
       });
     } else {
@@ -176,6 +185,7 @@ class USerServices {
       //selectedDishType='Select Dish Type';
       shopController.clear();
       createAtDateController.clear();
+      profileImageUrl = null;
     });
   }
 }
