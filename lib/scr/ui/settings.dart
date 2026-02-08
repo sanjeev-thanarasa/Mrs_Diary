@@ -335,6 +335,14 @@ class _SettingsScreenState extends State<SettingsScreen>
         const SizedBox(height: 12),
         Card(
           child: ListTile(
+            leading: const Icon(Icons.info_outline_rounded),
+            title: const Text('About App'),
+            subtitle: const Text('MRS DIARY · v2.0'),
+          ),
+        ),
+        const SizedBox(height: 12),
+        Card(
+          child: ListTile(
             leading: const Icon(Icons.exit_to_app_rounded),
             title: const Text('Exit'),
             subtitle: const Text('Close the app'),
@@ -408,7 +416,7 @@ class _SettingsScreenState extends State<SettingsScreen>
               ClipRRect(
                 borderRadius: BorderRadius.circular(16),
                 child: _buildShimmerImage(
-                  'assets/images/smart_pvt_ltd.png',
+                  'assets/images/sanjeev.jpg',
                   height: 120,
                   width: 120,
                 ),

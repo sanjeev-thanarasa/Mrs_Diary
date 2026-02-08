@@ -51,7 +51,7 @@ dependencies:
   pull_to_refresh: ^2.0.0
   flutter_switch: ^0.3.2
   shared_preferences: ^2.3.2
-  google_fonts: ^6.2.1
+  google_fonts: ^8.0.1
   image_picker: ^1.1.2
 
   ########################################### use 3rd Party Dependencies #################################
