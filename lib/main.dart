@@ -105,7 +105,12 @@ class _AppScrollBehavior extends MaterialScrollBehavior {
 
   @override
   ScrollPhysics getScrollPhysics(BuildContext context) {
-    return const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics());
+    final platform = getPlatform(context);
+    if (platform == TargetPlatform.iOS || platform == TargetPlatform.macOS) {
+      return const BouncingScrollPhysics(
+          parent: AlwaysScrollableScrollPhysics());
+    }
+    return const ClampingScrollPhysics();
   }
 }
 

@@ -256,14 +256,24 @@ class Home extends StatefulWidget {
 
 class _HomeState extends State<Home> {
   RefreshController _refreshController =
-      RefreshController(initialRefresh: true);
+      RefreshController(initialRefresh: false);
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        context.read<VillageProvider>().refreshCounts();
+      }
+    });
+  }
 
   void _onRefresh() async {
     ///ToDO Update Counter
     await context.read<VillageProvider>().refreshCounts();
     print("___On Refresh_______________");
     await Future.delayed(Duration(milliseconds: 1000));
-    _refreshController.refreshCompleted();
+    _refreshController.refreshCompleted(resetFooterState: true);
   }
 
   void _onLoading() async {
@@ -393,7 +403,7 @@ class _NotificationButton extends StatelessWidget {
                 color: Theme.of(context)
                     .colorScheme
                     .primary
-                    .withValues(alpha: 0.4),
+                    .withValues(alpha: 0.2),
               ),
             ),
             child: Icon(
