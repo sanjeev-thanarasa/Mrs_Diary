@@ -193,7 +193,6 @@ class _UserDetailsState extends State<UserDetails> {
     final name = data != null ? data['name'] ?? '' : '';
     final dish = data != null ? data['dishNumber'] ?? '' : '';
     final area = data != null ? data['area'] ?? '' : '';
-
     return Card(
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -219,6 +218,7 @@ class _UserDetailsState extends State<UserDetails> {
                       fontWeight: FontWeight.w700,
                       fontFamily: 'TamilArima',
                     ),
+                    overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 4),
                   Row(
@@ -254,10 +254,6 @@ class _UserDetailsState extends State<UserDetails> {
                 ],
               ),
             ),
-            IconButton(
-              onPressed: () => buildUserOnTapPopupWindow(),
-              icon: const Icon(Icons.info_outline_rounded),
-            ),
           ],
         ),
       ),
@@ -283,17 +279,7 @@ class _UserDetailsState extends State<UserDetails> {
         const SizedBox(width: 12),
         Expanded(
           child: OutlinedButton.icon(
-            onPressed: () {
-              changeScreen(
-                context,
-                EditUserDetail(
-                  data: _result,
-                  index: 0,
-                  userId: widget.userId,
-                  collectionName: widget.collectionName,
-                ),
-              );
-            },
+            onPressed: _openEditUser,
             icon: const Icon(Icons.edit_rounded),
             label: const Text(
               'Edit User',
@@ -312,6 +298,8 @@ class _UserDetailsState extends State<UserDetails> {
     }
 
     final map = _docMap(data);
+    final userTypeLabel =
+        widget.collectionName == 'NewUser' ? 'New User' : 'Old User';
 
     return Card(
       elevation: 1.5,
@@ -321,11 +309,21 @@ class _UserDetailsState extends State<UserDetails> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildInfoRow('Name', _safeField(map, 'name')),
-            _buildInfoRow('Mobile', _safeField(map, 'mobileNo')),
+            _buildInfoRow(
+              'Name',
+              _safeField(map, 'name'),
+            ),
+            _buildInfoRow('User Type', userTypeLabel),
+            _buildInfoRow(
+              'Mobile',
+              _safeField(map, 'mobileNo'),
+            ),
             if (_safeField(map, 'mobileNo2').isNotEmpty)
               _buildInfoRow('Mobile 2', _safeField(map, 'mobileNo2')),
-            _buildInfoRow('Dish Number', _safeField(map, 'dishNumber')),
+            _buildInfoRow(
+              'Dish Number',
+              _safeField(map, 'dishNumber'),
+            ),
             _buildInfoRow('Dish Type', _safeField(map, 'dishType')),
             _buildInfoRow('Area', _safeField(map, 'area')),
             if (_safeField(map, 'address').isNotEmpty)
@@ -430,11 +428,11 @@ class _UserDetailsState extends State<UserDetails> {
             const SizedBox(height: 12),
             Row(
               children: [
-                _buildSummaryTile('Paid', totalPaid, Colors.green),
+                _buildSummaryTile('செலுத்தியது', totalPaid, Colors.green),
                 const SizedBox(width: 8),
-                _buildSummaryTile('Pending', totalPending, Colors.orange),
+                _buildSummaryTile('நிலுவை', totalPending, Colors.orange),
                 const SizedBox(width: 8),
-                _buildSummaryTile('Balance', totalBalance, Colors.redAccent),
+                _buildSummaryTile('கொடுமதி', totalBalance, Colors.redAccent),
               ],
             ),
           ],
@@ -540,7 +538,7 @@ class _UserDetailsState extends State<UserDetails> {
             ),
           ),
           Expanded(
-            child: Text(
+            child: SelectableText(
               value,
               style: const TextStyle(
                 fontFamily: 'TamilArima',
@@ -573,173 +571,28 @@ class _UserDetailsState extends State<UserDetails> {
     return double.tryParse(value.toString()) ?? 0;
   }
 
-  void buildUserOnTapPopupWindow() {
-    showDialog<void>(
-      context: context,
-      barrierDismissible: true,
-      builder: (context) {
-        return Dialog(
-          backgroundColor: Colors.transparent,
-          insetPadding:
-              const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-          child: ConstrainedBox(
-            constraints: BoxConstraints(
-              maxWidth: MediaQuery.of(context).size.width * 0.92,
-              maxHeight: MediaQuery.of(context).size.height * 0.78,
-            ),
-            child: Container(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.08),
-                    blurRadius: 16,
-                    offset: const Offset(0, 8),
-                  )
-                ],
-              ),
-              child: Builder(builder: (_) {
-                final map = _docMap(_result.first);
-                final avatarUrl = _safeField(map, 'profileImage');
+  Future<void> _openEditUser() async {
+    if (_result.isEmpty) {
+      return;
+    }
 
-                return DefaultTextStyle(
-                  style: const TextStyle(color: kIndigoDark),
-                  child: SingleChildScrollView(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            const Icon(Icons.person_rounded,
-                                color: kPrimaryColor),
-                            const SizedBox(width: 8),
-                            const Text(
-                              "User details",
-                              style: TextStyle(
-                                fontFamily: 'TamilArima',
-                                fontWeight: FontWeight.w700,
-                                fontSize: 16,
-                              ),
-                            ),
-                            const Spacer(),
-                            IconButton(
-                              onPressed: () => Navigator.of(context).pop(),
-                              icon: const Icon(Icons.close_rounded),
-                              tooltip: "Close",
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        Center(
-                          child: Column(
-                            children: [
-                              CircleAvatar(
-                                radius: 42,
-                                backgroundColor:
-                                    kPrimaryColor.withValues(alpha: 0.12),
-                                backgroundImage: avatarUrl.isNotEmpty
-                                    ? NetworkImage(avatarUrl)
-                                    : null,
-                                child: avatarUrl.isEmpty
-                                    ? Image.asset(
-                                        "assets/images/unnamed.png",
-                                        fit: BoxFit.cover,
-                                        height: 70,
-                                      )
-                                    : null,
-                              ),
-                              const SizedBox(height: 10),
-                              Text(
-                                _safeField(map, 'name').isEmpty
-                                    ? 'User'
-                                    : _safeField(map, 'name'),
-                                style: const TextStyle(
-                                  fontFamily: 'TamilArima',
-                                  fontWeight: FontWeight.w700,
-                                  fontSize: 16,
-                                ),
-                              ),
-                              const SizedBox(height: 6),
-                              Text(
-                                _safeField(map, 'area').isEmpty
-                                    ? ''
-                                    : _safeField(map, 'area'),
-                                style: const TextStyle(
-                                  fontFamily: 'TamilArima2',
-                                  color: Colors.black54,
-                                ),
-                              ),
-                              const SizedBox(height: 12),
-                              SizedBox(
-                                width: 160,
-                                height: 40,
-                                child: ElevatedButton.icon(
-                                  onPressed: () {
-                                    changeScreen(
-                                      context,
-                                      EditUserDetail(
-                                        data: _result,
-                                        index: 0,
-                                        userId: widget.userId,
-                                        collectionName: widget.collectionName,
-                                      ),
-                                    );
-                                  },
-                                  icon: const Icon(Icons.edit_rounded),
-                                  label: const Text(
-                                    "Edit User",
-                                    style: TextStyle(fontFamily: 'TamilArima'),
-                                  ),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: kPrimaryColor,
-                                    foregroundColor: Colors.white,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 14),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _buildToggleCard(
-                                icon: Icons.edit_note_rounded,
-                                title: "Note",
-                                value: note,
-                                updateField: "NoteList",
-                                toast: "Noted",
-                              ),
-                            ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: _buildToggleCard(
-                                icon: Icons.block_rounded,
-                                title: "Blacklist",
-                                value: black,
-                                updateField: "BlackList",
-                                toast: "Black",
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-                        _buildInfoSection(map),
-                      ],
-                    ),
-                  ),
-                );
-              }),
-            ),
-          ),
-        );
-      },
+    final updated = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        builder: (context) => EditUserDetail(
+          data: _result,
+          index: 0,
+          userId: widget.userId,
+          collectionName: widget.collectionName,
+        ),
+      ),
     );
+
+    if (updated == true) {
+      await getUsersStreamSnapshots(collectionName: widget.collectionName);
+      if (mounted) {
+        setState(() {});
+      }
+    }
   }
 
   Widget _buildToggleCard({

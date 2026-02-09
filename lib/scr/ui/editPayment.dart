@@ -1,12 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:mrs_dth_diary_v1/scr/helpers/paymentService.dart';
-import 'package:mrs_dth_diary_v1/scr/widgets/CTextField.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/RoundedLoadingButton.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/SimpleCalc.dart';
-import 'package:mrs_dth_diary_v1/scr/widgets/datePicker.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/subHelpers/styles.dart';
 
 class EditPayment extends StatefulWidget {
@@ -65,23 +62,9 @@ class _EditPaymentState extends State<EditPayment> {
     _paymentServices.balanceAmount.text = widget.snapshot['BALANCE_AMOUNT'];
     _paymentServices.userNote.text = widget.snapshot['USER_NOTE'];
     _paymentServices.userNote2.text = widget.snapshot['USER_NOTE2'];
-    if (_paymentServices.pendingDate != null) {
-      _paymentServices.pendingDateController.text =
-          DateFormat('dd-MM-yyyy hh:mm a')
-              .format(_paymentServices.pendingDate!);
-    }
-    if (_paymentServices.expiredDate != null) {
-      _paymentServices.expiredDateController.text =
-          DateFormat('dd-MM-yyyy hh:mm a')
-              .format(_paymentServices.expiredDate!);
-    }
+    _showNotes = _paymentServices.userNote.text.trim().isNotEmpty;
   }
 
-  final TextStyle _style = const TextStyle(
-    fontSize: 15.0,
-    fontFamily: "TamilArima",
-    color: Colors.black,
-  );
   int recharge = 0;
   int paidAmount = 0;
 
@@ -98,7 +81,7 @@ class _EditPaymentState extends State<EditPayment> {
       backgroundColor: background,
       appBar: AppBar(
         title: const Text(
-          "Edit Payment",
+          "Add new payment record",
           style: TextStyle(
             fontFamily: 'TamilArima',
             fontWeight: FontWeight.w700,
@@ -148,7 +131,7 @@ class _EditPaymentState extends State<EditPayment> {
     );
   }
 
-  bool noteVisible = false;
+  bool _showNotes = false;
 
   Widget _buildContentUI(BuildContext context, bool equal) {
     return Column(
@@ -157,141 +140,79 @@ class _EditPaymentState extends State<EditPayment> {
         _buildHeaderCard(equal),
         const SizedBox(height: 12),
         _sectionCard(
-          title: "Update payment",
+          title: "புதிதாக தந்த பணம்",
           child: Column(
             children: [
               if (!equal)
-                CustomTextField(
+                _inputField(
                   controller: _paymentServices.newGiveAmount,
+                  labelText: "New paid amount",
                   hintText: widget.snapshot['BALANCE_AMOUNT'] != ''
                       ? "நீங்கள் கொடுத்த பணம்"
                       : "புதிதாக தந்த பணம்",
-                  hintTextColor: Colors.blueGrey,
                   icon: Icons.monetization_on,
-                  textStyle: _style,
                   keyboardType: TextInputType.number,
-                  animatedIconButtonStratIcon: Icons.done,
-                  animatedIconButtonEndIcon: Icons.done_all_rounded,
-                  iconButton: true,
-                  animatedIconButtonOnTap: () {
-                    widget.snapshot['BALANCE_AMOUNT'] != ''
-                        ? calculateBalance()
-                        : calculatePending();
-                  },
+                  onChanged: (_) => _recalculateFromAdditional(),
                 ),
               if (_paymentServices.pending) ...[
                 const SizedBox(height: 10),
                 _statusTile(
-                  title: "புதிய தருமதி பணம்",
+                  title: "புதிய நிலுவை தொகை",
                   value: _paymentServices.pendingAmount.text,
                   color: Colors.blueGrey,
-                ),
-                const SizedBox(height: 10),
-                CustomTextField(
-                  readOnly: true,
-                  controller: _paymentServices.pendingDateController,
-                  hintText: "தருமதி திகதி",
-                  icon: Icons.update,
-                  keyboardType: TextInputType.text,
-                  animatedIconButtonStratIcon: Icons.date_range,
-                  textStyle: _style,
-                  hintTextColor: Colors.blueGrey,
-                  iconButton: true,
-                  animatedIconButtonOnTap: () {
-                    showCupertinoModalPopup(
-                        context: context,
-                        builder: (_) => DatePicker(
-                              onDateTimeChanged: (val) {
-                                setState(() {
-                                  _paymentServices.pendingDate = val;
-                                  _paymentServices.pendingDateController.text =
-                                      DateFormat('dd-MM-yyyy hh:mm a')
-                                          .format(val);
-                                });
-                              },
-                            ));
-                  },
                 ),
               ],
               if (_paymentServices.balance) ...[
                 const SizedBox(height: 10),
                 _statusTile(
-                  title: "புதிய கொடுமதி பணம்",
+                  title: "புதிய கொடுமதி தொகை",
                   value: _paymentServices.balanceAmount.text,
                   color: Colors.blueGrey,
                 ),
               ],
-              const SizedBox(height: 10),
-              CustomTextField(
-                readOnly: true,
-                controller: _paymentServices.expiredDateController,
-                hintText: "முடியும் திகதி",
-                icon: Icons.date_range,
-                keyboardType: TextInputType.text,
-                textStyle: _style,
-                hintTextColor: Colors.blueGrey,
-                animatedIconButtonStratIcon: Icons.date_range,
-                animatedIconButtonEndIcon: Icons.date_range_outlined,
-                animatedIconButtonOnTap: () {
-                  showCupertinoModalPopup(
-                      context: context,
-                      builder: (_) => DatePicker(
-                            onDateTimeChanged: (val) {
-                              setState(() {
-                                _paymentServices.expiredDate = val;
-                                _paymentServices.expiredDateController.text =
-                                    DateFormat('dd-MM-yyyy hh:mm a')
-                                        .format(val);
-                              });
-                            },
-                          ));
-                },
-              ),
             ],
           ),
         ),
         const SizedBox(height: 12),
         _sectionCard(
-          title: "Notes",
+          title: "Note",
           child: Column(
             children: [
-              CustomTextField(
-                controller: _paymentServices.userNote,
-                hintText: "குறிப்பு",
-                icon: Icons.note_add,
-                keyboardType: TextInputType.text,
-                textStyle: _style,
-                hintTextColor: Colors.blueGrey,
-                iconButton: true,
-                animatedIconButtonStratIcon: Icons.add_circle_outline_rounded,
-                animatedIconButtonEndIcon:
-                    Icons.indeterminate_check_box_outlined,
-                animatedIconButtonOnTap: () =>
-                    setState(() => noteVisible = !noteVisible),
+              Row(
+                children: [
+                  const Expanded(
+                    child: Text(
+                      "Add note",
+                      style: TextStyle(
+                        fontFamily: 'TamilArima2',
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black54,
+                      ),
+                    ),
+                  ),
+                  Switch(
+                    value: _showNotes,
+                    activeColor: kPrimaryColor,
+                    onChanged: (val) => setState(() => _showNotes = val),
+                  ),
+                ],
               ),
-              if (noteVisible)
-                CustomTextField(
-                  controller: _paymentServices.userNote2,
-                  hintText: "குறிப்பு 2",
-                  icon: Icons.note_add_outlined,
-                  textStyle: _style,
+              if (_showNotes) ...[
+                const SizedBox(height: 10),
+                _inputField(
+                  controller: _paymentServices.userNote,
+                  labelText: "Note",
+                  hintText: "குறிப்பு",
+                  icon: Icons.note_add,
                   keyboardType: TextInputType.text,
                 ),
+              ],
             ],
           ),
         ),
-        const SizedBox(height: 12),
-        RoundedLoading(
-          btnController: _paymentServices.btnController,
-          paddingLeft: 10.0,
-          paddingRight: 10.0,
-          paddingTop: 8.0,
-          buttonHeight: 44,
-          btnColor: kBlueColor,
-          buttonPressed: () {
-            _paymentServices.updatePaymentRecord(snapshot: widget.snapshot);
-          },
-        ),
+        const SizedBox(height: 16),
+        _buildSaveButton(context),
         const SizedBox(height: 20),
       ],
     );
@@ -337,37 +258,19 @@ class _EditPaymentState extends State<EditPayment> {
                     ),
                   ),
                 ),
-                IconButton(
-                  tooltip: 'Change date',
-                  onPressed: () {
-                    showCupertinoModalPopup(
-                        context: context,
-                        builder: (_) => DatePicker(
-                              onDateTimeChanged: (val) {
-                                setState(() {
-                                  _paymentServices.createDate = val;
-                                  _paymentServices.createRecordDate.text =
-                                      DateFormat('dd-MM-yyyy hh:mm a')
-                                          .format(val);
-                                });
-                              },
-                            ));
-                  },
-                  icon: const Icon(Icons.edit_calendar_rounded),
-                )
               ],
             ),
             const Divider(height: 24),
             Row(
               children: [
                 _infoChip(
-                  label: 'Recharge',
+                  label: 'ரீசார்ஜ் தொகை',
                   value: widget.snapshot['AMOUNT'],
                   color: Colors.green.shade700,
                 ),
                 const SizedBox(width: 8),
                 _infoChip(
-                  label: 'Paid',
+                  label: 'செலுத்தியது',
                   value: widget.snapshot['PAID_AMOUNT'],
                   color: Colors.orange.shade700,
                 ),
@@ -375,8 +278,8 @@ class _EditPaymentState extends State<EditPayment> {
                   const SizedBox(width: 8),
                   _infoChip(
                     label: widget.snapshot['BALANCE_AMOUNT'] != ''
-                        ? 'Balance'
-                        : 'Pending',
+                        ? 'கொடுமதி'
+                        : 'நிலுவை',
                     value: pendingOrBalance,
                     color: Colors.purple.shade700,
                   ),
@@ -390,26 +293,77 @@ class _EditPaymentState extends State<EditPayment> {
   }
 
   Widget _sectionCard({required String title, required Widget child}) {
-    return Card(
-      elevation: 1.5,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              title,
-              style: const TextStyle(
-                fontSize: 14,
-                fontFamily: 'TamilArima',
-                fontWeight: FontWeight.w700,
-                color: Colors.black87,
-              ),
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey.shade200),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 6),
+          )
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: const TextStyle(
+              fontFamily: 'TamilArima',
+              fontWeight: FontWeight.w700,
+              fontSize: 14,
             ),
-            const SizedBox(height: 10),
-            child,
-          ],
+          ),
+          const SizedBox(height: 10),
+          child,
+        ],
+      ),
+    );
+  }
+
+  Widget _inputField({
+    required TextEditingController controller,
+    required String labelText,
+    required String hintText,
+    required IconData icon,
+    TextInputType keyboardType = TextInputType.text,
+    bool readOnly = false,
+    ValueChanged<String>? onChanged,
+  }) {
+    return TextField(
+      controller: controller,
+      readOnly: readOnly,
+      onChanged: onChanged,
+      keyboardType: keyboardType,
+      style: const TextStyle(
+        fontFamily: 'TamilArima',
+        fontWeight: FontWeight.w600,
+        color: Colors.black87,
+      ),
+      decoration: InputDecoration(
+        labelText: labelText,
+        floatingLabelBehavior: FloatingLabelBehavior.always,
+        hintText: hintText,
+        hintStyle: const TextStyle(
+          fontFamily: 'TamilArima2',
+          color: Colors.black45,
+        ),
+        prefixIcon: Icon(icon, color: Colors.blueGrey.shade600),
+        filled: true,
+        fillColor: Colors.white,
+        contentPadding:
+            const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
+        enabledBorder: OutlineInputBorder(
+          borderSide: BorderSide(color: Colors.grey.shade300),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderSide: BorderSide(color: kPrimaryColor, width: 1.2),
+          borderRadius: BorderRadius.circular(12),
         ),
       ),
     );
@@ -493,85 +447,83 @@ class _EditPaymentState extends State<EditPayment> {
     );
   }
 
-  void calculatePending() {
-    int amount = _paymentServices.newGiveAmount.text != ''
-        ? int.parse(_paymentServices.newGiveAmount.text.trim())
+  Widget _buildSaveButton(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey.shade200),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 6),
+          )
+        ],
+      ),
+      child: SizedBox(
+        width: double.infinity,
+        child: RoundedLoading(
+          btnController: _paymentServices.btnController,
+          paddingLeft: 10.0,
+          paddingRight: 10.0,
+          paddingTop: 8.0,
+          buttonHeight: 44,
+          btnColor: kPrimaryColor,
+          elevation: 2.0,
+          label: "Save payment",
+          textStyle: const TextStyle(
+            fontSize: 16.0,
+            fontWeight: FontWeight.w700,
+            fontFamily: 'TamilArima',
+            color: Colors.white,
+          ),
+          buttonPressed: () async {
+            if (_paymentServices.newGiveAmount.text.trim().isNotEmpty) {
+              _recalculateFromAdditional();
+            }
+            _paymentServices.createDate = DateTime.now();
+            await _paymentServices.updatePaymentRecord(
+              snapshot: widget.snapshot,
+            );
+            if (!mounted) return;
+            Navigator.of(context).pop();
+          },
+        ),
+      ),
+    );
+  }
+
+  void _recalculateFromAdditional() {
+    final additional = _paymentServices.newGiveAmount.text.trim().isNotEmpty
+        ? int.tryParse(_paymentServices.newGiveAmount.text.trim()) ?? 0
         : 0;
+    final totalPaid = paidAmount + additional;
 
-    int give = paidAmount + amount;
-
-    if (recharge > give) {
+    if (recharge > totalPaid) {
       setState(() {
         _paymentServices.pending = true;
         _paymentServices.balance = false;
         _paymentServices.balanceAmount.clear();
-        _paymentServices.pendingAmount.text = (recharge - give).toString();
-        _paymentServices.newGiveAmount.text = give.toString();
+        _paymentServices.pendingAmount.text = (recharge - totalPaid).toString();
       });
-    } else if (recharge < give) {
+    } else if (recharge < totalPaid) {
       setState(() {
         _paymentServices.pending = false;
         _paymentServices.balance = true;
         _paymentServices.pendingAmount.clear();
         _paymentServices.pendingDate = null;
-        _paymentServices.balanceAmount.text = (give - recharge).toString();
-        _paymentServices.newGiveAmount.text = give.toString();
-      });
-    } else if (recharge == give) {
-      setState(() {
-        _paymentServices.pending = false;
-        _paymentServices.balance = false;
-        _paymentServices.pendingAmount.clear();
-        _paymentServices.balanceAmount.clear();
-        _paymentServices.pendingDate = null;
-        _paymentServices.newGiveAmount.text = give.toString();
+        _paymentServices.balanceAmount.text = (totalPaid - recharge).toString();
       });
     } else {
       setState(() {
         _paymentServices.pending = false;
         _paymentServices.balance = false;
-        _paymentServices.pendingDate = null;
         _paymentServices.pendingAmount.clear();
         _paymentServices.balanceAmount.clear();
-      });
-    }
-  }
-
-  void calculateBalance() {
-    int balance = widget.snapshot['BALANCE_AMOUNT'] != ''
-        ? int.parse(widget.snapshot['BALANCE_AMOUNT'].trim())
-        : 0;
-
-    int give = _paymentServices.newGiveAmount.text != ''
-        ? int.parse(_paymentServices.newGiveAmount.text.trim())
-        : 0;
-
-    if (balance > give) {
-      setState(() {
-        _paymentServices.pending = false;
-        _paymentServices.balance = true;
-        _paymentServices.pendingAmount.clear();
         _paymentServices.pendingDate = null;
-        _paymentServices.balanceAmount.text = (balance - give).toString();
       });
-    } else if (balance < give) {
-      setState(() {
-        _paymentServices.pending = false;
-        _paymentServices.balance = true;
-        _paymentServices.balanceAmount.clear();
-        _paymentServices.pendingDate = null;
-        _paymentServices.pendingAmount.text = (give - balance).toString();
-      });
-    } else if (balance == give) {
-      setState(() {
-        _paymentServices.pending = false;
-        _paymentServices.balance = false;
-        _paymentServices.pendingDate = null;
-        _paymentServices.pendingAmount.clear();
-        _paymentServices.balanceAmount.clear();
-      });
-    } else {
-      setState(() {});
     }
   }
 }

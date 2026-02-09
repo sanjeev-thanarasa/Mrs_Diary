@@ -1,11 +1,8 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:mrs_dth_diary_v1/scr/helpers/paymentService.dart';
-import 'package:mrs_dth_diary_v1/scr/widgets/CTextField.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/RoundedLoadingButton.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/SimpleCalc.dart';
-import 'package:mrs_dth_diary_v1/scr/widgets/datePicker.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/subHelpers/styles.dart';
 
 class CreatePayment extends StatefulWidget {
@@ -22,6 +19,7 @@ class CreatePayment extends StatefulWidget {
 
 class _CreatePaymentState extends State<CreatePayment> {
   final PaymentServices _paymentServices = PaymentServices();
+  bool _showNotes = false;
 
   @override
   void dispose() {
@@ -36,11 +34,6 @@ class _CreatePaymentState extends State<CreatePayment> {
         DateFormat('MM/dd/yyyy hh:mm a').format(DateTime.now());
     _paymentServices.createDate = DateTime.now();
     super.initState();
-  }
-
-  void _onRefresh() {
-    _paymentServices.clearRecords();
-    _paymentServices.btnController.reset();
   }
 
   @override
@@ -63,9 +56,9 @@ class _CreatePaymentState extends State<CreatePayment> {
         iconTheme: const IconThemeData(color: Colors.black),
         actions: [
           Padding(
-            padding: EdgeInsets.only(right: 8.0),
+            padding: const EdgeInsets.only(right: 8.0),
             child: IconButton(
-              icon: Icon(
+              icon: const Icon(
                 Icons.calculate_rounded,
                 size: 26.0,
                 color: Colors.black87,
@@ -92,142 +85,95 @@ class _CreatePaymentState extends State<CreatePayment> {
     );
   }
 
-  bool noteVisible = false;
-
   Widget _buildContentUI(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildHeaderCard(),
-        const SizedBox(height: 12),
         _sectionCard(
           title: "Payment details",
           child: Column(
             children: [
-              _fieldLabel("Record date"),
-              CustomTextField(
-                controller: _paymentServices.createRecordDate,
-                hintText: "Select date",
-                icon: Icons.date_range,
-                keyboardType: TextInputType.text,
-                readOnly: true,
-                iconButton: true,
-                animatedIconButtonStratIcon: Icons.date_range,
-                animatedIconButtonEndIcon: Icons.date_range_outlined,
-                animatedIconButtonOnTap: () {
-                  showCupertinoModalPopup(
-                      context: context,
-                      builder: (_) => DatePicker(
-                            onDateTimeChanged: (val) {
-                              setState(() {
-                                _paymentServices.createDate = val;
-                                _paymentServices.createRecordDate.text =
-                                    DateFormat('MM/dd/yyyy hh:mm a')
-                                        .format(val);
-                              });
-                            },
-                          ));
-                },
-              ),
-              const SizedBox(height: 10),
-              _fieldLabel("Package name"),
-              CustomTextField(
+              _inputField(
                 controller: _paymentServices.packageName,
-                hintText: "Recharge Package Name",
+                labelText: "Package name",
+                hintText: "பேக்கேஜ் பெயர்",
                 icon: Icons.live_tv_rounded,
                 keyboardType: TextInputType.text,
               ),
               const SizedBox(height: 10),
-              _fieldLabel("Recharge amount"),
-              CustomTextField(
+              _inputField(
                 controller: _paymentServices.rechargeAmount,
-                hintText: "Recharge செய்த தொகை",
+                labelText: "Package amount",
+                hintText: "பேக்கேஜ் தொகை",
                 icon: Icons.mobile_friendly_sharp,
                 keyboardType: TextInputType.number,
+                onChanged: (_) => _calculateBalance(),
               ),
               const SizedBox(height: 10),
-              _fieldLabel("Paid amount"),
-              CustomTextField(
+              _inputField(
                 controller: _paymentServices.giveAmount,
-                hintText: "தந்த பணம்",
+                labelText: "Paid amount",
+                hintText: "கொடுத்த பணம்",
                 icon: Icons.monetization_on,
                 keyboardType: TextInputType.number,
-                animatedIconButtonStratIcon: Icons.done,
-                animatedIconButtonEndIcon: Icons.done_all_rounded,
-                iconButton: true,
-                animatedIconButtonOnTap: _calculateBalance,
+                onChanged: (_) => _calculateBalance(),
               ),
             ],
           ),
         ),
         const SizedBox(height: 12),
         _sectionCard(
-          title: "Status",
+          title: "நிலை",
           child: Column(
             children: [
               if (_paymentServices.pending)
                 _statusTile(
-                  title: "தருமதி பணம்",
+                  title: "நிலுவை தொகை",
                   value: _paymentServices.pendingAmount.text,
                   color: Colors.orange.shade700,
                 ),
               if (_paymentServices.balance)
                 _statusTile(
-                  title: "கொடுமதி பணம்",
+                  title: "கொடுமதி தொகை",
                   value: _paymentServices.balanceAmount.text,
                   color: Colors.green.shade700,
                 ),
               if (_paymentServices.pending) ...[
                 const SizedBox(height: 10),
-                _fieldLabel("Pending date"),
-                CustomTextField(
+                _inputField(
                   readOnly: true,
                   controller: _paymentServices.pendingDateController,
-                  hintText: "தருமதி திகதி",
+                  labelText: "நிலுவை திகதி",
+                  hintText: "நிலுவை திகதி",
                   icon: Icons.update,
                   keyboardType: TextInputType.text,
-                  iconButton: true,
-                  animatedIconButtonStratIcon: Icons.date_range,
-                  animatedIconButtonOnTap: () {
-                    showCupertinoModalPopup(
-                        context: context,
-                        builder: (_) => DatePicker(
-                              onDateTimeChanged: (val) {
-                                setState(() {
-                                  _paymentServices.pendingDate = val;
-                                  _paymentServices.pendingDateController.text =
-                                      DateFormat('MM/dd/yyyy hh:mm a')
-                                          .format(val);
-                                });
-                              },
-                            ));
+                  onTap: () {
+                    _pickDate(
+                      onSelected: (val) {
+                        _paymentServices.pendingDate = val;
+                        _paymentServices.pendingDateController.text =
+                            DateFormat('dd-MM-yyyy').format(val);
+                      },
+                    );
                   },
                 ),
               ],
               const SizedBox(height: 10),
-              _fieldLabel("Expired date"),
-              CustomTextField(
+              _inputField(
                 controller: _paymentServices.expiredDateController,
-                hintText: "முடியும் திகதி",
+                labelText: "Package end date",
+                hintText: "பேக்கேஜ் முடியும் திகதி",
                 icon: Icons.date_range,
                 keyboardType: TextInputType.text,
                 readOnly: true,
-                iconButton: true,
-                animatedIconButtonStratIcon: Icons.date_range,
-                animatedIconButtonEndIcon: Icons.date_range_outlined,
-                animatedIconButtonOnTap: () {
-                  showCupertinoModalPopup(
-                      context: context,
-                      builder: (_) => DatePicker(
-                            onDateTimeChanged: (val) {
-                              setState(() {
-                                _paymentServices.expiredDate = val;
-                                _paymentServices.expiredDateController.text =
-                                    DateFormat('MM/dd/yyyy hh:mm a')
-                                        .format(val);
-                              });
-                            },
-                          ));
+                onTap: () {
+                  _pickDate(
+                    onSelected: (val) {
+                      _paymentServices.expiredDate = val;
+                      _paymentServices.expiredDateController.text =
+                          DateFormat('dd-MM-yyyy').format(val);
+                    },
+                  );
                 },
               ),
             ],
@@ -235,32 +181,39 @@ class _CreatePaymentState extends State<CreatePayment> {
         ),
         const SizedBox(height: 12),
         _sectionCard(
-          title: "Notes",
+          title: "Note",
           child: Column(
             children: [
-              _fieldLabel("Note"),
-              CustomTextField(
-                controller: _paymentServices.userNote,
-                hintText: "குறிப்பு",
-                icon: Icons.note_add,
-                keyboardType: TextInputType.text,
-                iconButton: true,
-                animatedIconButtonStratIcon: Icons.add_circle_outline_rounded,
-                animatedIconButtonEndIcon:
-                    Icons.indeterminate_check_box_outlined,
-                animatedIconButtonOnTap: () =>
-                    setState(() => noteVisible = !noteVisible),
+              Row(
+                children: [
+                  const Expanded(
+                    child: Text(
+                      "Add note",
+                      style: TextStyle(
+                        fontFamily: 'TamilArima2',
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black54,
+                      ),
+                    ),
+                  ),
+                  Switch(
+                    value: _showNotes,
+                    activeColor: kPrimaryColor,
+                    onChanged: (val) => setState(() => _showNotes = val),
+                  ),
+                ],
               ),
-              if (noteVisible) ...[
+              if (_showNotes) ...[
                 const SizedBox(height: 10),
-                _fieldLabel("Note 2"),
-                CustomTextField(
-                  controller: _paymentServices.userNote2,
-                  hintText: "குறிப்பு 2 ",
-                  icon: Icons.note_add_outlined,
+                _inputField(
+                  controller: _paymentServices.userNote,
+                  labelText: "Note",
+                  hintText: "குறிப்பு",
+                  icon: Icons.note_add,
                   keyboardType: TextInputType.text,
                 ),
-              ]
+              ],
             ],
           ),
         ),
@@ -270,14 +223,32 @@ class _CreatePaymentState extends State<CreatePayment> {
     );
   }
 
+  Future<void> _pickDate({required ValueChanged<DateTime> onSelected}) async {
+    final now = DateTime.now();
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: now,
+      firstDate: DateTime(now.year - 5),
+      lastDate: DateTime(now.year + 5),
+    );
+    if (picked == null) return;
+    setState(() => onSelected(picked));
+  }
+
   void _calculateBalance() {
     final rechargeText = _paymentServices.rechargeAmount.text.trim();
     final giveText = _paymentServices.giveAmount.text.trim();
     if (rechargeText.isEmpty || giveText.isEmpty) {
+      setState(() {
+        _paymentServices.pending = false;
+        _paymentServices.balance = false;
+        _paymentServices.pendingAmount.clear();
+        _paymentServices.balanceAmount.clear();
+      });
       return;
     }
-    final recharge = int.tryParse(rechargeText) ?? 0;
-    final give = int.tryParse(giveText) ?? 0;
+    final recharge = _parseAmount(rechargeText);
+    final give = _parseAmount(giveText);
 
     if (recharge > give) {
       setState(() {
@@ -302,67 +273,16 @@ class _CreatePaymentState extends State<CreatePayment> {
     }
   }
 
-  Widget _buildHeaderCard() {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.shade200),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 12,
-            offset: const Offset(0, 8),
-          )
-        ],
-      ),
-      child: Row(
-        children: [
-          CircleAvatar(
-            radius: 28,
-            backgroundColor: kPrimaryColor.withValues(alpha: 0.12),
-            child: const Icon(Icons.payments_rounded, color: kPrimaryColor),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: const [
-                Text(
-                  "New payment",
-                  style: TextStyle(
-                    fontFamily: 'TamilArima',
-                    fontWeight: FontWeight.w700,
-                    fontSize: 16,
-                  ),
-                ),
-                SizedBox(height: 4),
-                Text(
-                  "Create payment record",
-                  style: TextStyle(
-                    fontFamily: 'TamilArima2',
-                    color: Colors.black54,
-                    fontSize: 12,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          IconButton(
-            onPressed: _onRefresh,
-            icon: const Icon(Icons.refresh_rounded),
-          )
-        ],
-      ),
-    );
+  int _parseAmount(String value) {
+    final cleaned = value.replaceAll(RegExp(r'[^0-9]'), '');
+    return int.tryParse(cleaned) ?? 0;
   }
 
   Widget _sectionCard({required String title, required Widget child}) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: const Color(0xFFF8FAFC),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: Colors.grey.shade200),
         boxShadow: [
@@ -401,6 +321,52 @@ class _CreatePaymentState extends State<CreatePayment> {
           fontSize: 12,
           fontWeight: FontWeight.w600,
           color: Colors.black54,
+        ),
+      ),
+    );
+  }
+
+  Widget _inputField({
+    required TextEditingController controller,
+    required String labelText,
+    required String hintText,
+    required IconData icon,
+    TextInputType keyboardType = TextInputType.text,
+    bool readOnly = false,
+    VoidCallback? onTap,
+    ValueChanged<String>? onChanged,
+  }) {
+    return TextField(
+      controller: controller,
+      readOnly: readOnly,
+      onTap: onTap,
+      onChanged: onChanged,
+      keyboardType: keyboardType,
+      style: const TextStyle(
+        fontFamily: 'TamilArima',
+        fontWeight: FontWeight.w600,
+        color: Colors.black87,
+      ),
+      decoration: InputDecoration(
+        labelText: labelText,
+        floatingLabelBehavior: FloatingLabelBehavior.always,
+        hintText: hintText,
+        hintStyle: const TextStyle(
+          fontFamily: 'TamilArima2',
+          color: Colors.black45,
+        ),
+        prefixIcon: Icon(icon, color: Colors.blueGrey.shade600),
+        filled: true,
+        fillColor: Colors.white,
+        contentPadding:
+            const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
+        enabledBorder: OutlineInputBorder(
+          borderSide: BorderSide(color: Colors.grey.shade300),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderSide: BorderSide(color: kPrimaryColor, width: 1.2),
+          borderRadius: BorderRadius.circular(12),
         ),
       ),
     );
@@ -472,7 +438,7 @@ class _CreatePaymentState extends State<CreatePayment> {
           paddingRight: 10.0,
           paddingTop: 8.0,
           buttonHeight: 44,
-          btnColor: kBlueLight,
+          btnColor: kPrimaryColor,
           elevation: 2.0,
           label: "Save payment",
           textStyle: const TextStyle(
@@ -482,10 +448,22 @@ class _CreatePaymentState extends State<CreatePayment> {
             color: Colors.white,
           ),
           buttonPressed: () {
-            _paymentServices.createPaymentRecord(userId: widget.userId);
+            _savePayment();
           },
         ),
       ),
     );
+  }
+
+  Future<void> _savePayment() async {
+    final success = await _paymentServices.createPaymentRecord(
+      userId: widget.userId,
+    );
+    if (!mounted) return;
+    if (success) {
+      Navigator.of(context).pop();
+    } else {
+      _paymentServices.btnController.reset();
+    }
   }
 }

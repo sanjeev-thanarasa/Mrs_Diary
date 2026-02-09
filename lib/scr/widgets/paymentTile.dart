@@ -38,9 +38,31 @@ class _PaymentContainerListTileState extends State<PaymentContainerListTile>
     final pendingAmount = _field(data['PENDING_AMOUNT']);
     final pendingDate = data['PENDING_DATE'];
     final balanceAmount = _field(data['BALANCE_AMOUNT']);
+    final history = (data['PAYMENT_HISTORY'] as List?) ?? [];
     final expiredAt = data['EXPIRED_AT'];
     final userNote = _field(data['USER_NOTE']);
     final userNote2 = _field(data['USER_NOTE2']);
+    final status = _resolveStatus(
+      amount: amount,
+      paidAmount: paidAmount,
+      pendingAmount: pendingAmount,
+      balanceAmount: balanceAmount,
+    );
+    final statusStyle = _resolveStatusStyle(
+      amount: amount,
+      paidAmount: paidAmount,
+      pendingAmount: pendingAmount,
+      balanceAmount: balanceAmount,
+    );
+    final amountValue = _parseAmount(amount);
+    final paidValue = _parseAmount(paidAmount);
+    final pendingValue = _parseAmount(pendingAmount);
+    final balanceValue = _parseAmount(balanceAmount);
+    final hasBalance = balanceValue > 0;
+    final isCompleted = amountValue > 0 &&
+        paidValue >= amountValue &&
+        pendingValue <= 0 &&
+        balanceValue <= 0;
 
     return GestureDetector(
       onLongPress: () => _showDeleteDialog(context),
@@ -57,9 +79,10 @@ class _PaymentContainerListTileState extends State<PaymentContainerListTile>
         child: Container(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(rs.r(18)),
-            color: const Color(0xffF5FAFF),
+            color: statusStyle?.backgroundColor ?? const Color(0xffF5FAFF),
             border: Border.all(
-              color: kPrimaryLightColor.withValues(alpha: 0.6),
+              color: (statusStyle?.color ?? kPrimaryLightColor)
+                  .withValues(alpha: 0.35),
             ),
           ),
           child: Column(
@@ -70,8 +93,8 @@ class _PaymentContainerListTileState extends State<PaymentContainerListTile>
                   Padding(
                     padding: EdgeInsets.all(rs.r(14)),
                     child: _StatusBadge(
-                      pendingAmount: pendingAmount,
-                      balanceAmount: balanceAmount,
+                      icon: statusStyle?.icon ?? Icons.info_rounded,
+                      color: statusStyle?.color ?? kBlueColor,
                     ),
                   ),
                   Padding(
@@ -82,9 +105,6 @@ class _PaymentContainerListTileState extends State<PaymentContainerListTile>
                       children: <Widget>[
                         Row(
                           children: [
-                            Image.asset("assets/images/dish.png",
-                                height: rs.r(26), width: rs.r(26)),
-                            SizedBox(width: rs.rw(6)),
                             CText(
                               msg:
                                   packageName.isEmpty ? "No Name" : packageName,
@@ -132,9 +152,6 @@ class _PaymentContainerListTileState extends State<PaymentContainerListTile>
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Icon(Icons.payments_rounded,
-                                      color: kBlueLight, size: rs.r(18)),
-                                  SizedBox(width: rs.rw(6)),
                                   CText(
                                     msg: "Rs.${amount.isEmpty ? "0" : amount}",
                                     size: rs.sp(15),
@@ -145,19 +162,18 @@ class _PaymentContainerListTileState extends State<PaymentContainerListTile>
                               ),
                             ),
                           ),
-                          IconButton(
-                            icon: Icon(
-                              tileVisible
-                                  ? Icons.expand_less_rounded
-                                  : Icons.expand_more_rounded,
-                              color: mainBlue,
+                          if (status != null)
+                            Padding(
+                              padding: EdgeInsets.only(
+                                right: rs.rw(8),
+                                bottom: rs.rh(6),
+                              ),
+                              child: _StatusChip(
+                                label: status.label,
+                                value: status.value,
+                                color: status.color,
+                              ),
                             ),
-                            onPressed: () {
-                              setState(() {
-                                tileVisible = !tileVisible;
-                              });
-                            },
-                          )
                         ],
                       ),
                     ),
@@ -197,33 +213,49 @@ class _PaymentContainerListTileState extends State<PaymentContainerListTile>
                                     size: rs.sp(15),
                                     weight: FontWeight.w700,
                                   ),
-                                  GestureDetector(
-                                    onTap: () => changeScreen(
-                                      context,
-                                      EditPayment(
-                                        snapshot: widget.snapshot,
-                                        userId: widget.snapshot.id,
+                                  if (!isCompleted && !hasBalance)
+                                    GestureDetector(
+                                      onTap: () {
+                                        if (balanceAmount.isNotEmpty) {
+                                          ScaffoldMessenger.of(context)
+                                              .showSnackBar(
+                                            const SnackBar(
+                                              content: Text(
+                                                  'Balance amount exists. Create next payment to adjust.'),
+                                              behavior:
+                                                  SnackBarBehavior.floating,
+                                            ),
+                                          );
+                                          return;
+                                        }
+                                        changeScreen(
+                                          context,
+                                          EditPayment(
+                                            snapshot: widget.snapshot,
+                                            userId: widget.snapshot.id,
+                                          ),
+                                        );
+                                      },
+                                      child: Row(
+                                        children: [
+                                          Icon(Icons.edit_rounded,
+                                              size: rs.r(16),
+                                              color: kBlueColor),
+                                          SizedBox(width: rs.rw(4)),
+                                          CText(
+                                            msg: "Add Payment",
+                                            size: rs.sp(12),
+                                            color: kBlueColor,
+                                          ),
+                                        ],
                                       ),
                                     ),
-                                    child: Row(
-                                      children: [
-                                        Icon(Icons.edit_rounded,
-                                            size: rs.r(16), color: kBlueColor),
-                                        SizedBox(width: rs.rw(4)),
-                                        CText(
-                                          msg: "Edit",
-                                          size: rs.sp(12),
-                                          color: kBlueColor,
-                                        ),
-                                      ],
-                                    ),
-                                  ),
                                 ],
                               ),
                               Divider(height: rs.rh(16)),
                               _DetailRow(
                                 icon: Icons.payments_rounded,
-                                label: 'Paid amount',
+                                label: 'செலுத்திய தொகை',
                                 value:
                                     'Rs.${paidAmount.isEmpty ? "0" : paidAmount}',
                                 color: const Color(0xff2E7D32),
@@ -231,14 +263,14 @@ class _PaymentContainerListTileState extends State<PaymentContainerListTile>
                               if (pendingAmount.isNotEmpty)
                                 _DetailRow(
                                   icon: Icons.schedule_rounded,
-                                  label: 'Pending amount',
+                                  label: 'நிலுவை தொகை',
                                   value: 'Rs.$pendingAmount',
                                   color: const Color(0xffAF0069),
                                 ),
                               if (pendingDate != null)
                                 _DetailRow(
                                   icon: Icons.event_rounded,
-                                  label: 'Pending date',
+                                  label: 'நிலுவை தேதி',
                                   value: _formatDate(pendingDate),
                                   color: const Color(0xff09015f),
                                 ),
@@ -252,7 +284,7 @@ class _PaymentContainerListTileState extends State<PaymentContainerListTile>
                               if (expiredAt != null)
                                 _DetailRow(
                                   icon: Icons.event_busy_rounded,
-                                  label: 'Expired date',
+                                  label: 'காலாவதி தேதி',
                                   value: _formatDate(expiredAt),
                                   color: const Color(0xff09015f),
                                 ),
@@ -270,6 +302,56 @@ class _PaymentContainerListTileState extends State<PaymentContainerListTile>
                                   value: userNote2,
                                   color: const Color(0xffff884b),
                                 ),
+                              if (history.isNotEmpty) ...[
+                                Divider(height: rs.rh(20)),
+                                Text(
+                                  'Payment history',
+                                  style: TextStyle(
+                                    fontSize: rs.sp(13),
+                                    fontWeight: FontWeight.w700,
+                                    color: kIndigoLight,
+                                  ),
+                                ),
+                                SizedBox(height: rs.rh(8)),
+                                ...history.reversed.map((entry) {
+                                  final map = entry is Map<String, dynamic>
+                                      ? entry
+                                      : <String, dynamic>{};
+                                  final paidAt = map['PAID_AT'];
+                                  final paidValue =
+                                      _field(map['AMOUNT']).isEmpty
+                                          ? '0'
+                                          : _field(map['AMOUNT']);
+                                  return Padding(
+                                    padding: EdgeInsets.only(bottom: rs.rh(6)),
+                                    child: Row(
+                                      children: [
+                                        Icon(Icons.payments_rounded,
+                                            size: rs.r(14), color: kBlueColor),
+                                        SizedBox(width: rs.rw(6)),
+                                        Expanded(
+                                          child: Text(
+                                            _formatDate(paidAt),
+                                            style: TextStyle(
+                                              fontSize: rs.sp(12),
+                                              color: Colors.black54,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                        ),
+                                        Text(
+                                          'Rs.$paidValue',
+                                          style: TextStyle(
+                                            fontSize: rs.sp(12),
+                                            fontWeight: FontWeight.w700,
+                                            color: kIndigoDark,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                }).toList(),
+                              ],
                             ],
                           ),
                         ),
@@ -406,33 +488,162 @@ class _PaymentContainerListTileState extends State<PaymentContainerListTile>
       deleteProduct(id: widget.snapshot.id, collectionName: "PaymentRecords");
     }
   }
+
+  _StatusInfo? _resolveStatus({
+    required String amount,
+    required String paidAmount,
+    required String pendingAmount,
+    required String balanceAmount,
+  }) {
+    final amountValue = _parseAmount(amount);
+    final paidValue = _parseAmount(paidAmount);
+    final pendingValue = _parseAmount(pendingAmount);
+    final balanceValue = _parseAmount(balanceAmount);
+
+    if (balanceValue > 0) {
+      return _StatusInfo(
+        label: 'கொடுமதி',
+        value: balanceValue,
+        color: Colors.orange,
+      );
+    }
+    if (pendingValue > 0 || (amountValue > 0 && paidValue < amountValue)) {
+      return _StatusInfo(
+        label: 'நிலுவை',
+        value: pendingValue > 0
+            ? pendingValue
+            : (amountValue - paidValue).clamp(0, double.infinity),
+        color: Colors.redAccent,
+      );
+    }
+    if (amountValue > 0 && paidValue >= amountValue) {
+      return _StatusInfo(
+        label: 'முடிந்தது',
+        value: paidValue,
+        color: Colors.green,
+      );
+    }
+    return null;
+  }
+
+  _StatusStyle? _resolveStatusStyle({
+    required String amount,
+    required String paidAmount,
+    required String pendingAmount,
+    required String balanceAmount,
+  }) {
+    final amountValue = _parseAmount(amount);
+    final paidValue = _parseAmount(paidAmount);
+    final pendingValue = _parseAmount(pendingAmount);
+    final balanceValue = _parseAmount(balanceAmount);
+
+    if (balanceValue > 0) {
+      return _StatusStyle(
+        icon: Icons.account_balance_wallet_rounded,
+        color: Colors.orange,
+        backgroundColor: Colors.orange.withValues(alpha: 0.08),
+      );
+    }
+    if (pendingValue > 0 || (amountValue > 0 && paidValue < amountValue)) {
+      return _StatusStyle(
+        icon: Icons.schedule_rounded,
+        color: Colors.redAccent,
+        backgroundColor: Colors.redAccent.withValues(alpha: 0.08),
+      );
+    }
+    if (amountValue > 0 && paidValue >= amountValue) {
+      return _StatusStyle(
+        icon: Icons.check_circle_rounded,
+        color: Colors.green,
+        backgroundColor: Colors.green.withValues(alpha: 0.08),
+      );
+    }
+    return null;
+  }
+
+  double _parseAmount(String value) {
+    if (value.isEmpty) return 0;
+    final text = value
+        .replaceAll('Rs.', '')
+        .replaceAll('Rs', '')
+        .replaceAll(',', '')
+        .trim();
+    return double.tryParse(text) ?? 0;
+  }
 }
 
-class _StatusBadge extends StatelessWidget {
-  final String pendingAmount;
-  final String balanceAmount;
+class _StatusInfo {
+  final String label;
+  final double value;
+  final Color color;
 
-  const _StatusBadge({
-    required this.pendingAmount,
-    required this.balanceAmount,
+  const _StatusInfo({
+    required this.label,
+    required this.value,
+    required this.color,
+  });
+}
+
+class _StatusStyle {
+  final IconData icon;
+  final Color color;
+  final Color backgroundColor;
+
+  const _StatusStyle({
+    required this.icon,
+    required this.color,
+    required this.backgroundColor,
+  });
+}
+
+class _StatusChip extends StatelessWidget {
+  final String label;
+  final double value;
+  final Color color;
+
+  const _StatusChip({
+    required this.label,
+    required this.value,
+    required this.color,
   });
 
   @override
   Widget build(BuildContext context) {
     final rs = context.rs;
-    final hasPending = pendingAmount.isNotEmpty;
-    final hasBalance = balanceAmount.isNotEmpty;
-    final icon = hasPending
-        ? Icons.error_rounded
-        : hasBalance
-            ? Icons.info_rounded
-            : Icons.check_circle_rounded;
-    final color = hasPending
-        ? Colors.redAccent
-        : hasBalance
-            ? Colors.orange
-            : Colors.green;
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: rs.rw(8),
+        vertical: rs.rh(4),
+      ),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(rs.r(10)),
+      ),
+      child: Text(
+        '$label Rs.${value.toStringAsFixed(0)}',
+        style: TextStyle(
+          fontSize: rs.sp(11),
+          fontWeight: FontWeight.w700,
+          color: color,
+          fontFamily: 'TamilArima2',
+        ),
+      ),
+    );
+  }
+}
 
+class _StatusBadge extends StatelessWidget {
+  final IconData icon;
+  final Color color;
+
+  const _StatusBadge({
+    required this.icon,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final rs = context.rs;
     return Container(
       height: rs.r(40),
       width: rs.r(40),

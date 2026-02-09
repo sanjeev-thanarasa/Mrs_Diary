@@ -26,6 +26,7 @@ class _TotalPendingUsersState extends State<TotalPendingUsers> {
   final ScrollController _controller = ScrollController();
 
   final List<_UserEntry> _entries = [];
+  final Set<String> _seenUserIds = {};
   QueryDocumentSnapshot<Object?>? _lastPaymentDoc;
   bool _isLoading = true;
   bool _isLoadingMore = false;
@@ -61,6 +62,7 @@ class _TotalPendingUsersState extends State<TotalPendingUsers> {
       _isLoading = true;
       _hasMore = true;
       _entries.clear();
+      _seenUserIds.clear();
       _lastPaymentDoc = null;
     });
 
@@ -122,8 +124,12 @@ class _TotalPendingUsersState extends State<TotalPendingUsers> {
     for (final payment in paymentDocs) {
       final paymentData = payment.data() as Map<String, dynamic>;
       final userId = paymentData["USER_ID"];
-      final userDoc = userId is String ? userMap[userId] : null;
+      if (userId is! String || _seenUserIds.contains(userId)) {
+        continue;
+      }
+      final userDoc = userMap[userId];
       if (userDoc != null) {
+        _seenUserIds.add(userId);
         _entries.add(_UserEntry(
           userDoc,
           pendingAmount: paymentData["PENDING_AMOUNT"],

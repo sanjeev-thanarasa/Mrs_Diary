@@ -29,6 +29,7 @@ class _TodayPaymentNotificationsState extends State<TodayPaymentNotifications> {
   final ScrollController _controller = ScrollController();
 
   final List<_NotificationEntry> _entries = [];
+  final List<_NotificationEntry> _expiredEntries = [];
   QueryDocumentSnapshot<Object?>? _lastPaymentDoc;
   bool _isLoading = true;
   bool _isLoadingMore = false;
@@ -66,6 +67,7 @@ class _TodayPaymentNotificationsState extends State<TodayPaymentNotifications> {
       _isLoading = true;
       _hasMore = true;
       _entries.clear();
+      _expiredEntries.clear();
       _lastPaymentDoc = null;
     });
 
@@ -78,9 +80,21 @@ class _TodayPaymentNotificationsState extends State<TodayPaymentNotifications> {
     final snapshot = await query.get();
     if (!mounted) return;
 
-    await _appendEntries(snapshot.docs);
+    await _appendEntries(snapshot.docs, _entries, badgeLabel: 'Due');
     _lastPaymentDoc = snapshot.docs.isNotEmpty ? snapshot.docs.last : null;
     _hasMore = snapshot.docs.length == _pageSize;
+
+    final expiredQuery = paymentRecords
+        .where("EXPIRED_AT", isGreaterThan: _dateTodayStart)
+        .where("EXPIRED_AT", isLessThanOrEqualTo: _dateTodayEnd)
+        .orderBy("EXPIRED_AT")
+        .limit(_pageSize);
+
+    final expiredSnapshot = await expiredQuery.get();
+    if (!mounted) return;
+
+    await _appendEntries(expiredSnapshot.docs, _expiredEntries,
+        badgeLabel: 'Ends');
 
     setState(() {
       _isLoading = false;
@@ -103,7 +117,7 @@ class _TodayPaymentNotificationsState extends State<TodayPaymentNotifications> {
     final snapshot = await query.get();
     if (!mounted) return;
 
-    await _appendEntries(snapshot.docs);
+    await _appendEntries(snapshot.docs, _entries, badgeLabel: 'Due');
     if (snapshot.docs.isNotEmpty) {
       _lastPaymentDoc = snapshot.docs.last;
     }
@@ -115,7 +129,10 @@ class _TodayPaymentNotificationsState extends State<TodayPaymentNotifications> {
   }
 
   Future<void> _appendEntries(
-      List<QueryDocumentSnapshot<Object?>> paymentDocs) async {
+    List<QueryDocumentSnapshot<Object?>> paymentDocs,
+    List<_NotificationEntry> target, {
+    required String badgeLabel,
+  }) async {
     if (paymentDocs.isEmpty) return;
 
     final ids = paymentDocs
@@ -131,10 +148,11 @@ class _TodayPaymentNotificationsState extends State<TodayPaymentNotifications> {
       final userId = paymentData["USER_ID"];
       final userDoc = userId is String ? userMap[userId] : null;
       if (userDoc != null) {
-        _entries.add(_NotificationEntry(
+        target.add(_NotificationEntry(
           user: userDoc,
           paymentId: payment.id,
           payment: paymentData,
+          badgeLabel: badgeLabel,
         ));
       }
     }
@@ -167,7 +185,7 @@ class _TodayPaymentNotificationsState extends State<TodayPaymentNotifications> {
       appBar: AppBar(
         titleSpacing: 11,
         title: Text(
-          "Today's payment notifications",
+          "Notifications",
           style: TextStyle(fontWeight: FontWeight.w700, color: Colors.black87),
         ),
         backgroundColor: Colors.white,
@@ -176,9 +194,9 @@ class _TodayPaymentNotificationsState extends State<TodayPaymentNotifications> {
       ),
       body: _isLoading
           ? const LoadingShimmerList()
-          : _entries.isEmpty
+          : _entries.isEmpty && _expiredEntries.isEmpty
               ? SearchNoData()
-              : ListView.builder(
+              : ListView(
                   controller: _controller,
                   padding: EdgeInsets.fromLTRB(
                     rs.rw(12),
@@ -186,30 +204,57 @@ class _TodayPaymentNotificationsState extends State<TodayPaymentNotifications> {
                     rs.rw(12),
                     rs.rh(16),
                   ),
-                  itemCount: _entries.length + (_isLoadingMore ? 1 : 0),
-                  itemBuilder: (_, index) {
-                    if (index >= _entries.length) {
-                      return const Padding(
+                  children: [
+                    _SectionHeader(title: "இன்று பணம் தர வேண்டியவர்கள்"),
+                    if (_entries.isEmpty)
+                      _EmptyNotice(text: "No due payments today")
+                    else
+                      ..._entries.asMap().entries.map((item) {
+                        final index = item.key;
+                        final entry = item.value;
+                        return Dismissible(
+                          key: ValueKey(
+                              "${entry.user.id}-${entry.paymentId}-$index"),
+                          direction: DismissDirection.endToStart,
+                          background: _DismissBackground(),
+                          confirmDismiss: (_) => _confirmRemove(context),
+                          onDismissed: (_) {
+                            setState(() {
+                              _entries.removeAt(index);
+                            });
+                          },
+                          child: _NotificationTile(entry: entry),
+                        );
+                      }),
+                    if (_isLoadingMore)
+                      const Padding(
                         padding: EdgeInsets.symmetric(vertical: 12),
                         child: LoadingCircle(),
-                      );
-                    }
-
-                    final entry = _entries[index];
-                    return Dismissible(
-                      key: ValueKey(
-                          "${entry.user.id}-${entry.paymentId}-$index"),
-                      direction: DismissDirection.endToStart,
-                      background: _DismissBackground(),
-                      confirmDismiss: (_) => _confirmRemove(context),
-                      onDismissed: (_) {
-                        setState(() {
-                          _entries.removeAt(index);
-                        });
-                      },
-                      child: _NotificationTile(entry: entry),
-                    );
-                  },
+                      ),
+                    SizedBox(height: rs.rh(8)),
+                    _SectionHeader(
+                        title: "இன்று ரீசார்ஜ் முடியும் வாடிக்கையாளர்கள்"),
+                    if (_expiredEntries.isEmpty)
+                      _EmptyNotice(text: "No expiries today")
+                    else
+                      ..._expiredEntries.asMap().entries.map((item) {
+                        final index = item.key;
+                        final entry = item.value;
+                        return Dismissible(
+                          key: ValueKey(
+                              "expired-${entry.user.id}-${entry.paymentId}-$index"),
+                          direction: DismissDirection.endToStart,
+                          background: _DismissBackground(),
+                          confirmDismiss: (_) => _confirmRemove(context),
+                          onDismissed: (_) {
+                            setState(() {
+                              _expiredEntries.removeAt(index);
+                            });
+                          },
+                          child: _NotificationTile(entry: entry),
+                        );
+                      }),
+                  ],
                 ),
     );
   }
@@ -240,11 +285,13 @@ class _NotificationEntry {
   final QueryDocumentSnapshot<Object?> user;
   final String paymentId;
   final Map<String, dynamic> payment;
+  final String badgeLabel;
 
   _NotificationEntry({
     required this.user,
     required this.paymentId,
     required this.payment,
+    required this.badgeLabel,
   });
 }
 
@@ -372,7 +419,7 @@ class _NotificationTile extends StatelessWidget {
               child: Column(
                 children: [
                   CText(
-                    msg: 'Due',
+                    msg: entry.badgeLabel,
                     size: rs.sp(11),
                     color: kPrimaryColor,
                   ),
@@ -407,6 +454,52 @@ class _DismissBackground extends StatelessWidget {
         Icons.delete_rounded,
         color: Colors.redAccent,
         size: rs.r(22),
+      ),
+    );
+  }
+}
+
+class _SectionHeader extends StatelessWidget {
+  final String title;
+
+  const _SectionHeader({required this.title});
+
+  @override
+  Widget build(BuildContext context) {
+    final rs = context.rs;
+    return Padding(
+      padding: EdgeInsets.only(bottom: rs.rh(6), top: rs.rh(10)),
+      child: Text(
+        title,
+        style: TextStyle(
+          fontSize: rs.sp(14),
+          fontWeight: FontWeight.w700,
+          color: kIndigoDark,
+          fontFamily: 'TamilArima',
+        ),
+      ),
+    );
+  }
+}
+
+class _EmptyNotice extends StatelessWidget {
+  final String text;
+
+  const _EmptyNotice({required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    final rs = context.rs;
+    return Padding(
+      padding: EdgeInsets.only(bottom: rs.rh(8)),
+      child: Text(
+        text,
+        style: TextStyle(
+          fontSize: rs.sp(12),
+          color: Colors.black54,
+          fontFamily: 'TamilArima2',
+          fontWeight: FontWeight.w600,
+        ),
       ),
     );
   }

@@ -22,8 +22,6 @@ class USerServices {
   TextEditingController expiredDateController = TextEditingController();
   TextEditingController createAtDateController = TextEditingController();
 
-  String? profileImageUrl;
-
   DateTime? registerDate;
   DateTime? expiredDate;
   DateTime? createAt;
@@ -59,7 +57,6 @@ class USerServices {
       "mobileNo2": mobileController1.text,
       "dishNumber": dishNumberController.text,
       "dishType": selectedDishType,
-      "profileImageUrl": profileImageUrl,
       "createAt": DateTime.now(),
       "NoteList": false,
       "BlackList": false,
@@ -74,7 +71,6 @@ class USerServices {
       "dishNumber": dishNumberController.text,
       "dishType": selectedDishType,
       "shopName": shopController.text,
-      "profileImageUrl": profileImageUrl,
       "createAt": DateTime.now(),
       "registerDate": registerDate,
       "expiredDate": expiredDate,
@@ -126,7 +122,6 @@ class USerServices {
         "dishNumber": dishNumberController.text,
         "dishType": selectedDishType,
         "shopName": shopController.text,
-        "profileImageUrl": profileImageUrl,
         "createAt": now,
         "registerDate": registerDate,
         "expiredDate": expiredDate,
@@ -140,7 +135,7 @@ class USerServices {
           btnController.success();
           CToast.show(message: "Added Successfully");
           clearRecords();
-          Navigator.maybePop(context);
+          Navigator.maybePop(context, true);
         });
       });
     } else if (collectionName == 'OldUser') {
@@ -153,7 +148,6 @@ class USerServices {
         "mobileNo2": mobileController1.text,
         "dishNumber": dishNumberController.text,
         "dishType": selectedDishType,
-        "profileImageUrl": profileImageUrl,
         "createAt": now,
       };
       Timer(Duration(milliseconds: 200), () {
@@ -165,7 +159,7 @@ class USerServices {
           btnController.success();
           CToast.show(message: "Added Successfully");
           clearRecords();
-          Navigator.maybePop(context);
+          Navigator.maybePop(context, true);
         });
       });
     } else {
@@ -185,7 +179,6 @@ class USerServices {
       //selectedDishType='Select Dish Type';
       shopController.clear();
       createAtDateController.clear();
-      profileImageUrl = null;
     });
   }
 }

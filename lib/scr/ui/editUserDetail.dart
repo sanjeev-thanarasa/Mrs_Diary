@@ -1,15 +1,9 @@
-import 'dart:io';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:mrs_dth_diary_v1/scr/helpers/createUser.dart';
 import 'package:mrs_dth_diary_v1/scr/models/dropDownModel.dart';
-import 'package:mrs_dth_diary_v1/scr/widgets/CDropDownList.dart';
-import 'package:mrs_dth_diary_v1/scr/widgets/CTextField.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/RoundedLoadingButton.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/datePicker.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/subHelpers/styles.dart';
@@ -33,109 +27,12 @@ class EditUserDetail extends StatefulWidget {
 
 class _EditUserDetailState extends State<EditUserDetail> {
   USerServices _uSerServices = USerServices();
-  final ImagePicker _imagePicker = ImagePicker();
-  bool _uploadingImage = false;
 
   String _formatDate(DateTime? value) {
     if (value == null) {
       return '';
     }
     return DateFormat('dd-MM-yyyy hh:mm a').format(value);
-  }
-
-  Future<void> _pickProfileImage(ImageSource source) async {
-    try {
-      final picked = await _imagePicker.pickImage(
-        source: source,
-        imageQuality: 80,
-        maxWidth: 1200,
-      );
-      if (picked == null) return;
-
-      setState(() => _uploadingImage = true);
-
-      final file = File(picked.path);
-      final storageRef = FirebaseStorage.instance
-          .ref()
-          .child('profile_images')
-          .child(
-              '${widget.userId}_${DateTime.now().millisecondsSinceEpoch}.jpg');
-
-      await storageRef.putFile(file);
-      final downloadUrl = await storageRef.getDownloadURL();
-
-      if (!mounted) return;
-      setState(() {
-        _uSerServices.profileImageUrl = downloadUrl;
-        _uploadingImage = false;
-      });
-    } catch (e) {
-      if (!mounted) return;
-      setState(() => _uploadingImage = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Unable to update profile image')),
-      );
-    }
-  }
-
-  void _removeProfileImage() {
-    setState(() => _uSerServices.profileImageUrl = null);
-  }
-
-  void _showImagePickerSheet() {
-    showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (context) {
-        return Container(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade300,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-              ),
-              const SizedBox(height: 16),
-              ListTile(
-                leading: const Icon(Icons.photo_library_rounded),
-                title: const Text('Choose from gallery'),
-                onTap: () {
-                  Navigator.pop(context);
-                  _pickProfileImage(ImageSource.gallery);
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.camera_alt_rounded),
-                title: const Text('Take a photo'),
-                onTap: () {
-                  Navigator.pop(context);
-                  _pickProfileImage(ImageSource.camera);
-                },
-              ),
-              if (_uSerServices.profileImageUrl != null)
-                ListTile(
-                  leading: const Icon(Icons.delete_outline_rounded,
-                      color: Colors.redAccent),
-                  title: const Text('Remove photo'),
-                  onTap: () {
-                    Navigator.pop(context);
-                    _removeProfileImage();
-                  },
-                ),
-            ],
-          ),
-        );
-      },
-    );
   }
 
   Map<String, dynamic> _getItemMap() {
@@ -165,7 +62,6 @@ class _EditUserDetailState extends State<EditUserDetail> {
 
   void editInitialize() {
     final data = _getItemMap();
-    _uSerServices.profileImageUrl = data['profileImageUrl'];
     if (widget.collectionName == 'NewUser') {
       editOldUserInitialize();
       print(
@@ -233,41 +129,39 @@ class _EditUserDetailState extends State<EditUserDetail> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildHeaderCard(),
-        const SizedBox(height: 12),
         _sectionCard(
           title: "Basic details",
           child: Column(
             children: [
-              _fieldLabel("Name"),
-              CustomTextField(
-                hintTextColor: Colors.blue,
-                leadingIconColor: mainBlue,
+              _inputField(
                 controller: _uSerServices.nameController,
+                labelText: "Name",
                 hintText: "பெயர்",
                 icon: Icons.person_outline,
                 keyboardType: TextInputType.text,
               ),
               const SizedBox(height: 10),
-              _fieldLabel("Address"),
-              CustomTextField(
-                hintTextColor: Colors.blue,
-                leadingIconColor: mainBlue,
+              _inputField(
                 controller: _uSerServices.addressController,
+                labelText: "Address",
                 hintText: "விலாசம்",
                 icon: Icons.home_rounded,
                 keyboardType: TextInputType.text,
               ),
               const SizedBox(height: 10),
-              _fieldLabel("Area"),
-              SelectDropList(
-                  itemSelected: _uSerServices.selectedArea,
-                  dropListModel: villageDropListModel,
-                  onOptionSelected: (optionItem) {
-                    setState(() => _uSerServices.selectedArea = optionItem);
-                  },
-                  iconColor: mainBlue,
-                  image: 'assets/images/dish.png'),
+              _dropdownField(
+                labelText: "Area",
+                hintText: "Select Area",
+                value: _uSerServices.selectedArea,
+                options: villageDropListModel.listOptionItems
+                    .map((item) => item.name)
+                    .toList(),
+                icon: Icons.location_on_rounded,
+                onChanged: (value) {
+                  if (value == null) return;
+                  setState(() => _uSerServices.selectedArea = value);
+                },
+              ),
             ],
           ),
         ),
@@ -276,21 +170,17 @@ class _EditUserDetailState extends State<EditUserDetail> {
           title: "Contact",
           child: Column(
             children: [
-              _fieldLabel("Mobile number"),
-              CustomTextField(
-                hintTextColor: Colors.blue,
-                leadingIconColor: mainBlue,
+              _inputField(
                 controller: _uSerServices.mobileController,
+                labelText: "Mobile number",
                 hintText: "M.No",
                 icon: Icons.phone,
                 keyboardType: TextInputType.number,
               ),
               const SizedBox(height: 10),
-              _fieldLabel("Alternate mobile"),
-              CustomTextField(
-                hintTextColor: Colors.blue,
-                leadingIconColor: mainBlue,
+              _inputField(
                 controller: _uSerServices.mobileController1,
+                labelText: "Alternate mobile",
                 hintText: "M.No 2",
                 icon: Icons.phone_in_talk_rounded,
                 keyboardType: TextInputType.number,
@@ -303,25 +193,27 @@ class _EditUserDetailState extends State<EditUserDetail> {
           title: "Dish details",
           child: Column(
             children: [
-              _fieldLabel("Dish number"),
-              CustomTextField(
-                hintTextColor: Colors.blue,
-                leadingIconColor: mainBlue,
+              _inputField(
                 controller: _uSerServices.dishNumberController,
+                labelText: "Dish number",
                 hintText: "Dish இலக்கம்",
-                image: 'assets/images/dish.png',
+                icon: Icons.tv_rounded,
                 keyboardType: TextInputType.number,
               ),
               const SizedBox(height: 10),
-              _fieldLabel("Dish type"),
-              SelectDropList(
-                  itemSelected: _uSerServices.selectedDishType,
-                  dropListModel: dishDropListModel,
-                  onOptionSelected: (name) {
-                    setState(() => _uSerServices.selectedDishType = name);
-                  },
-                  iconColor: mainBlue,
-                  image: 'assets/images/dish.png'),
+              _dropdownField(
+                labelText: "Dish type",
+                hintText: "Select Dish Type",
+                value: _uSerServices.selectedDishType,
+                options: dishDropListModel.listOptionItems
+                    .map((item) => item.name)
+                    .toList(),
+                icon: Icons.tv_rounded,
+                onChanged: (value) {
+                  if (value == null) return;
+                  setState(() => _uSerServices.selectedDishType = value);
+                },
+              ),
             ],
           ),
         ),
@@ -356,7 +248,12 @@ class _EditUserDetailState extends State<EditUserDetail> {
       ),
       child: Column(
         children: [
-          _buildProfileAvatar(),
+          CircleAvatar(
+            radius: 40,
+            backgroundColor: const Color(0x1A5B67CA),
+            child: const Icon(Icons.person_rounded,
+                color: kPrimaryColor, size: 34),
+          ),
           const SizedBox(height: 10),
           Text(
             _uSerServices.nameController.text.isEmpty
@@ -410,96 +307,30 @@ class _EditUserDetailState extends State<EditUserDetail> {
     );
   }
 
-  Widget _buildProfileAvatar() {
-    final imageUrl = _uSerServices.profileImageUrl;
-    return Stack(
-      alignment: Alignment.center,
-      children: [
-        CircleAvatar(
-          radius: 40,
-          backgroundColor: kPrimaryColor.withValues(alpha: 0.12),
-          child: imageUrl == null || imageUrl.isEmpty
-              ? const Icon(Icons.person_rounded, color: kPrimaryColor, size: 34)
-              : ClipOval(
-                  child: Image.network(
-                    imageUrl,
-                    width: 80,
-                    height: 80,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) => const Icon(
-                      Icons.person_rounded,
-                      color: kPrimaryColor,
-                      size: 34,
-                    ),
-                  ),
-                ),
-        ),
-        if (_uploadingImage)
-          Positioned.fill(
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.6),
-                shape: BoxShape.circle,
-              ),
-              child: const Center(
-                child: SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                ),
-              ),
-            ),
-          ),
-        Positioned(
-          bottom: 2,
-          right: 2,
-          child: GestureDetector(
-            onTap: _showImagePickerSheet,
-            child: Container(
-              padding: const EdgeInsets.all(6),
-              decoration: BoxDecoration(
-                color: kPrimaryColor,
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.15),
-                    blurRadius: 6,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child:
-                  const Icon(Icons.edit_rounded, size: 14, color: Colors.white),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
   Widget _buildSaveButton(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(12),
-      // decoration: BoxDecoration(
-      //   color: Colors.white,
-      //   borderRadius: BorderRadius.circular(16),
-      //   border: Border.all(color: Colors.grey.shade200),
-      //   boxShadow: [
-      //     BoxShadow(
-      //       color: Colors.black.withValues(alpha: 0.04),
-      //       blurRadius: 10,
-      //       offset: const Offset(0, 6),
-      //     )
-      //   ],
-      // ),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey.shade200),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 6),
+          )
+        ],
+      ),
       child: SizedBox(
         width: double.infinity,
         child: RoundedLoading(
           btnController: _uSerServices.btnController,
-          paddingLeft: 30.0,
-          paddingRight: 30.0,
-          paddingTop: 10.0,
-          btnColor: kBlueLight,
+          paddingLeft: 10.0,
+          paddingRight: 10.0,
+          paddingTop: 8.0,
+          buttonHeight: 44,
+          btnColor: kPrimaryColor,
           elevation: 2.0,
           label: "Save changes",
           textStyle: const TextStyle(
@@ -509,6 +340,10 @@ class _EditUserDetailState extends State<EditUserDetail> {
             color: Colors.white,
           ),
           buttonPressed: () {
+            if (!_validateRequiredFields()) {
+              _uSerServices.btnController.reset();
+              return;
+            }
             final now = DateTime.now();
             _uSerServices.createAt = now;
             _uSerServices.createAtDateController.text =
@@ -522,6 +357,77 @@ class _EditUserDetailState extends State<EditUserDetail> {
           },
         ),
       ),
+    );
+  }
+
+  bool _validateRequiredFields() {
+    final name = _uSerServices.nameController.text.trim();
+    final address = _uSerServices.addressController.text.trim();
+    final mobile = _uSerServices.mobileController.text.trim();
+    final dishNumber = _uSerServices.dishNumberController.text.trim();
+    final area = _uSerServices.selectedArea.trim();
+    final dishType = _uSerServices.selectedDishType.trim();
+
+    if (name.isEmpty) {
+      _showValidationMessage('Name is required');
+      _uSerServices.btnController.reset();
+      return false;
+    }
+    if (address.isEmpty) {
+      _showValidationMessage('Address is required');
+      _uSerServices.btnController.reset();
+      return false;
+    }
+    if (area.isEmpty || area == 'Select Area') {
+      _showValidationMessage('Area is required');
+      _uSerServices.btnController.reset();
+      return false;
+    }
+    if (mobile.isEmpty) {
+      _showValidationMessage('Mobile number is required');
+      _uSerServices.btnController.reset();
+      return false;
+    }
+    if (dishNumber.isEmpty) {
+      _showValidationMessage('Dish number is required');
+      _uSerServices.btnController.reset();
+      return false;
+    }
+    if (dishType.isEmpty || dishType == 'Select Dish Type') {
+      _showValidationMessage('Dish type is required');
+      _uSerServices.btnController.reset();
+      return false;
+    }
+
+    if (widget.collectionName == 'NewUser') {
+      final shopName = _uSerServices.shopController.text.trim();
+      final registerDate = _uSerServices.registerDateController.text.trim();
+      final expiredDate = _uSerServices.expiredDateController.text.trim();
+      if (shopName.isEmpty) {
+        _showValidationMessage('Shop name is required');
+        _uSerServices.btnController.reset();
+        return false;
+      }
+      if (registerDate.isEmpty) {
+        _showValidationMessage('Register date is required');
+        _uSerServices.btnController.reset();
+        return false;
+      }
+      if (expiredDate.isEmpty) {
+        _showValidationMessage('Expired date is required');
+        _uSerServices.btnController.reset();
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  void _showValidationMessage(String message) {
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.hideCurrentSnackBar();
+    messenger.showSnackBar(
+      SnackBar(content: Text(message), behavior: SnackBarBehavior.floating),
     );
   }
 
@@ -573,6 +479,110 @@ class _EditUserDetailState extends State<EditUserDetail> {
     );
   }
 
+  Widget _inputField({
+    required TextEditingController controller,
+    required String labelText,
+    required String hintText,
+    required IconData icon,
+    TextInputType keyboardType = TextInputType.text,
+    bool readOnly = false,
+    VoidCallback? onTap,
+  }) {
+    return TextField(
+      controller: controller,
+      readOnly: readOnly,
+      onTap: onTap,
+      keyboardType: keyboardType,
+      style: const TextStyle(
+        fontFamily: 'TamilArima',
+        fontWeight: FontWeight.w600,
+        color: Colors.black87,
+      ),
+      decoration: InputDecoration(
+        labelText: labelText,
+        floatingLabelBehavior: FloatingLabelBehavior.always,
+        hintText: hintText,
+        hintStyle: const TextStyle(
+          fontFamily: 'TamilArima2',
+          color: Colors.black45,
+        ),
+        prefixIcon: Icon(icon, color: Colors.blueGrey.shade600),
+        filled: true,
+        fillColor: Colors.white,
+        contentPadding:
+            const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
+        enabledBorder: OutlineInputBorder(
+          borderSide: BorderSide(color: Colors.grey.shade300),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderSide: BorderSide(color: kPrimaryColor, width: 1.2),
+          borderRadius: BorderRadius.circular(12),
+        ),
+      ),
+    );
+  }
+
+  Widget _dropdownField({
+    required String labelText,
+    required String hintText,
+    required String value,
+    required List<String> options,
+    required IconData icon,
+    required ValueChanged<String?> onChanged,
+  }) {
+    final normalized = value.trim();
+    final currentValue = normalized.isEmpty ||
+            normalized == 'Select Area' ||
+            normalized == 'Select Dish Type'
+        ? null
+        : normalized;
+
+    return DropdownButtonFormField<String>(
+      value: currentValue,
+      isExpanded: true,
+      onChanged: onChanged,
+      icon: const Icon(Icons.keyboard_arrow_down_rounded),
+      items: options
+          .map(
+            (item) => DropdownMenuItem<String>(
+              value: item,
+              child: Text(
+                item,
+                style: const TextStyle(
+                  fontFamily: 'TamilArima',
+                  fontWeight: FontWeight.w600,
+                  color: Colors.black87,
+                ),
+              ),
+            ),
+          )
+          .toList(),
+      decoration: InputDecoration(
+        labelText: labelText,
+        floatingLabelBehavior: FloatingLabelBehavior.always,
+        hintText: hintText,
+        hintStyle: const TextStyle(
+          fontFamily: 'TamilArima2',
+          color: Colors.black45,
+        ),
+        prefixIcon: Icon(icon, color: Colors.blueGrey.shade600),
+        filled: true,
+        fillColor: Colors.white,
+        contentPadding:
+            const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
+        enabledBorder: OutlineInputBorder(
+          borderSide: BorderSide(color: Colors.grey.shade300),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderSide: BorderSide(color: kPrimaryColor, width: 1.2),
+          borderRadius: BorderRadius.circular(12),
+        ),
+      ),
+    );
+  }
+
   Widget buildNewUserFields({required String collectionName}) {
     if (collectionName == 'OldUser') {
       return const SizedBox();
@@ -580,26 +590,22 @@ class _EditUserDetailState extends State<EditUserDetail> {
       return Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          _fieldLabel("Shop name"),
-          CustomTextField(
+          _inputField(
             controller: _uSerServices.shopController,
+            labelText: "Shop name",
             hintText: "கடையின் பெயர்",
-            icon: Icons.phone,
+            icon: Icons.storefront_rounded,
             keyboardType: TextInputType.text,
           ),
           const SizedBox(height: 10),
-          _fieldLabel("Register date"),
-          CustomTextField(
-            hintTextColor: Colors.blue,
+          _inputField(
             controller: _uSerServices.registerDateController,
+            labelText: "Register date",
             hintText: "Register Date : Select Date",
-            icon: Icons.phone,
+            icon: Icons.date_range,
             keyboardType: TextInputType.text,
-            iconButton: true,
             readOnly: true,
-            animatedIconButtonStratIcon: Icons.date_range,
-            animatedIconButtonEndIcon: Icons.date_range_outlined,
-            animatedIconButtonOnTap: () {
+            onTap: () {
               showCupertinoModalPopup(
                   context: context,
                   builder: (_) => DatePicker(
@@ -614,17 +620,14 @@ class _EditUserDetailState extends State<EditUserDetail> {
             },
           ),
           const SizedBox(height: 10),
-          _fieldLabel("Expired date"),
-          CustomTextField(
-            hintTextColor: Colors.blue,
+          _inputField(
             controller: _uSerServices.expiredDateController,
+            labelText: "Expired date",
             hintText: "முடியும் திகதி : Select Date",
-            icon: Icons.phone,
+            icon: Icons.event_busy_rounded,
             keyboardType: TextInputType.text,
-            iconButton: true,
-            animatedIconButtonStratIcon: Icons.date_range,
-            animatedIconButtonEndIcon: Icons.date_range_outlined,
-            animatedIconButtonOnTap: () {
+            readOnly: true,
+            onTap: () {
               showCupertinoModalPopup(
                   context: context,
                   builder: (_) => DatePicker(

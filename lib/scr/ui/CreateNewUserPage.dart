@@ -299,11 +299,87 @@ class _CreateNewUserState extends State<CreateNewUser> {
             color: Colors.white,
           ),
           buttonPressed: () {
+            final isNewUser = _index == 1;
+            if (!_validateRequiredFields(isNewUser: isNewUser)) {
+              _uSerServices.btnController.reset();
+              return;
+            }
             _uSerServices.createRecord(index: _index, context: context);
           },
         ),
         SizedBox(height: rs.rh(20))
       ],
+    );
+  }
+
+  bool _validateRequiredFields({required bool isNewUser}) {
+    final name = _uSerServices.nameController.text.trim();
+    final address = _uSerServices.addressController.text.trim();
+    final mobile = _uSerServices.mobileController.text.trim();
+    final dishNumber = _uSerServices.dishNumberController.text.trim();
+    final area = _uSerServices.selectedArea.trim();
+    final dishType = _uSerServices.selectedDishType.trim();
+
+    if (name.isEmpty) {
+      _showValidationMessage('Name is required');
+      _uSerServices.btnController.reset();
+      return false;
+    }
+    if (address.isEmpty) {
+      _showValidationMessage('Address is required');
+      _uSerServices.btnController.reset();
+      return false;
+    }
+    if (area.isEmpty || area == 'Select Area') {
+      _showValidationMessage('Area is required');
+      _uSerServices.btnController.reset();
+      return false;
+    }
+    if (mobile.isEmpty) {
+      _showValidationMessage('Mobile number is required');
+      _uSerServices.btnController.reset();
+      return false;
+    }
+    if (dishNumber.isEmpty) {
+      _showValidationMessage('Dish number is required');
+      _uSerServices.btnController.reset();
+      return false;
+    }
+    if (dishType.isEmpty || dishType == 'Select Dish Type') {
+      _showValidationMessage('Dish type is required');
+      _uSerServices.btnController.reset();
+      return false;
+    }
+
+    if (isNewUser) {
+      final shopName = _uSerServices.shopController.text.trim();
+      final registerDate = _uSerServices.registerDateController.text.trim();
+      final expiredDate = _uSerServices.expiredDateController.text.trim();
+      if (shopName.isEmpty) {
+        _showValidationMessage('Shop name is required');
+        _uSerServices.btnController.reset();
+        return false;
+      }
+      if (registerDate.isEmpty) {
+        _showValidationMessage('Register date is required');
+        _uSerServices.btnController.reset();
+        return false;
+      }
+      if (expiredDate.isEmpty) {
+        _showValidationMessage('Expired date is required');
+        _uSerServices.btnController.reset();
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  void _showValidationMessage(String message) {
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.hideCurrentSnackBar();
+    messenger.showSnackBar(
+      SnackBar(content: Text(message), behavior: SnackBarBehavior.floating),
     );
   }
 

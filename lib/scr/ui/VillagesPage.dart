@@ -119,7 +119,21 @@ class _VillagesListState extends State<VillagesList> {
           ElevatedButton(
             onPressed: () async {
               final name = controller.text.trim();
-              if (name.isNotEmpty && name != currentName) {
+              if (name.isEmpty) {
+                _showVillageMessage('Village name is required');
+                return;
+              }
+              if (name == currentName) {
+                if (mounted) {
+                  Navigator.pop(context);
+                }
+                return;
+              }
+              if (await _isVillageNameTaken(name, excludeId: villageId)) {
+                _showVillageMessage('Village already exists');
+                return;
+              }
+              if (name.isNotEmpty) {
                 await updateProduct(
                   collectionName: 'Villages',
                   id: villageId,
@@ -295,6 +309,11 @@ class _VillagesListState extends State<VillagesList> {
                 bthFunction: (text) async {
                   final name = text.trim();
                   if (name.isEmpty) {
+                    _showVillageMessage('Village name is required');
+                    return;
+                  }
+                  if (await _isVillageNameTaken(name)) {
+                    _showVillageMessage('Village already exists');
                     return;
                   }
                   villageProvider.editControllerName.text = name;
@@ -325,6 +344,26 @@ class _VillagesListState extends State<VillagesList> {
             ],
           );
         });
+  }
+
+  Future<bool> _isVillageNameTaken(String name, {String? excludeId}) async {
+    final snapshot =
+        await collectionReference.where('name', isEqualTo: name).limit(1).get();
+    if (snapshot.docs.isEmpty) {
+      return false;
+    }
+    if (excludeId == null) {
+      return true;
+    }
+    return snapshot.docs.any((doc) => doc.id != excludeId);
+  }
+
+  void _showVillageMessage(String message) {
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.hideCurrentSnackBar();
+    messenger.showSnackBar(
+      SnackBar(content: Text(message), behavior: SnackBarBehavior.floating),
+    );
   }
 }
 
