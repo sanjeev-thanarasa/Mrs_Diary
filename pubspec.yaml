@@ -24,10 +24,6 @@ dependencies:
   flutter:
     sdk: flutter
 
-  # The following adds the Cupertino Icons font to your application.
-  # Use with the CupertinoIcons class for iOS style icons.
-  cupertino_icons: ^1.0.2
-
   ########################################### use 3rd Party Dependencies #################################
   firebase_core: ^4.4.0
   cloud_firestore: ^6.1.2
@@ -37,26 +33,21 @@ dependencies:
   passcode_screen: ^2.0.0
   flutter_svg: ^2.0.10
   flutter_animation_progress_bar: ^2.3.1
-  curved_navigation_bar: ^1.0.6
   intl: ^0.20.2
   rounded_loading_button: ^2.1.0
-  bubble_tab_indicator: ^0.1.6
   flutter_spinkit: ^5.2.0
   shimmer: ^3.0.0
   uuid: ^4.5.1
   page_transition: ^2.1.0
   get: ^4.6.6
   flutter_slidable: ^4.0.3
-  pull_to_reveal: ^0.0.3-nullsafety.0
   pull_to_refresh: ^2.0.0
   flutter_switch: ^0.3.2
   shared_preferences: ^2.3.2
-  google_fonts: ^8.0.1
   image_picker: ^1.1.2
 
   ########################################### use 3rd Party Dependencies #################################
 
-  animated_icon_button: any
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -83,66 +74,14 @@ flutter:
     - assets/icons/
 
   fonts:
-    - family: ShortBaby
-      fonts:
-        - asset: assets/fonts/ShortBaby.ttf
-
     - family: Lobster
       fonts:
         - asset: assets/fonts/Lobster.ttf
-
-    - family: TamilKavi
-      fonts:
-        - asset: assets/fonts/Kavivanar-Regular.ttf
-
-    - family: TamilMeera
-      fonts:
-        - asset: assets/fonts/MeeraInimai-Regular.ttf
 
     - family: TamilArima
       fonts:
         - asset: assets/fonts/ArimaMadurai-Black.ttf
 
-    - family: TamilArima1
-      fonts:
-        - asset: assets/fonts/ArimaMadurai-Bold.ttf
-
     - family: TamilArima2
       fonts:
         - asset: assets/fonts/ArimaMadurai-ExtraBold.ttf
-
-    - family: TamilArima3
-      fonts:
-        - asset: assets/fonts/ArimaMadurai-ExtraLight.ttf
-
-    - family: TamilArima4
-      fonts:
-        - asset: assets/fonts/ArimaMadurai-Light.ttf
-
-    - family: TamilArima5
-      fonts:
-        - asset: assets/fonts/ArimaMadurai-Medium.ttf
-
-    - family: TamilArima6
-      fonts:
-        - asset: assets/fonts/ArimaMadurai-Regular.ttf
-
-    - family: TamilArima7
-      fonts:
-        - asset: assets/fonts/ArimaMadurai-Thin.ttf
-
-    - family: WorkSans
-      fonts:
-        - asset: assets/fonts/WorkSans-Regular.ttf
-        - asset: assets/fonts/WorkSans-Medium.ttf
-          weight: 500
-        - asset: assets/fonts/WorkSans-SemiBold.ttf
-          weight: 600
-        - asset: assets/fonts/WorkSans-Bold.ttf
-          weight: 700
-    - family: Roboto
-      fonts:
-        - asset: assets/fonts/Roboto-Bold.ttf
-        - asset: assets/fonts/Roboto-Regular.ttf
-        - asset: assets/fonts/Roboto-Medium.ttf
-          weight: 400

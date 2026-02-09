@@ -103,9 +103,12 @@ class _VillagesListState extends State<VillagesList> {
         content: TextField(
           controller: controller,
           autofocus: true,
+          style: const TextStyle(color: Colors.black),
           decoration: const InputDecoration(
             labelText: 'Village name',
             hintText: 'Enter village name',
+            labelStyle: TextStyle(color: Colors.black),
+            floatingLabelStyle: TextStyle(color: Colors.black),
           ),
         ),
         actions: [

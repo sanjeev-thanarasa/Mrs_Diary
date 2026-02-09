@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:mrs_dth_diary_v1/scr/ui/DashBoard/createMyAccountsPayment.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/dashBoardPaymentContainerListTile.dart';
-import 'package:mrs_dth_diary_v1/scr/widgets/loading.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/subHelpers/screen_navigation.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/subHelpers/styles.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
@@ -19,7 +18,7 @@ class MyAccountsUserDetails extends StatefulWidget {
 
 class _MyAccountsUserDetailsState extends State<MyAccountsUserDetails> {
   RefreshController _refreshController =
-      RefreshController(initialRefresh: true);
+      RefreshController(initialRefresh: false);
 
   late String dbID;
 
@@ -74,7 +73,7 @@ class _MyAccountsUserDetailsState extends State<MyAccountsUserDetails> {
 
             if (snapshot.connectionState == ConnectionState.waiting ||
                 !snapshot.hasData) {
-              return const LoadingShimmerList();
+              return const SizedBox.shrink();
             }
 
             final docs = snapshot.data?.docs ?? [];

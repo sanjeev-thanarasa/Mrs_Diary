@@ -43,7 +43,7 @@ class _UserDetailsState extends State<UserDetails> {
   }
 
   RefreshController _refreshController =
-      RefreshController(initialRefresh: true);
+      RefreshController(initialRefresh: false);
   bool black = false;
   bool note = false;
   List _result = [];
@@ -77,7 +77,7 @@ class _UserDetailsState extends State<UserDetails> {
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         title: Text(
-          userName.isEmpty ? 'User details' : userName,
+          "User details",
           style: const TextStyle(
             fontFamily: 'TamilArima',
             fontWeight: FontWeight.w700,
@@ -106,7 +106,7 @@ class _UserDetailsState extends State<UserDetails> {
         controller: _refreshController,
         onRefresh: _onRefresh,
         onLoading: _onLoading,
-        enablePullDown: true,
+        // enablePullDown: true,
         child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
           stream: filterStream(),
           builder: (context, snapshot) {
@@ -123,37 +123,40 @@ class _UserDetailsState extends State<UserDetails> {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return SizedBox(
                 height: MediaQuery.of(context).size.height / 2 + 100,
-                child: const Center(child: LoadingCircle()),
+                child: const Center(child: LoadingShimmerList()),
               );
             }
 
             final docs = snapshot.data?.docs ?? [];
 
-            return ListView(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
-              children: [
-                _buildUserHeaderCard(context),
-                const SizedBox(height: 12),
-                _buildUserQuickActions(context),
-                const SizedBox(height: 12),
-                _buildUserInfoCard(),
-                const SizedBox(height: 12),
-                _buildPaymentSummaryCard(docs),
-                const SizedBox(height: 12),
-                _buildSectionTitle(
-                  title: "Payment history",
-                  subtitle: docs.isEmpty
-                      ? "No payment records yet"
-                      : "${docs.length} records",
-                ),
-                const SizedBox(height: 8),
-                if (docs.isEmpty)
-                  _buildEmptyState()
-                else
-                  ...docs.map(
-                    (doc) => PaymentContainerListTile(snapshot: doc),
+            return DefaultTextStyle(
+              style: const TextStyle(color: kIndigoDark),
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+                children: [
+                  _buildUserHeaderCard(context),
+                  const SizedBox(height: 12),
+                  _buildUserQuickActions(context),
+                  const SizedBox(height: 12),
+                  _buildUserInfoCard(),
+                  const SizedBox(height: 12),
+                  _buildPaymentSummaryCard(docs),
+                  const SizedBox(height: 12),
+                  _buildSectionTitle(
+                    title: "Payment history",
+                    subtitle: docs.isEmpty
+                        ? "No payment records yet"
+                        : "${docs.length} records",
                   ),
-              ],
+                  const SizedBox(height: 8),
+                  if (docs.isEmpty)
+                    _buildEmptyState()
+                  else
+                    ...docs.map(
+                      (doc) => PaymentContainerListTile(snapshot: doc),
+                    ),
+                ],
+              ),
             );
           },
         ),
@@ -211,6 +214,7 @@ class _UserDetailsState extends State<UserDetails> {
                   Text(
                     name,
                     style: const TextStyle(
+                      color: kIndigoDark,
                       fontSize: 18,
                       fontWeight: FontWeight.w700,
                       fontFamily: 'TamilArima',
@@ -224,6 +228,7 @@ class _UserDetailsState extends State<UserDetails> {
                       Text(
                         dish.toString(),
                         style: const TextStyle(
+                          color: kIndigoDark,
                           fontSize: 13,
                           fontFamily: 'Lobster',
                           fontWeight: FontWeight.w700,
@@ -237,7 +242,7 @@ class _UserDetailsState extends State<UserDetails> {
                         child: Text(
                           area,
                           style: const TextStyle(
-                            fontSize: 12,
+                            color: kIndigoDark,
                             fontFamily: 'TamilArima2',
                             fontWeight: FontWeight.w600,
                           ),
@@ -303,7 +308,7 @@ class _UserDetailsState extends State<UserDetails> {
   Widget _buildUserInfoCard() {
     final data = _result.isNotEmpty ? _result[0] : null;
     if (data == null) {
-      return const Center(child: LoadingCircle());
+      return const Center(child: LoadingShimmerList());
     }
 
     final map = _docMap(data);
@@ -333,21 +338,17 @@ class _UserDetailsState extends State<UserDetails> {
                 _buildToggleChip(
                   label: 'Noted',
                   value: note,
-                  onChanged: (val) => buildFlutterSwitch(
-                    value: val,
-                    updateField: 'NoteList',
-                    toast: 'Noted',
-                  ),
+                  updateField: 'NoteList',
+                  toast: 'Noted',
+                  ContainerColor: Colors.white,
                 ),
                 const SizedBox(width: 12),
                 _buildToggleChip(
                   label: 'Black List',
                   value: black,
-                  onChanged: (val) => buildFlutterSwitch(
-                    value: val,
-                    updateField: 'BlackList',
-                    toast: 'Black',
-                  ),
+                  updateField: 'BlackList',
+                  toast: 'Black',
+                  ContainerColor: Colors.orange.shade100,
                 ),
               ],
             ),
@@ -360,12 +361,14 @@ class _UserDetailsState extends State<UserDetails> {
   Widget _buildToggleChip({
     required String label,
     required bool value,
-    required ValueChanged<bool> onChanged,
+    required String updateField,
+    required String toast,
+    required Color ContainerColor,
   }) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: value ? Colors.green.shade50 : Colors.grey.shade200,
+        color: ContainerColor,
         borderRadius: BorderRadius.circular(20),
       ),
       child: Row(
@@ -375,6 +378,7 @@ class _UserDetailsState extends State<UserDetails> {
             style: const TextStyle(
               fontFamily: 'TamilArima',
               fontWeight: FontWeight.w600,
+              color: kIndigoDark,
             ),
           ),
           const SizedBox(width: 8),
@@ -386,7 +390,7 @@ class _UserDetailsState extends State<UserDetails> {
             borderRadius: 12,
             activeColor: Colors.green,
             value: value,
-            onToggle: onChanged,
+            onToggle: (val) => _handleToggle(updateField, val, toast),
           ),
         ],
       ),
@@ -420,6 +424,7 @@ class _UserDetailsState extends State<UserDetails> {
                 fontSize: 16,
                 fontWeight: FontWeight.w700,
                 fontFamily: 'TamilArima',
+                color: kIndigoDark,
               ),
             ),
             const SizedBox(height: 12),
@@ -464,6 +469,7 @@ class _UserDetailsState extends State<UserDetails> {
                 fontFamily: 'TamilArima2',
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
+                color: kIndigoDark,
               ),
             ),
           ],
@@ -539,6 +545,7 @@ class _UserDetailsState extends State<UserDetails> {
               style: const TextStyle(
                 fontFamily: 'TamilArima',
                 fontWeight: FontWeight.w600,
+                color: kIndigoDark,
               ),
             ),
           ),
@@ -593,143 +600,141 @@ class _UserDetailsState extends State<UserDetails> {
                   )
                 ],
               ),
-              child: _result.isNotEmpty
-                  ? Builder(builder: (_) {
-                      final map = _docMap(_result.first);
-                      final avatarUrl = _safeField(map, 'profileImage');
+              child: Builder(builder: (_) {
+                final map = _docMap(_result.first);
+                final avatarUrl = _safeField(map, 'profileImage');
 
-                      return SingleChildScrollView(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                return DefaultTextStyle(
+                  style: const TextStyle(color: kIndigoDark),
+                  child: SingleChildScrollView(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
                           children: [
-                            Row(
-                              children: [
-                                const Icon(Icons.person_rounded,
-                                    color: kPrimaryColor),
-                                const SizedBox(width: 8),
-                                const Text(
-                                  "User details",
-                                  style: TextStyle(
-                                    fontFamily: 'TamilArima',
-                                    fontWeight: FontWeight.w700,
-                                    fontSize: 16,
-                                  ),
-                                ),
-                                const Spacer(),
-                                IconButton(
-                                  onPressed: () => Navigator.of(context).pop(),
-                                  icon: const Icon(Icons.close_rounded),
-                                  tooltip: "Close",
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 8),
-                            Center(
-                              child: Column(
-                                children: [
-                                  CircleAvatar(
-                                    radius: 42,
-                                    backgroundColor:
-                                        kPrimaryColor.withValues(alpha: 0.12),
-                                    backgroundImage: avatarUrl.isNotEmpty
-                                        ? NetworkImage(avatarUrl)
-                                        : null,
-                                    child: avatarUrl.isEmpty
-                                        ? Image.asset(
-                                            "assets/images/unnamed.png",
-                                            fit: BoxFit.cover,
-                                            height: 70,
-                                          )
-                                        : null,
-                                  ),
-                                  const SizedBox(height: 10),
-                                  Text(
-                                    _safeField(map, 'name').isEmpty
-                                        ? 'User'
-                                        : _safeField(map, 'name'),
-                                    style: const TextStyle(
-                                      fontFamily: 'TamilArima',
-                                      fontWeight: FontWeight.w700,
-                                      fontSize: 16,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 6),
-                                  Text(
-                                    _safeField(map, 'area').isEmpty
-                                        ? ''
-                                        : _safeField(map, 'area'),
-                                    style: const TextStyle(
-                                      fontFamily: 'TamilArima2',
-                                      color: Colors.black54,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 12),
-                                  SizedBox(
-                                    width: 160,
-                                    height: 40,
-                                    child: ElevatedButton.icon(
-                                      onPressed: () {
-                                        changeScreen(
-                                          context,
-                                          EditUserDetail(
-                                            data: _result,
-                                            index: 0,
-                                            userId: widget.userId,
-                                            collectionName:
-                                                widget.collectionName,
-                                          ),
-                                        );
-                                      },
-                                      icon: const Icon(Icons.edit_rounded),
-                                      label: const Text(
-                                        "Edit User",
-                                        style:
-                                            TextStyle(fontFamily: 'TamilArima'),
-                                      ),
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: kPrimaryColor,
-                                        foregroundColor: Colors.white,
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(12),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ],
+                            const Icon(Icons.person_rounded,
+                                color: kPrimaryColor),
+                            const SizedBox(width: 8),
+                            const Text(
+                              "User details",
+                              style: TextStyle(
+                                fontFamily: 'TamilArima',
+                                fontWeight: FontWeight.w700,
+                                fontSize: 16,
                               ),
                             ),
-                            const SizedBox(height: 14),
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: _buildToggleCard(
-                                    icon: Icons.edit_note_rounded,
-                                    title: "Note",
-                                    value: note,
-                                    updateField: "NoteList",
-                                    toast: "Noted",
-                                  ),
-                                ),
-                                const SizedBox(width: 10),
-                                Expanded(
-                                  child: _buildToggleCard(
-                                    icon: Icons.block_rounded,
-                                    title: "Blacklist",
-                                    value: black,
-                                    updateField: "BlackList",
-                                    toast: "Black",
-                                  ),
-                                ),
-                              ],
+                            const Spacer(),
+                            IconButton(
+                              onPressed: () => Navigator.of(context).pop(),
+                              icon: const Icon(Icons.close_rounded),
+                              tooltip: "Close",
                             ),
-                            const SizedBox(height: 12),
-                            _buildInfoSection(map),
                           ],
                         ),
-                      );
-                    })
-                  : const Center(child: LoadingCircle()),
+                        const SizedBox(height: 8),
+                        Center(
+                          child: Column(
+                            children: [
+                              CircleAvatar(
+                                radius: 42,
+                                backgroundColor:
+                                    kPrimaryColor.withValues(alpha: 0.12),
+                                backgroundImage: avatarUrl.isNotEmpty
+                                    ? NetworkImage(avatarUrl)
+                                    : null,
+                                child: avatarUrl.isEmpty
+                                    ? Image.asset(
+                                        "assets/images/unnamed.png",
+                                        fit: BoxFit.cover,
+                                        height: 70,
+                                      )
+                                    : null,
+                              ),
+                              const SizedBox(height: 10),
+                              Text(
+                                _safeField(map, 'name').isEmpty
+                                    ? 'User'
+                                    : _safeField(map, 'name'),
+                                style: const TextStyle(
+                                  fontFamily: 'TamilArima',
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 16,
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                _safeField(map, 'area').isEmpty
+                                    ? ''
+                                    : _safeField(map, 'area'),
+                                style: const TextStyle(
+                                  fontFamily: 'TamilArima2',
+                                  color: Colors.black54,
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              SizedBox(
+                                width: 160,
+                                height: 40,
+                                child: ElevatedButton.icon(
+                                  onPressed: () {
+                                    changeScreen(
+                                      context,
+                                      EditUserDetail(
+                                        data: _result,
+                                        index: 0,
+                                        userId: widget.userId,
+                                        collectionName: widget.collectionName,
+                                      ),
+                                    );
+                                  },
+                                  icon: const Icon(Icons.edit_rounded),
+                                  label: const Text(
+                                    "Edit User",
+                                    style: TextStyle(fontFamily: 'TamilArima'),
+                                  ),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: kPrimaryColor,
+                                    foregroundColor: Colors.white,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _buildToggleCard(
+                                icon: Icons.edit_note_rounded,
+                                title: "Note",
+                                value: note,
+                                updateField: "NoteList",
+                                toast: "Noted",
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: _buildToggleCard(
+                                icon: Icons.block_rounded,
+                                title: "Blacklist",
+                                value: black,
+                                updateField: "BlackList",
+                                toast: "Black",
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        _buildInfoSection(map),
+                      ],
+                    ),
+                  ),
+                );
+              }),
             ),
           ),
         );
@@ -761,6 +766,7 @@ class _UserDetailsState extends State<UserDetails> {
               style: const TextStyle(
                 fontFamily: 'TamilArima',
                 fontWeight: FontWeight.w600,
+                color: kIndigoDark,
               ),
             ),
           ),

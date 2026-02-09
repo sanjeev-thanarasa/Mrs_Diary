@@ -75,10 +75,20 @@ class _CustomAppBarState extends State<CustomAppBar> {
                     child: TextField(
                       controller: search,
                       cursorColor: Colors.black,
+                      style: TextStyle(
+                        color: Colors.black,
+                        fontFamily: "TamilArima",
+                        fontSize: rs.r(16.0),
+                      ),
                       keyboardType: TextInputType.text,
                       textInputAction: TextInputAction.go,
                       onChanged: widget.onChanged,
                       decoration: InputDecoration(
+                          labelStyle: TextStyle(
+                            color: Colors.blueGrey,
+                            fontFamily: "TamilArima",
+                            fontSize: rs.r(16.0),
+                          ),
                           border: InputBorder.none,
                           // contentPadding: EdgeInsets.symmetric(
                           //   horizontal: rs.rw(15),

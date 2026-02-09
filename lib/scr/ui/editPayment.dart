@@ -80,7 +80,7 @@ class _EditPaymentState extends State<EditPayment> {
   final TextStyle _style = const TextStyle(
     fontSize: 15.0,
     fontFamily: "TamilArima",
-    color: Colors.blueGrey,
+    color: Colors.black,
   );
   int recharge = 0;
   int paidAmount = 0;
@@ -318,6 +318,7 @@ class _EditPaymentState extends State<EditPayment> {
                 fontSize: 18,
                 fontFamily: 'TamilArima',
                 fontWeight: FontWeight.w700,
+                color: kIndigoDark,
               ),
             ),
             const SizedBox(height: 6),

@@ -70,43 +70,55 @@ class _MyAccountsScreenState extends State<MyAccountsScreen> {
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
               ),
               const SizedBox(height: 8),
-              CustomStreamBuilder(
-                  context: context,
-                  stream: collectionReference.snapshots()
-                      as Stream<QuerySnapshot<Map<String, dynamic>>>,
-                  body: (snap) {
-                    final docs = snap.data?.docs ?? [];
-                    return ListView.builder(
-                      scrollDirection: Axis.vertical,
-                      controller: _controller,
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: docs.length,
-                      itemBuilder: (_, index) {
-                        var data = docs[index];
-                        return CListTile(
-                          context: context,
-                          docId: data["id"].toString(),
-                          collectionName: "DashBoard",
-                          tileOnTap: () => changeScreenAnimated(
-                              context,
-                              MyAccountsUserDetails(
-                                data: data,
-                              )),
-                          onEdit: () => _showRenameDialog(
+              StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                stream: collectionReference.snapshots()
+                    as Stream<QuerySnapshot<Map<String, dynamic>>>,
+                builder: (context, snap) {
+                  if (snap.connectionState == ConnectionState.waiting ||
+                      !snap.hasData) {
+                    return const SizedBox.shrink();
+                  }
+                  if (snap.hasError) {
+                    return const Center(child: Text('Something went wrong!!!'));
+                  }
+                  final docs = snap.data?.docs ?? [];
+                  if (docs.isEmpty) {
+                    return const Center(
+                        child:
+                            Text('No results found. Try a different keyword'));
+                  }
+                  return ListView.builder(
+                    scrollDirection: Axis.vertical,
+                    controller: _controller,
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: docs.length,
+                    itemBuilder: (_, index) {
+                      var data = docs[index];
+                      return CListTile(
+                        context: context,
+                        docId: data["id"].toString(),
+                        collectionName: "DashBoard",
+                        tileOnTap: () => changeScreenAnimated(
                             context,
-                            data["id"].toString(),
-                            data["name"]?.toString() ?? "",
-                          ),
-                          title: data["name"],
-                          subtitle:
-                              "${DateFormat.yMMMd().add_jm().format(data["createAt"].toDate()).toString()}",
-                          subtitleIcon: Icons.access_time,
-                          counter: "${index + 1}",
-                        );
-                      },
-                    );
-                  })
+                            MyAccountsUserDetails(
+                              data: data,
+                            )),
+                        onEdit: () => _showRenameDialog(
+                          context,
+                          data["id"].toString(),
+                          data["name"]?.toString() ?? "",
+                        ),
+                        title: data["name"],
+                        subtitle:
+                            "${DateFormat.yMMMd().add_jm().format(data["createAt"].toDate()).toString()}",
+                        subtitleIcon: Icons.access_time,
+                        counter: "${index + 1}",
+                      );
+                    },
+                  );
+                },
+              )
             ],
           ),
         ),
@@ -290,18 +302,26 @@ class _MyAccountsScreenState extends State<MyAccountsScreen> {
           child: TextField(
             controller: controller,
             autofocus: true,
+            style: const TextStyle(
+              color: Colors.black,
+              fontSize: 16,
+              fontFamily: 'TamilArima',
+            ),
             decoration: const InputDecoration(
               hintText: "TopUp Name",
               labelText: "Edit TopUP",
               labelStyle: TextStyle(
+                color: Colors.black,
                 fontSize: 16,
                 fontFamily: 'TamilArima',
                 fontWeight: FontWeight.w600,
               ),
-            ),
-            style: const TextStyle(
-              fontSize: 16,
-              fontFamily: 'TamilArima',
+              floatingLabelStyle: TextStyle(
+                color: Colors.black,
+                fontSize: 16,
+                fontFamily: 'TamilArima',
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
         ),

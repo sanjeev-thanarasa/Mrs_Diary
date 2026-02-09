@@ -40,7 +40,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   "assets/images/diary.png",
                 ),
                 image: AssetImage(
-                  "assets/images/bgworld.png",
+                  "assets/images/bgworld.jpg",
                 ),
                 fadeInDuration: Duration(seconds: 1),
                 fit: BoxFit.cover,

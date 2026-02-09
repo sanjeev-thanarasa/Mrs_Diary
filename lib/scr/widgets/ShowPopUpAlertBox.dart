@@ -33,12 +33,20 @@ class PopUpBox extends StatelessWidget {
             hintText: hintText,
             labelText: labelText,
             labelStyle: const TextStyle(
+              color: Colors.black,
+              fontSize: 16,
+              fontFamily: 'TamilArima',
+              fontWeight: FontWeight.w600,
+            ),
+            floatingLabelStyle: const TextStyle(
+              color: Colors.black,
               fontSize: 16,
               fontFamily: 'TamilArima',
               fontWeight: FontWeight.w600,
             ),
           ),
           style: const TextStyle(
+            color: Colors.black,
             fontSize: 16,
             fontFamily: 'TamilArima',
           ),

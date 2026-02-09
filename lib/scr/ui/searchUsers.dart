@@ -128,6 +128,7 @@ class _SearchUsersScreenState extends State<SearchUsersScreen> {
           Expanded(
             child: TextField(
               controller: _queryController,
+              style: const TextStyle(color: Colors.black),
               onChanged: (_) => setState(() {}),
               decoration: const InputDecoration(
                 border: InputBorder.none,

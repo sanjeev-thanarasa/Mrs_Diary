@@ -95,7 +95,7 @@ class _CustomTextFieldState extends State<CustomTextField> {
                   const TextStyle(
                     fontSize: 15.5,
                     fontFamily: 'TamilArima',
-                    color: Colors.black87,
+                    color: Colors.black,
                     fontWeight: FontWeight.w600,
                   ),
               controller: widget.controller,
