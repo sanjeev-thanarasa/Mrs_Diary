@@ -2,8 +2,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/CustomListTile.dart';
-import 'package:mrs_dth_diary_v1/scr/widgets/CustomStreamBuilder.dart';
-import 'package:mrs_dth_diary_v1/scr/widgets/ShowPopUpAlertBox.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/subHelpers/screen_navigation.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/subHelpers/styles.dart';
 import 'package:uuid/uuid.dart';
@@ -16,9 +14,9 @@ class MyAccountsScreen extends StatefulWidget {
 }
 
 class _MyAccountsScreenState extends State<MyAccountsScreen> {
-  ScrollController _controller = ScrollController();
-  late final CollectionReference collectionReference;
-  late final CollectionReference paymentsReference;
+  final ScrollController _controller = ScrollController();
+  late final CollectionReference<Map<String, dynamic>> collectionReference;
+  late final CollectionReference<Map<String, dynamic>> paymentsReference;
 
   @override
   void initState() {
@@ -26,6 +24,12 @@ class _MyAccountsScreenState extends State<MyAccountsScreen> {
     paymentsReference =
         FirebaseFirestore.instance.collection("DashboardPaymentRecords");
     super.initState();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
   }
 
   @override
@@ -44,82 +48,32 @@ class _MyAccountsScreenState extends State<MyAccountsScreen> {
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-                stream: paymentsReference.snapshots()
-                    as Stream<QuerySnapshot<Map<String, dynamic>>>,
-                builder: (context, snapshot) {
-                  final docs = snapshot.data?.docs;
-                  final totals = docs == null
-                      ? _SummaryTotals.empty
-                      : _SummaryTotals.fromDocs(docs);
-                  final isLoading =
-                      snapshot.connectionState == ConnectionState.waiting &&
-                          docs == null;
-                  return _buildHeaderCard(
+          child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+            stream: paymentsReference.snapshots(),
+            builder: (context, snapshot) {
+              final docs = snapshot.data?.docs ?? [];
+              final totals = docs.isEmpty
+                  ? _SummaryTotals.empty
+                  : _SummaryTotals.fromDocs(docs);
+              final summaries = docs.isEmpty
+                  ? <String, _AccountSummary>{}
+                  : _AccountSummary.fromDocs(docs);
+              final isLoading =
+                  snapshot.connectionState == ConnectionState.waiting &&
+                      snapshot.data == null;
+
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildHeaderCard(
                     totals: totals,
                     isLoading: isLoading,
-                  );
-                },
-              ),
-              const SizedBox(height: 16),
-              const Text(
-                "All Accounts",
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
-              ),
-              const SizedBox(height: 8),
-              StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-                stream: collectionReference.snapshots()
-                    as Stream<QuerySnapshot<Map<String, dynamic>>>,
-                builder: (context, snap) {
-                  if (snap.connectionState == ConnectionState.waiting ||
-                      !snap.hasData) {
-                    return const SizedBox.shrink();
-                  }
-                  if (snap.hasError) {
-                    return const Center(child: Text('Something went wrong!!!'));
-                  }
-                  final docs = snap.data?.docs ?? [];
-                  if (docs.isEmpty) {
-                    return const Center(
-                        child:
-                            Text('No results found. Try a different keyword'));
-                  }
-                  return ListView.builder(
-                    scrollDirection: Axis.vertical,
-                    controller: _controller,
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: docs.length,
-                    itemBuilder: (_, index) {
-                      var data = docs[index];
-                      return CListTile(
-                        context: context,
-                        docId: data["id"].toString(),
-                        collectionName: "DashBoard",
-                        tileOnTap: () => changeScreenAnimated(
-                            context,
-                            MyAccountsUserDetails(
-                              data: data,
-                            )),
-                        onEdit: () => _showRenameDialog(
-                          context,
-                          data["id"].toString(),
-                          data["name"]?.toString() ?? "",
-                        ),
-                        title: data["name"],
-                        subtitle:
-                            "${DateFormat.yMMMd().add_jm().format(data["createAt"].toDate()).toString()}",
-                        subtitleIcon: Icons.access_time,
-                        counter: "${index + 1}",
-                      );
-                    },
-                  );
-                },
-              )
-            ],
+                  ),
+                  const SizedBox(height: 16),
+                  _buildAccountsSection(summaries),
+                ],
+              );
+            },
           ),
         ),
       ),
@@ -127,32 +81,7 @@ class _MyAccountsScreenState extends State<MyAccountsScreen> {
         padding: const EdgeInsets.only(left: 16, bottom: 16),
         child: FloatingActionButton.extended(
           backgroundColor: kPrimaryColor,
-          onPressed: () {
-            showDialog(
-                context: context,
-                builder: (context) {
-                  return SimpleDialog(
-                    backgroundColor: Colors.transparent,
-                    elevation: 0.0,
-                    children: <Widget>[
-                      PopUpBox(
-                        hintText: "TopUp Name",
-                        labelText: "Create New TopUP",
-                        btnText: "CREATE",
-                        bthFunction: (text) {
-                          String id = Uuid().v1();
-                          collectionReference.doc(id).set({
-                            "id": id,
-                            "name": text,
-                            "createAt": DateTime.now(),
-                          });
-                        },
-                        context: context,
-                      )
-                    ],
-                  );
-                });
-          },
+          onPressed: _showCreateTopupDialog,
           icon: const Icon(Icons.add, color: white),
           label: const Text(
             "New Topup",
@@ -161,6 +90,106 @@ class _MyAccountsScreenState extends State<MyAccountsScreen> {
         ),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.endDocked,
+    );
+  }
+
+  Widget _buildAccountsSection(Map<String, _AccountSummary> summaries) {
+    return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+      stream: collectionReference.snapshots(),
+      builder: (context, snap) {
+        final colorScheme = Theme.of(context).colorScheme;
+        if (snap.hasError) {
+          return Center(
+            child: Text(
+              'Something went wrong!!!',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: colorScheme.onSurfaceVariant,
+              ),
+            ),
+          );
+        }
+        if (snap.connectionState == ConnectionState.waiting || !snap.hasData) {
+          return const Center(
+            child: Padding(
+              padding: EdgeInsets.only(top: 16),
+              child: CircularProgressIndicator(),
+            ),
+          );
+        }
+
+        final docs = List<QueryDocumentSnapshot<Map<String, dynamic>>>.from(
+          snap.data?.docs ?? [],
+        );
+        if (docs.isEmpty) {
+          return Center(
+            child: Text(
+              'No results found. Try a different keyword',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: colorScheme.onSurfaceVariant,
+              ),
+            ),
+          );
+        }
+
+        docs.sort((a, b) {
+          final aDate = _safeDate(a.data()['createAt']);
+          final bDate = _safeDate(b.data()['createAt']);
+          return bDate.compareTo(aDate);
+        });
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              "All Accounts (${docs.length})",
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+            ),
+            const SizedBox(height: 8),
+            ListView.builder(
+              scrollDirection: Axis.vertical,
+              controller: _controller,
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: docs.length,
+              itemBuilder: (_, index) {
+                final data = docs[index];
+                final map = data.data();
+                final id = (map["id"]?.toString().trim().isNotEmpty ?? false)
+                    ? map["id"].toString()
+                    : data.id;
+                final title = map["name"]?.toString().trim();
+                final createdAt = _formatCreatedAt(map["createAt"]);
+                final summary = summaries[id];
+                final pendingChip = _buildPendingChipText(summary);
+
+                return CListTile(
+                  context: context,
+                  docId: id,
+                  collectionName: "DashBoard",
+                  tileOnTap: () => changeScreenAnimated(
+                    context,
+                    MyAccountsUserDetails(data: data),
+                  ),
+                  onEdit: () => _showRenameDialog(
+                    context,
+                    id,
+                    title ?? "",
+                  ),
+                  title: title?.isNotEmpty == true ? title! : 'Topup',
+                  subtitle: createdAt,
+                  subtitleIcon: Icons.access_time,
+                  counter: "${index + 1}",
+                  pendingAmount: pendingChip,
+                );
+              },
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -281,6 +310,108 @@ class _MyAccountsScreenState extends State<MyAccountsScreen> {
   String _formatAmount(double value) {
     final formatter = NumberFormat.decimalPattern();
     return 'Rs.${formatter.format(value.round())}';
+  }
+
+  String _formatCreatedAt(dynamic value) {
+    final date = _safeDate(value);
+    if (date == DateTime.fromMillisecondsSinceEpoch(0)) {
+      return 'Unknown date';
+    }
+    return DateFormat.yMMMd().add_jm().format(date);
+  }
+
+  DateTime _safeDate(dynamic value) {
+    if (value is Timestamp) return value.toDate();
+    if (value is DateTime) return value;
+    return DateTime.fromMillisecondsSinceEpoch(0);
+  }
+
+  String? _buildPendingChipText(_AccountSummary? summary) {
+    if (summary == null) return null;
+    if (summary.pending > 0) {
+      return 'Pending ${_formatAmount(summary.pending)}';
+    }
+    if (summary.balance > 0) {
+      return 'Balance ${_formatAmount(summary.balance)}';
+    }
+    return null;
+  }
+
+  void _showCreateTopupDialog() {
+    final controller = TextEditingController();
+    String? errorText;
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setLocalState) {
+            return AlertDialog(
+              insetPadding:
+                  const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              contentPadding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
+              content: SizedBox(
+                width: MediaQuery.of(context).size.width * 0.8,
+                child: TextField(
+                  controller: controller,
+                  autofocus: true,
+                  decoration: InputDecoration(
+                    hintText: "TopUp Name",
+                    labelText: "Create New TopUP",
+                    errorText: errorText,
+                  ),
+                ),
+              ),
+              actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+              actionsAlignment: MainAxisAlignment.spaceBetween,
+              actions: <Widget>[
+                TextButton(
+                  onPressed: () => Navigator.pop(dialogContext),
+                  child: const Text(
+                    'CANCEL',
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                ),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Theme.of(context).colorScheme.primary,
+                    foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 20, vertical: 10),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  onPressed: () {
+                    final name = controller.text.trim();
+                    if (name.isEmpty) {
+                      setLocalState(() {
+                        errorText = 'Please enter a name';
+                      });
+                      return;
+                    }
+                    final id = const Uuid().v1();
+                    collectionReference.doc(id).set({
+                      "id": id,
+                      "name": name,
+                      "createAt": DateTime.now(),
+                    });
+                    Navigator.pop(dialogContext);
+                  },
+                  child: const Text(
+                    'CREATE',
+                    style: TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
   }
 
   void _showRenameDialog(
@@ -409,6 +540,37 @@ class _SummaryTotals {
         .replaceAll(',', '')
         .trim();
     return double.tryParse(text) ?? 0;
+  }
+}
+
+class _AccountSummary {
+  double paid;
+  double pending;
+  double balance;
+
+  _AccountSummary({
+    required this.paid,
+    required this.pending,
+    required this.balance,
+  });
+
+  static Map<String, _AccountSummary> fromDocs(
+      List<QueryDocumentSnapshot<Map<String, dynamic>>> docs) {
+    final map = <String, _AccountSummary>{};
+
+    for (final doc in docs) {
+      final dbId = (doc.data()['DB_ID'] ?? '').toString();
+      if (dbId.isEmpty) continue;
+      final summary = map.putIfAbsent(
+        dbId,
+        () => _AccountSummary(paid: 0, pending: 0, balance: 0),
+      );
+      summary.paid += _SummaryTotals._parseAmount(doc['PAID_AMOUNT']);
+      summary.pending += _SummaryTotals._parseAmount(doc['PENDING_AMOUNT']);
+      summary.balance += _SummaryTotals._parseAmount(doc['BALANCE_AMOUNT']);
+    }
+
+    return map;
   }
 }
 

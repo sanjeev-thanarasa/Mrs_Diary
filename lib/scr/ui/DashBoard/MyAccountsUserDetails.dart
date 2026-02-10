@@ -21,6 +21,7 @@ class _MyAccountsUserDetailsState extends State<MyAccountsUserDetails> {
       RefreshController(initialRefresh: false);
 
   late String dbID;
+  late Map<String, dynamic> _data;
 
   void _onRefresh() async {
     await Future.delayed(Duration(milliseconds: 1000));
@@ -34,7 +35,9 @@ class _MyAccountsUserDetailsState extends State<MyAccountsUserDetails> {
 
   @override
   void initState() {
-    dbID = widget.data['id'] ?? '';
+    _data = (widget.data.data() as Map<String, dynamic>?) ?? {};
+    final rawId = _data['id']?.toString().trim();
+    dbID = (rawId != null && rawId.isNotEmpty) ? rawId : widget.data.id;
     super.initState();
   }
 
@@ -47,7 +50,7 @@ class _MyAccountsUserDetailsState extends State<MyAccountsUserDetails> {
         elevation: 0,
         foregroundColor: kIndigoDark,
         title: Text(
-          "${widget.data["name"] ?? ''} விவரங்கள்",
+          "${_data["name"] ?? ''} விவரங்கள்",
           style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 18),
         ),
         actions: [
@@ -158,7 +161,7 @@ class _MyAccountsUserDetailsState extends State<MyAccountsUserDetails> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    "${widget.data["name"] ?? ''} விவரங்கள்",
+                    "${_data["name"] ?? ''} விவரங்கள்",
                     style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w700,
@@ -185,7 +188,7 @@ class _MyAccountsUserDetailsState extends State<MyAccountsUserDetails> {
               ),
               onPressed: () => changeScreen(
                 context,
-                CreateMyAccountsPayment(dbId: widget.data["id"]),
+                CreateMyAccountsPayment(dbId: dbID),
               ),
               icon: const Icon(Icons.add_rounded, size: 18),
               label: const Text(

@@ -36,30 +36,12 @@ class _AppShell extends StatelessWidget {
         seedColor: Colors.blue,
         brightness: brightness,
       ),
-      textTheme: base.textTheme
-          .apply(
-            fontFamily: 'TamilArima',
-          )
-          .copyWith(
-            bodySmall: const TextStyle(fontFamily: 'TamilArima2'),
-            bodyMedium: const TextStyle(fontFamily: 'TamilArima2'),
-            bodyLarge: const TextStyle(fontFamily: 'TamilArima'),
-            labelSmall: const TextStyle(fontFamily: 'Lobster'),
-            labelMedium: const TextStyle(fontFamily: 'Lobster'),
-            labelLarge: const TextStyle(fontFamily: 'Lobster'),
-          ),
-      primaryTextTheme: base.primaryTextTheme
-          .apply(
-            fontFamily: 'TamilArima',
-          )
-          .copyWith(
-            bodySmall: const TextStyle(fontFamily: 'TamilArima2'),
-            bodyMedium: const TextStyle(fontFamily: 'TamilArima2'),
-            bodyLarge: const TextStyle(fontFamily: 'TamilArima'),
-            labelSmall: const TextStyle(fontFamily: 'Lobster'),
-            labelMedium: const TextStyle(fontFamily: 'Lobster'),
-            labelLarge: const TextStyle(fontFamily: 'Lobster'),
-          ),
+      textTheme: base.textTheme.apply(
+        fontFamily: 'TamilArima2',
+      ),
+      primaryTextTheme: base.primaryTextTheme.apply(
+        fontFamily: 'TamilArima2',
+      ),
       pageTransitionsTheme: const PageTransitionsTheme(
         builders: <TargetPlatform, PageTransitionsBuilder>{
           TargetPlatform.android: ZoomPageTransitionsBuilder(),
