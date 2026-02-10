@@ -122,7 +122,7 @@ class _DashboardTile extends StatelessWidget {
               gradient: LinearGradient(
                 colors: [
                   colorScheme.surface,
-                  colorScheme.surfaceVariant.withValues(alpha: 0.6),
+                  colorScheme.surfaceContainerHighest.withValues(alpha: 0.6),
                 ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,

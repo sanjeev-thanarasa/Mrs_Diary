@@ -36,7 +36,6 @@ class _AppShell extends StatelessWidget {
     final base =
         brightness == Brightness.light ? ThemeData.light() : ThemeData.dark();
     return base.copyWith(
-      useMaterial3: true,
       colorScheme: ColorScheme.fromSeed(
         seedColor: Colors.blue,
         brightness: brightness,

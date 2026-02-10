@@ -199,7 +199,7 @@ class _CreatePaymentState extends State<CreatePayment> {
                   ),
                   Switch(
                     value: _showNotes,
-                    activeColor: kPrimaryColor,
+                    activeThumbColor: kPrimaryColor,
                     onChanged: (val) => setState(() => _showNotes = val),
                   ),
                 ],

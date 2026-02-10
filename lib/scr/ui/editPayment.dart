@@ -193,7 +193,7 @@ class _EditPaymentState extends State<EditPayment> {
                   ),
                   Switch(
                     value: _showNotes,
-                    activeColor: kPrimaryColor,
+                    activeThumbColor: kPrimaryColor,
                     onChanged: (val) => setState(() => _showNotes = val),
                   ),
                 ],

@@ -244,7 +244,7 @@ class _CreateMyAccountsPaymentState extends State<CreateMyAccountsPayment> {
                 ),
                 Switch(
                   value: _showNotes,
-                  activeColor: kPrimaryColor,
+                  activeThumbColor: kPrimaryColor,
                   onChanged: (val) => setState(() => _showNotes = val),
                 ),
               ],

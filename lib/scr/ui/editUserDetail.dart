@@ -539,7 +539,7 @@ class _EditUserDetailState extends State<EditUserDetail> {
         : normalized;
 
     return DropdownButtonFormField<String>(
-      value: currentValue,
+      initialValue: currentValue,
       isExpanded: true,
       onChanged: onChanged,
       icon: const Icon(Icons.keyboard_arrow_down_rounded),

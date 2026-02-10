@@ -540,7 +540,7 @@ class _RecordsScreenState extends State<RecordsScreen>
               surface: white,
               onSurface: kIndigoDark,
             ),
-            dialogBackgroundColor: white,
+            dialogTheme: DialogThemeData(backgroundColor: white),
           ),
           child: child!,
         );

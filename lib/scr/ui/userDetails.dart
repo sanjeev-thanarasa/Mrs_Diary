@@ -852,6 +852,7 @@ class _UserDetailsState extends State<UserDetails> {
     var firestore = FirebaseFirestore.instance;
     var data = await firestore
         .collection(collectionName)
+        .where('ownerId', isEqualTo: requireOwnerId())
         .where('id', isEqualTo: widget.userId)
         .get();
     setState(() {

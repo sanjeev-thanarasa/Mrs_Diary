@@ -63,6 +63,8 @@ dependency_overrides:
     path: packages/rounded_loading_button
   passcode_screen:
     path: packages/passcode_screen
+  flutter_app_badger:
+    path: packages/flutter_app_badger
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

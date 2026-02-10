@@ -40,14 +40,14 @@ class VillageProvider with ChangeNotifier {
         _totalCounterServices.getTotalPaidCount(),
       ]);
 
-      villageCount = results[0] as int;
-      totalOldCustomersCount = results[1] as int;
-      totalNewCustomersCount = results[2] as int;
-      todayPaymentCount = results[3] as int;
-      todayExpiredCount = results[4] as int;
-      totalBalanceCount = results[5] as int;
-      totalPendingCount = results[6] as int;
-      totalPaidCount = results[7] as int;
+      villageCount = results[0];
+      totalOldCustomersCount = results[1];
+      totalNewCustomersCount = results[2];
+      todayPaymentCount = results[3];
+      todayExpiredCount = results[4];
+      totalBalanceCount = results[5];
+      totalPendingCount = results[6];
+      totalPaidCount = results[7];
     } catch (_) {
       villageCount = 0;
       totalOldCustomersCount = 0;

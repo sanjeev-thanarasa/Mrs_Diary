@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mrs_dth_diary_v1/scr/providers/village.dart';
 import 'package:mrs_dth_diary_v1/scr/helpers/fcm_service.dart';
-import 'package:mrs_dth_diary_v1/scr/ui/notes_screen.dart';
+import 'package:mrs_dth_diary_v1/scr/ui/astrology_screen.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/homeCard.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/subHelpers/responsive.dart';
 import 'package:provider/provider.dart';
@@ -21,11 +21,13 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   ScrollController controller = ScrollController();
-  int _selectedIndex = 0;
+  static int _lastSelectedIndex = 0;
+  int _selectedIndex = _lastSelectedIndex;
 
   @override
   void initState() {
     super.initState();
+    _selectedIndex = _lastSelectedIndex;
   }
 
   @override
@@ -39,7 +41,7 @@ class _HomePageState extends State<HomePage> {
           children: [
             Home(),
             const SearchUsersScreen(),
-            const NotesScreen(),
+            const AstrologyScreen(),
             const SettingsScreen(),
           ],
         ),
@@ -104,8 +106,10 @@ class _HomePageState extends State<HomePage> {
                 ),
                 child: NavigationBar(
                   selectedIndex: _selectedIndex,
-                  onDestinationSelected: (index) =>
-                      setState(() => _selectedIndex = index),
+                  onDestinationSelected: (index) => setState(() {
+                    _selectedIndex = index;
+                    _lastSelectedIndex = index;
+                  }),
                   labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
                   destinations: const [
                     NavigationDestination(
@@ -119,9 +123,9 @@ class _HomePageState extends State<HomePage> {
                       label: 'Search',
                     ),
                     NavigationDestination(
-                      icon: Icon(Icons.note_alt_outlined),
-                      selectedIcon: Icon(Icons.note_alt_rounded),
-                      label: 'Notes',
+                      icon: Icon(Icons.auto_awesome_outlined),
+                      selectedIcon: Icon(Icons.auto_awesome_rounded),
+                      label: 'Astrology',
                     ),
                     NavigationDestination(
                       icon: Icon(Icons.settings_outlined),
