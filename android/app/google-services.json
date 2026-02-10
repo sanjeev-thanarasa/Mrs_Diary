@@ -13,7 +13,20 @@
           "package_name": "com.sms.mrs_dth_diary_v1"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "398539462557-668lufmnd2pqipqg91uvl00a3f7q944u.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.sms.mrs_dth_diary_v1",
+            "certificate_hash": "885db3ddd2a308302b7f638ff6dab2ffd8e2e07e"
+          }
+        },
+        {
+          "client_id": "398539462557-68tf36gfo70um9om8c4kmro63p94g9p0.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyA7wnj49RyqmiFDX3lZX1z003ofEhPqxqA"
@@ -21,7 +34,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "398539462557-68tf36gfo70um9om8c4kmro63p94g9p0.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }

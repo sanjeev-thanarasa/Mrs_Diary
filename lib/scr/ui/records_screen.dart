@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:mrs_dth_diary_v1/scr/helpers/owner_service.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/customText.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/subHelpers/styles.dart';
 
@@ -627,6 +628,7 @@ class _RecordsScreenState extends State<RecordsScreen>
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance
           .collection('DashboardPaymentRecords')
+          .where('ownerId', isEqualTo: requireOwnerId())
           .snapshots(),
       builder: (context, snapshot) {
         if (snapshot.hasError) {
@@ -663,6 +665,7 @@ class _RecordsScreenState extends State<RecordsScreen>
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance
           .collection('DashboardPaymentRecords')
+          .where('ownerId', isEqualTo: requireOwnerId())
           .snapshots(),
       builder: (context, snapshot) {
         if (snapshot.hasError) {
@@ -699,6 +702,7 @@ class _RecordsScreenState extends State<RecordsScreen>
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance
           .collection('DashboardPaymentRecords')
+          .where('ownerId', isEqualTo: requireOwnerId())
           .orderBy('CREATE_AT', descending: true)
           .snapshots(),
       builder: (context, snapshot) {

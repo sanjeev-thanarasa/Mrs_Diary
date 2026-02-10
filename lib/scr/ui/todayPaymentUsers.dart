@@ -3,6 +3,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:mrs_dth_diary_v1/scr/helpers/owner_service.dart';
 import 'package:mrs_dth_diary_v1/scr/models/totalCustomers.dart';
 import 'package:mrs_dth_diary_v1/scr/ui/userDetails.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/CAppBar.dart';
@@ -80,8 +81,10 @@ class _TodayPaymentUsersState extends State<TodayPaymentUsers> {
       _lastPaymentDoc = null;
     });
 
+    final ownerId = requireOwnerId();
     final query = paymentRecords
-        .where("PENDING_DATE", isGreaterThan: _dateTodayStart)
+        .where('ownerId', isEqualTo: ownerId)
+        .where("PENDING_DATE", isGreaterThanOrEqualTo: _dateTodayStart)
         .where("PENDING_DATE", isLessThanOrEqualTo: _dateTodayEnd)
         .orderBy("PENDING_DATE")
         .limit(_pageSize);
@@ -104,8 +107,10 @@ class _TodayPaymentUsersState extends State<TodayPaymentUsers> {
       _isLoadingMore = true;
     });
 
+    final ownerId = requireOwnerId();
     final query = paymentRecords
-        .where("PENDING_DATE", isGreaterThan: _dateTodayStart)
+        .where('ownerId', isEqualTo: ownerId)
+        .where("PENDING_DATE", isGreaterThanOrEqualTo: _dateTodayStart)
         .where("PENDING_DATE", isLessThanOrEqualTo: _dateTodayEnd)
         .orderBy("PENDING_DATE")
         .startAfterDocument(_lastPaymentDoc!)
@@ -153,11 +158,15 @@ class _TodayPaymentUsersState extends State<TodayPaymentUsers> {
   Future<Map<String, QueryDocumentSnapshot<Object?>>> _fetchUsersByIds(
       List<String> ids) async {
     final Map<String, QueryDocumentSnapshot<Object?>> result = {};
+    final ownerId = requireOwnerId();
     const chunkSize = 10;
     for (var i = 0; i < ids.length; i += chunkSize) {
       final chunk = ids.sublist(
           i, i + chunkSize > ids.length ? ids.length : i + chunkSize);
-      final snapshot = await oldUser.where('id', whereIn: chunk).get();
+      final snapshot = await oldUser
+          .where('ownerId', isEqualTo: ownerId)
+          .where('id', whereIn: chunk)
+          .get();
       for (final doc in snapshot.docs) {
         final data = doc.data() as Map<String, dynamic>;
         final id = data['id'];

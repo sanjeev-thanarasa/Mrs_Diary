@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:mrs_dth_diary_v1/scr/helpers/owner_service.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/CustomListTile.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/subHelpers/screen_navigation.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/subHelpers/styles.dart';
@@ -49,7 +50,9 @@ class _MyAccountsScreenState extends State<MyAccountsScreen> {
         child: Padding(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
           child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-            stream: paymentsReference.snapshots(),
+            stream: paymentsReference
+                .where('ownerId', isEqualTo: requireOwnerId())
+                .snapshots(),
             builder: (context, snapshot) {
               final docs = snapshot.data?.docs ?? [];
               final totals = docs.isEmpty
@@ -95,7 +98,9 @@ class _MyAccountsScreenState extends State<MyAccountsScreen> {
 
   Widget _buildAccountsSection(Map<String, _AccountSummary> summaries) {
     return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-      stream: collectionReference.snapshots(),
+      stream: collectionReference
+          .where('ownerId', isEqualTo: requireOwnerId())
+          .snapshots(),
       builder: (context, snap) {
         final colorScheme = Theme.of(context).colorScheme;
         if (snap.hasError) {
@@ -380,6 +385,7 @@ class _MyAccountsScreenState extends State<MyAccountsScreen> {
                     final id = const Uuid().v1();
                     collectionReference.doc(id).set({
                       "id": id,
+                      "ownerId": requireOwnerId(),
                       "name": name,
                       "createAt": DateTime.now(),
                     });

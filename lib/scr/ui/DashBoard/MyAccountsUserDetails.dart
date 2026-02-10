@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:mrs_dth_diary_v1/scr/helpers/owner_service.dart';
 import 'package:intl/intl.dart';
 import 'package:mrs_dth_diary_v1/scr/ui/DashBoard/createMyAccountsPayment.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/dashBoardPaymentContainerListTile.dart';
@@ -117,6 +118,7 @@ class _MyAccountsUserDetailsState extends State<MyAccountsUserDetails> {
     var firestore = FirebaseFirestore.instance;
     var _stream = firestore
         .collection('DashboardPaymentRecords')
+        .where('ownerId', isEqualTo: requireOwnerId())
         .where('DB_ID', isEqualTo: dbID)
         .orderBy('CREATE_AT', descending: true)
         .snapshots();

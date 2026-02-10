@@ -1,13 +1,16 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:passcode_screen/passcode_screen.dart';
 import 'package:mrs_dth_diary_v1/scr/providers/village.dart';
 import 'package:mrs_dth_diary_v1/scr/helpers/passcode_storage.dart';
 import 'package:mrs_dth_diary_v1/scr/helpers/app_settings.dart';
-import 'package:mrs_dth_diary_v1/scr/ui/homePage.dart';
+import 'package:mrs_dth_diary_v1/scr/helpers/fcm_service.dart';
+import 'package:mrs_dth_diary_v1/scr/ui/auth/auth_gate.dart';
+import 'package:mrs_dth_diary_v1/scr/ui/splashScreen.dart';
 import 'package:provider/provider.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/subHelpers/responsive.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
@@ -18,6 +21,8 @@ void main() async {
     DeviceOrientation.portraitUp,
   ]);
   await Firebase.initializeApp();
+  FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+  await FcmService.initialize();
   runApp(MultiProvider(providers: [
     ChangeNotifierProvider.value(value: VillageProvider.initialize()),
     ChangeNotifierProvider(create: (_) => AppSettings()..load()),
@@ -220,6 +225,8 @@ class _AppRootState extends State<AppRoot> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
-    return HomePage();
+    return const SplashScreen(
+      secondScreen: AuthGate(),
+    );
   }
 }

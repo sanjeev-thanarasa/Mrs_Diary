@@ -3,6 +3,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:mrs_dth_diary_v1/scr/helpers/owner_service.dart';
 import 'package:mrs_dth_diary_v1/scr/models/totalCustomers.dart';
 import 'package:mrs_dth_diary_v1/scr/ui/userDetails.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/CAppBar.dart';
@@ -25,6 +26,7 @@ class _TodayPackageExpiredUsersState extends State<TodayPackageExpiredUsers> {
   bool searchVisible = false;
   late DateTime _dateTodayStart;
   late DateTime _dateTodayEnd;
+  String? _ownerId;
   String formattedDateStart =
       "${DateFormat('yyyyMMdd').format(DateTime.now())}T000000";
   String formattedDateEnd =
@@ -34,6 +36,7 @@ class _TodayPackageExpiredUsersState extends State<TodayPackageExpiredUsers> {
   final ScrollController _controller = ScrollController();
 
   final List<_UserEntry> _entries = [];
+  final Set<String> _seenUserIds = {};
   QueryDocumentSnapshot<Object?>? _lastPaymentDoc;
   bool _isLoading = true;
   bool _isLoadingMore = false;
@@ -50,6 +53,7 @@ class _TodayPackageExpiredUsersState extends State<TodayPackageExpiredUsers> {
   void initState() {
     _dateTodayStart = DateTime.parse(formattedDateStart);
     _dateTodayEnd = DateTime.parse(formattedDateEnd);
+    _ownerId = currentOwnerId();
     paymentRecords = FirebaseFirestore.instance.collection("PaymentRecords");
     oldUser = FirebaseFirestore.instance.collection("OldUser");
 
@@ -74,15 +78,18 @@ class _TodayPackageExpiredUsersState extends State<TodayPackageExpiredUsers> {
   }
 
   Future<void> _fetchInitial() async {
+    if (_ownerId == null) return;
     setState(() {
       _isLoading = true;
       _hasMore = true;
       _entries.clear();
+      _seenUserIds.clear();
       _lastPaymentDoc = null;
     });
 
     final query = paymentRecords
-        .where("EXPIRED_AT", isGreaterThan: _dateTodayStart)
+        .where('ownerId', isEqualTo: _ownerId)
+        .where("EXPIRED_AT", isGreaterThanOrEqualTo: _dateTodayStart)
         .where("EXPIRED_AT", isLessThanOrEqualTo: _dateTodayEnd)
         .orderBy("EXPIRED_AT")
         .limit(_pageSize);
@@ -101,12 +108,14 @@ class _TodayPackageExpiredUsersState extends State<TodayPackageExpiredUsers> {
 
   Future<void> _fetchMore() async {
     if (_lastPaymentDoc == null) return;
+    if (_ownerId == null) return;
     setState(() {
       _isLoadingMore = true;
     });
 
     final query = paymentRecords
-        .where("EXPIRED_AT", isGreaterThan: _dateTodayStart)
+        .where('ownerId', isEqualTo: _ownerId)
+        .where("EXPIRED_AT", isGreaterThanOrEqualTo: _dateTodayStart)
         .where("EXPIRED_AT", isLessThanOrEqualTo: _dateTodayEnd)
         .orderBy("EXPIRED_AT")
         .startAfterDocument(_lastPaymentDoc!)
@@ -129,6 +138,7 @@ class _TodayPackageExpiredUsersState extends State<TodayPackageExpiredUsers> {
   Future<void> _appendEntries(
       List<QueryDocumentSnapshot<Object?>> paymentDocs) async {
     if (paymentDocs.isEmpty) return;
+    if (_ownerId == null) return;
 
     final ids = paymentDocs
         .map((doc) => (doc.data() as Map<String, dynamic>)["USER_ID"])
@@ -141,8 +151,12 @@ class _TodayPackageExpiredUsersState extends State<TodayPackageExpiredUsers> {
     for (final payment in paymentDocs) {
       final paymentData = payment.data() as Map<String, dynamic>;
       final userId = paymentData["USER_ID"];
-      final userDoc = userId is String ? userMap[userId] : null;
+      if (userId is! String || _seenUserIds.contains(userId)) {
+        continue;
+      }
+      final userDoc = userMap[userId];
       if (userDoc != null) {
+        _seenUserIds.add(userId);
         _entries.add(_UserEntry(userDoc));
       }
     }
@@ -151,11 +165,15 @@ class _TodayPackageExpiredUsersState extends State<TodayPackageExpiredUsers> {
   Future<Map<String, QueryDocumentSnapshot<Object?>>> _fetchUsersByIds(
       List<String> ids) async {
     final Map<String, QueryDocumentSnapshot<Object?>> result = {};
+    if (_ownerId == null) return result;
     const chunkSize = 10;
     for (var i = 0; i < ids.length; i += chunkSize) {
       final chunk = ids.sublist(
           i, i + chunkSize > ids.length ? ids.length : i + chunkSize);
-      final snapshot = await oldUser.where('id', whereIn: chunk).get();
+      final snapshot = await oldUser
+          .where('ownerId', isEqualTo: _ownerId)
+          .where('id', whereIn: chunk)
+          .get();
       for (final doc in snapshot.docs) {
         final data = doc.data() as Map<String, dynamic>;
         final id = data['id'];

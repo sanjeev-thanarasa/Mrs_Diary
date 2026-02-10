@@ -2,6 +2,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:mrs_dth_diary_v1/scr/helpers/fcm_service.dart';
+import 'package:mrs_dth_diary_v1/scr/helpers/owner_service.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/customText.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/loading.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/noResultFound.dart';
@@ -19,6 +21,7 @@ class TodayPaymentNotifications extends StatefulWidget {
 class _TodayPaymentNotificationsState extends State<TodayPaymentNotifications> {
   late DateTime _dateTodayStart;
   late DateTime _dateTodayEnd;
+  String? _ownerId;
   String formattedDateStart =
       "${DateFormat('yyyyMMdd').format(DateTime.now())}T000000";
   String formattedDateEnd =
@@ -40,6 +43,8 @@ class _TodayPaymentNotificationsState extends State<TodayPaymentNotifications> {
   void initState() {
     _dateTodayStart = DateTime.parse(formattedDateStart);
     _dateTodayEnd = DateTime.parse(formattedDateEnd);
+    _ownerId = currentOwnerId();
+    FcmService.clearBadge();
     paymentRecords = FirebaseFirestore.instance.collection("PaymentRecords");
     oldUser = FirebaseFirestore.instance.collection("OldUser");
     _controller.addListener(_onScroll);
@@ -63,6 +68,7 @@ class _TodayPaymentNotificationsState extends State<TodayPaymentNotifications> {
   }
 
   Future<void> _fetchInitial() async {
+    if (_ownerId == null) return;
     setState(() {
       _isLoading = true;
       _hasMore = true;
@@ -72,7 +78,8 @@ class _TodayPaymentNotificationsState extends State<TodayPaymentNotifications> {
     });
 
     final query = paymentRecords
-        .where("PENDING_DATE", isGreaterThan: _dateTodayStart)
+        .where('ownerId', isEqualTo: _ownerId)
+        .where("PENDING_DATE", isGreaterThanOrEqualTo: _dateTodayStart)
         .where("PENDING_DATE", isLessThanOrEqualTo: _dateTodayEnd)
         .orderBy("PENDING_DATE")
         .limit(_pageSize);
@@ -85,7 +92,8 @@ class _TodayPaymentNotificationsState extends State<TodayPaymentNotifications> {
     _hasMore = snapshot.docs.length == _pageSize;
 
     final expiredQuery = paymentRecords
-        .where("EXPIRED_AT", isGreaterThan: _dateTodayStart)
+        .where('ownerId', isEqualTo: _ownerId)
+        .where("EXPIRED_AT", isGreaterThanOrEqualTo: _dateTodayStart)
         .where("EXPIRED_AT", isLessThanOrEqualTo: _dateTodayEnd)
         .orderBy("EXPIRED_AT")
         .limit(_pageSize);
@@ -103,12 +111,14 @@ class _TodayPaymentNotificationsState extends State<TodayPaymentNotifications> {
 
   Future<void> _fetchMore() async {
     if (_lastPaymentDoc == null) return;
+    if (_ownerId == null) return;
     setState(() {
       _isLoadingMore = true;
     });
 
     final query = paymentRecords
-        .where("PENDING_DATE", isGreaterThan: _dateTodayStart)
+        .where('ownerId', isEqualTo: _ownerId)
+        .where("PENDING_DATE", isGreaterThanOrEqualTo: _dateTodayStart)
         .where("PENDING_DATE", isLessThanOrEqualTo: _dateTodayEnd)
         .orderBy("PENDING_DATE")
         .startAfterDocument(_lastPaymentDoc!)
@@ -134,6 +144,7 @@ class _TodayPaymentNotificationsState extends State<TodayPaymentNotifications> {
     required String badgeLabel,
   }) async {
     if (paymentDocs.isEmpty) return;
+    if (_ownerId == null) return;
 
     final ids = paymentDocs
         .map((doc) => (doc.data() as Map<String, dynamic>)["USER_ID"])
@@ -161,11 +172,15 @@ class _TodayPaymentNotificationsState extends State<TodayPaymentNotifications> {
   Future<Map<String, QueryDocumentSnapshot<Object?>>> _fetchUsersByIds(
       List<String> ids) async {
     final Map<String, QueryDocumentSnapshot<Object?>> result = {};
+    if (_ownerId == null) return result;
     const chunkSize = 10;
     for (var i = 0; i < ids.length; i += chunkSize) {
       final chunk = ids.sublist(
           i, i + chunkSize > ids.length ? ids.length : i + chunkSize);
-      final snapshot = await oldUser.where('id', whereIn: chunk).get();
+      final snapshot = await oldUser
+          .where('ownerId', isEqualTo: _ownerId)
+          .where('id', whereIn: chunk)
+          .get();
       for (final doc in snapshot.docs) {
         final data = doc.data() as Map<String, dynamic>;
         final id = data['id'];

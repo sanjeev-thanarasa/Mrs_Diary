@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:intl/intl.dart';
+import 'package:mrs_dth_diary_v1/scr/helpers/owner_service.dart';
 import 'package:mrs_dth_diary_v1/scr/helpers/operations.dart';
 import 'package:mrs_dth_diary_v1/scr/providers/village.dart';
 import 'package:mrs_dth_diary_v1/scr/ui/filterVIllageUsers.dart';
@@ -49,13 +50,16 @@ class _VillagesListState extends State<VillagesList> {
 
   Future<int> _fetchVillageUserCount(String villageName) async {
     final firestore = FirebaseFirestore.instance;
+    final ownerId = requireOwnerId();
     final oldUserCount = await firestore
         .collection("OldUser")
+        .where('ownerId', isEqualTo: ownerId)
         .where("area", isEqualTo: villageName)
         .count()
         .get();
     final newUserCount = await firestore
         .collection("NewUser")
+        .where('ownerId', isEqualTo: ownerId)
         .where("area", isEqualTo: villageName)
         .count()
         .get();
@@ -186,6 +190,7 @@ class _VillagesListState extends State<VillagesList> {
     while (true) {
       Query query = firestore
           .collection(collectionName)
+          .where('ownerId', isEqualTo: requireOwnerId())
           .where('area', isEqualTo: oldName)
           .orderBy(FieldPath.documentId)
           .limit(400);
@@ -246,9 +251,12 @@ class _VillagesListState extends State<VillagesList> {
             CustomStreamBuilder(
                 context: context,
                 stream: searchText.isEmpty
-                    ? collectionReference.snapshots()
+                    ? collectionReference
+                            .where('ownerId', isEqualTo: requireOwnerId())
+                            .snapshots()
                         as Stream<QuerySnapshot<Map<String, dynamic>>>
                     : collectionReference
+                            .where('ownerId', isEqualTo: requireOwnerId())
                             .orderBy("name")
                             .startAt([searchText]).endAt(
                                 [searchText + '\uf8ff']).snapshots()
@@ -347,8 +355,11 @@ class _VillagesListState extends State<VillagesList> {
   }
 
   Future<bool> _isVillageNameTaken(String name, {String? excludeId}) async {
-    final snapshot =
-        await collectionReference.where('name', isEqualTo: name).limit(1).get();
+    final snapshot = await collectionReference
+        .where('ownerId', isEqualTo: requireOwnerId())
+        .where('name', isEqualTo: name)
+        .limit(1)
+        .get();
     if (snapshot.docs.isEmpty) {
       return false;
     }

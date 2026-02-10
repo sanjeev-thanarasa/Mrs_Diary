@@ -4,6 +4,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:mrs_dth_diary_v1/scr/models/dropDownModel.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/CToast.dart';
+import 'package:mrs_dth_diary_v1/scr/helpers/owner_service.dart';
 import 'package:rounded_loading_button/rounded_loading_button.dart';
 import 'package:uuid/uuid.dart';
 
@@ -36,8 +37,11 @@ class USerServices {
   String collection = "Villages";
   FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  Future<DropListModel> getVillageName() async =>
-      _firestore.collection(collection).get().then((result) {
+  Future<DropListModel> getVillageName() async => _firestore
+          .collection(collection)
+          .where('ownerId', isEqualTo: requireOwnerId())
+          .get()
+          .then((result) {
         villageDropListModel.listOptionItems.clear();
         for (DocumentSnapshot data in result.docs) {
           villageDropListModel.listOptionItems
@@ -48,8 +52,10 @@ class USerServices {
 
   void createRecord({required int index, required BuildContext context}) async {
     String id = const Uuid().v1();
+    final ownerId = requireOwnerId();
     addOldUser = {
       "id": id,
+      "ownerId": ownerId,
       "name": nameController.text,
       "address": addressController.text,
       "area": selectedArea,
@@ -63,6 +69,7 @@ class USerServices {
     };
     addNewUser = {
       "id": id,
+      "ownerId": ownerId,
       "name": nameController.text,
       "address": addressController.text,
       "area": selectedArea,
@@ -111,9 +118,11 @@ class USerServices {
     required String collectionName,
   }) async {
     final now = DateTime.now();
+    final ownerId = requireOwnerId();
     if (collectionName == 'NewUser') {
       addNewUser = {
         "id": userId,
+        "ownerId": ownerId,
         "name": nameController.text,
         "address": addressController.text,
         "area": selectedArea,
@@ -141,6 +150,7 @@ class USerServices {
     } else if (collectionName == 'OldUser') {
       addOldUser = {
         "id": userId,
+        "ownerId": ownerId,
         "name": nameController.text,
         "address": addressController.text,
         "area": selectedArea,

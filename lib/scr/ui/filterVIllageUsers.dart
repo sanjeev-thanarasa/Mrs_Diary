@@ -2,6 +2,7 @@
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:mrs_dth_diary_v1/scr/helpers/owner_service.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:mrs_dth_diary_v1/scr/models/filterUser.dart';
 import 'package:mrs_dth_diary_v1/scr/ui/editUserDetail.dart';
@@ -284,6 +285,7 @@ class _FilterVillageUserState extends State<FilterVillageUser> {
   Stream<QuerySnapshot<Map<String, dynamic>>> _oldUsersStream() {
     return FirebaseFirestore.instance
         .collection("OldUser")
+        .where('ownerId', isEqualTo: requireOwnerId())
         .where('area', isEqualTo: widget.villageName.trim())
         .snapshots();
   }
@@ -291,6 +293,7 @@ class _FilterVillageUserState extends State<FilterVillageUser> {
   Stream<QuerySnapshot<Map<String, dynamic>>> _newUsersStream() {
     return FirebaseFirestore.instance
         .collection("NewUser")
+        .where('ownerId', isEqualTo: requireOwnerId())
         .where('area', isEqualTo: widget.villageName.trim())
         .snapshots();
   }

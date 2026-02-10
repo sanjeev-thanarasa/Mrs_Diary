@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
+import 'package:mrs_dth_diary_v1/scr/helpers/owner_service.dart';
 
 class TotalCounterServices {
   FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -9,45 +10,86 @@ class TotalCounterServices {
       DateTime.parse("${DateFormat('yyyyMMdd').format(DateTime.now())}T235959");
 
   Future<int> _count(Query query) async {
-    final snapshot = await query.count().get();
-    return snapshot.count ?? 0;
+    try {
+      final snapshot = await query.count().get();
+      return snapshot.count ?? 0;
+    } on FirebaseException {
+      return 0;
+    } catch (_) {
+      return 0;
+    }
   }
 
-  Future<int> getOldUserCount() async =>
-      _count(_firestore.collection("OldUser"));
+  Future<int> getOldUserCount() async {
+    final ownerId = currentOwnerId();
+    if (ownerId == null) return 0;
+    return _count(
+      _firestore.collection("OldUser").where('ownerId', isEqualTo: ownerId),
+    );
+  }
 
-  Future<int> getNewUserCount() async =>
-      _count(_firestore.collection("NewUser"));
+  Future<int> getNewUserCount() async {
+    final ownerId = currentOwnerId();
+    if (ownerId == null) return 0;
+    return _count(
+      _firestore.collection("NewUser").where('ownerId', isEqualTo: ownerId),
+    );
+  }
 
-  Future<int> getTodayPaymentCount() async => _count(
-        _firestore
-            .collection("PaymentRecords")
-            .where("PENDING_DATE", isGreaterThanOrEqualTo: _dateTodayStart)
-            .where("PENDING_DATE", isLessThanOrEqualTo: _dateTodayEnd),
-      );
+  Future<int> getTodayPaymentCount() async {
+    final ownerId = currentOwnerId();
+    if (ownerId == null) return 0;
+    return _count(
+      _firestore
+          .collection("PaymentRecords")
+          .where('ownerId', isEqualTo: ownerId)
+          .where("PENDING_DATE", isGreaterThanOrEqualTo: _dateTodayStart)
+          .where("PENDING_DATE", isLessThanOrEqualTo: _dateTodayEnd),
+    );
+  }
 
-  Future<int> getTodayExpiredCount() async => _count(
-        _firestore
-            .collection("PaymentRecords")
-            .where("EXPIRED_AT", isGreaterThanOrEqualTo: _dateTodayStart)
-            .where("EXPIRED_AT", isLessThanOrEqualTo: _dateTodayEnd),
-      );
+  Future<int> getTodayExpiredCount() async {
+    final ownerId = currentOwnerId();
+    if (ownerId == null) return 0;
+    return _count(
+      _firestore
+          .collection("PaymentRecords")
+          .where('ownerId', isEqualTo: ownerId)
+          .where("EXPIRED_AT", isGreaterThanOrEqualTo: _dateTodayStart)
+          .where("EXPIRED_AT", isLessThanOrEqualTo: _dateTodayEnd),
+    );
+  }
 
-  Future<int> getTotalBalanceCount() async => _count(
-        _firestore
-            .collection("PaymentRecords")
-            .where("BALANCE_AMOUNT", isNotEqualTo: ""),
-      );
+  Future<int> getTotalBalanceCount() async {
+    final ownerId = currentOwnerId();
+    if (ownerId == null) return 0;
+    return _count(
+      _firestore
+          .collection("PaymentRecords")
+          .where('ownerId', isEqualTo: ownerId)
+          .where("BALANCE_AMOUNT", isNotEqualTo: ""),
+    );
+  }
 
-  Future<int> getTotalPendingCount() async => _count(
-        _firestore
-            .collection("PaymentRecords")
-            .where("PENDING_AMOUNT", isNotEqualTo: ""),
-      );
+  Future<int> getTotalPendingCount() async {
+    final ownerId = currentOwnerId();
+    if (ownerId == null) return 0;
+    return _count(
+      _firestore
+          .collection("PaymentRecords")
+          .where('ownerId', isEqualTo: ownerId)
+          .where("PENDING_AMOUNT", isNotEqualTo: ""),
+    );
+  }
 
-  Future<int> getTotalPaidCount() async => _count(
-        _firestore
-            .collection("PaymentRecords")
-            .where("PAID_AMOUNT", isNotEqualTo: ""),
-      );
+  Future<int> getTotalPaidCount() async {
+    final ownerId = currentOwnerId();
+    if (ownerId == null) return 0;
+    return _count(
+      _firestore
+          .collection("PaymentRecords")
+          .where('ownerId', isEqualTo: ownerId)
+          .where("PAID_AMOUNT", isNotEqualTo: ""),
+    );
+  }
 }

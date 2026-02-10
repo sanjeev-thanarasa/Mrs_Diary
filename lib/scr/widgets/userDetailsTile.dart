@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:mrs_dth_diary_v1/scr/helpers/owner_service.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/subHelpers/responsive.dart';
 
 class UserDetailsTile extends StatefulWidget {
@@ -29,7 +30,7 @@ class UserDetailsTile extends StatefulWidget {
 }
 
 class _UserDetailsTileState extends State<UserDetailsTile> {
-  Future<Object?>? _pendingFuture;
+  Future<Map<String, Object?>?>? _amountFuture;
 
   @override
   void initState() {
@@ -48,15 +49,15 @@ class _UserDetailsTileState extends State<UserDetailsTile> {
 
   void _setPendingFuture() {
     if (_hasAmountValue(widget.amountValue)) {
-      _pendingFuture = null;
+      _amountFuture = null;
       return;
     }
     final id = widget.userId?.trim();
     if (id == null || id.isEmpty) {
-      _pendingFuture = null;
+      _amountFuture = null;
       return;
     }
-    _pendingFuture = _fetchPendingAmount(id);
+    _amountFuture = _fetchOutstandingAmount(id);
   }
 
   bool _hasAmountValue(Object? value) {
@@ -81,23 +82,25 @@ class _UserDetailsTileState extends State<UserDetailsTile> {
     return text.endsWith('.0') ? text.substring(0, text.length - 2) : text;
   }
 
-  Future<Object?> _fetchPendingAmount(String userId) async {
+  Future<Map<String, Object?>?> _fetchOutstandingAmount(String userId) async {
     try {
+      final ownerId = currentOwnerId();
+      if (ownerId == null) return null;
       final snapshot = await FirebaseFirestore.instance
           .collection('PaymentRecords')
+          .where('ownerId', isEqualTo: ownerId)
           .where('USER_ID', isEqualTo: userId)
           .limit(20)
           .get();
 
-      Object? bestValue;
+      Object? bestPending;
+      Object? bestBalance;
       DateTime? bestDate;
 
       for (final doc in snapshot.docs) {
         final data = doc.data();
-        final value = data['PENDING_AMOUNT'];
-        if (!_hasAmountValue(value)) {
-          continue;
-        }
+        final pendingValue = data['PENDING_AMOUNT'];
+        final balanceValue = data['BALANCE_AMOUNT'];
         final createdAt = data['CREATE_AT'];
         DateTime? created;
         if (createdAt is Timestamp) {
@@ -109,14 +112,25 @@ class _UserDetailsTileState extends State<UserDetailsTile> {
         if (bestDate == null ||
             (created != null && created.isAfter(bestDate))) {
           bestDate = created ?? bestDate;
-          bestValue = value;
-        } else if (bestValue == null) {
-          bestValue = value;
+          bestPending = pendingValue;
+          bestBalance = balanceValue;
+        } else if (bestPending == null && bestBalance == null) {
+          bestPending = pendingValue;
+          bestBalance = balanceValue;
         }
       }
 
-      if (_hasAmountValue(bestValue)) {
-        return bestValue;
+      if (_hasAmountValue(bestPending)) {
+        return {
+          'label': 'நிலுவை',
+          'value': bestPending,
+        };
+      }
+      if (_hasAmountValue(bestBalance)) {
+        return {
+          'label': 'கொடுமதி',
+          'value': bestBalance,
+        };
       }
     } catch (_) {
       return null;
@@ -155,24 +169,31 @@ class _UserDetailsTileState extends State<UserDetailsTile> {
       return _buildAmountChip(context, label, amountText);
     }
 
-    if (_pendingFuture == null) {
+    if (_amountFuture == null) {
       return const SizedBox.shrink();
     }
 
-    return FutureBuilder<Object?>(
-      future: _pendingFuture,
+    return FutureBuilder<Map<String, Object?>?>(
+      future: _amountFuture,
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
           return const SizedBox.shrink();
         }
-        if (!_hasAmountValue(snapshot.data)) {
+        final data = snapshot.data;
+        final value = data?['value'];
+        final labelText = data?['label']?.toString().trim();
+        if (!_hasAmountValue(value)) {
           return const SizedBox.shrink();
         }
-        final amountText = _formatAmountText(snapshot.data);
+        final amountText = _formatAmountText(value);
         if (amountText.isEmpty) {
           return const SizedBox.shrink();
         }
-        return _buildAmountChip(context, label, amountText);
+        return _buildAmountChip(
+          context,
+          labelText?.isNotEmpty == true ? labelText! : label,
+          amountText,
+        );
       },
     );
   }
@@ -231,7 +252,7 @@ class _UserDetailsTileState extends State<UserDetailsTile> {
               ),
               if (widget.villageName.isNotEmpty ||
                   _hasAmountValue(widget.amountValue) ||
-                  _pendingFuture != null) ...[
+                  _amountFuture != null) ...[
                 SizedBox(height: rs.rh(8)),
                 Row(
                   children: [

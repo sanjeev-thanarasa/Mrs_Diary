@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:mrs_dth_diary_v1/scr/helpers/owner_service.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/subHelpers/styles.dart';
 
 class NotesScreen extends StatefulWidget {
@@ -99,9 +100,14 @@ class _NotesScreenState extends State<NotesScreen> {
   }
 
   Widget _buildNotesList() {
+    final ownerId = currentOwnerId();
+    if (ownerId == null) {
+      return const Center(child: CircularProgressIndicator());
+    }
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance
           .collection('Notes')
+          .where('ownerId', isEqualTo: ownerId)
           .orderBy('updatedAt', descending: true)
           .snapshots(),
       builder: (context, snapshot) {
@@ -382,6 +388,7 @@ class _NotesScreenState extends State<NotesScreen> {
                             FirebaseFirestore.instance.collection('Notes');
                         if (doc == null) {
                           await notes.add({
+                            'ownerId': requireOwnerId(),
                             'title': title,
                             'content': content,
                             'createdAt': FieldValue.serverTimestamp(),
@@ -389,6 +396,7 @@ class _NotesScreenState extends State<NotesScreen> {
                           });
                         } else {
                           await notes.doc(doc.id).update({
+                            'ownerId': requireOwnerId(),
                             'title': title,
                             'content': content,
                             'updatedAt': FieldValue.serverTimestamp(),

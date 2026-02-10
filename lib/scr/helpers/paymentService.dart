@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:mrs_dth_diary_v1/scr/helpers/owner_service.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/CToast.dart';
 import 'package:rounded_loading_button/rounded_loading_button.dart';
 
@@ -37,6 +38,7 @@ class PaymentServices {
   Future<bool> createPaymentRecord({required String userId}) async {
     final rechargeValue = _parseAmount(rechargeAmount.text);
     final paidValue = _parseAmount(giveAmount.text);
+    final ownerId = requireOwnerId();
 
     double prevPending = 0;
     double prevBalance = 0;
@@ -46,6 +48,7 @@ class PaymentServices {
 
     final latest = await databaseReference
         .collection(collection)
+        .where('ownerId', isEqualTo: ownerId)
         .where("USER_ID", isEqualTo: userId)
         .orderBy("CREATE_AT", descending: true)
         .limit(1)
@@ -119,6 +122,7 @@ class PaymentServices {
     }
 
     addPayment = {
+      "ownerId": ownerId,
       "USER_ID": userId,
       "PACKAGE_NAME": packageName.text,
       "AMOUNT": _formatAmountForStorage(rechargeValue),
@@ -145,6 +149,7 @@ class PaymentServices {
     final prevPaid = _parseAmount(snapshot["PAID_AMOUNT"]);
     final additionalPaid = _parseAmount(newGiveAmount.text);
     final totalPaid = prevPaid + additionalPaid;
+    final ownerId = requireOwnerId();
 
     double pendingValue = 0;
     double balanceValue = 0;
@@ -155,6 +160,7 @@ class PaymentServices {
     }
 
     updatePayment = {
+      "ownerId": ownerId,
       // "USER_ID": snapshot["USER_ID"],
       "PACKAGE_NAME": packageName.text,
       "AMOUNT": rechargeAmount.text,

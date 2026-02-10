@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:rounded_loading_button/rounded_loading_button.dart';
 import 'package:uuid/uuid.dart';
+import 'package:mrs_dth_diary_v1/scr/helpers/owner_service.dart';
 
 class DashBoardService {
   RoundedLoadingButtonController btnController =
@@ -35,6 +36,7 @@ class DashBoardService {
     final id = const Uuid().v1();
     final rechargeValue = _parseAmount(packageAmount.text);
     final paidValue = _parseAmount(paidAmount.text);
+    final ownerId = requireOwnerId();
 
     double prevPending = 0;
     double prevBalance = 0;
@@ -42,6 +44,7 @@ class DashBoardService {
 
     final latest = await _firestore
         .collection(collection)
+        .where('ownerId', isEqualTo: ownerId)
         .where('DB_ID', isEqualTo: dbID)
         .orderBy('CREATE_AT', descending: true)
         .limit(1)
@@ -101,6 +104,7 @@ class DashBoardService {
 
     addRecord = {
       "id": id,
+      "ownerId": ownerId,
       "DB_ID": dbID,
       "CREATE_AT": createAt,
       "RECHARGE_AMOUNT": _formatAmountForStorage(rechargeValue),
@@ -133,12 +137,14 @@ class DashBoardService {
     final totalPaid = newPaidAmount.text.trim().isEmpty
         ? existingPaid
         : existingPaid + newPaid;
+    final ownerId = requireOwnerId();
     final double pendingValue =
         rechargeValue > totalPaid ? (rechargeValue - totalPaid) : 0.0;
     final double balanceValue =
         totalPaid > rechargeValue ? (totalPaid - rechargeValue) : 0.0;
 
     addRecord = {
+      "ownerId": ownerId,
       "BALANCE_AMOUNT": _formatAmountForStorage(balanceValue),
       "PAID_AMOUNT": _formatAmountForStorage(totalPaid),
       "PENDING_AMOUNT": _formatAmountForStorage(pendingValue),

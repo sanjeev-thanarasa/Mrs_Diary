@@ -28,27 +28,39 @@ class VillageProvider with ChangeNotifier {
   loadProducts() async {
     isLoading = true;
     notifyListeners();
-    final results = await Future.wait([
-      _villageServices.getVillageCount(),
-      _totalCounterServices.getOldUserCount(),
-      _totalCounterServices.getNewUserCount(),
-      _totalCounterServices.getTodayPaymentCount(),
-      _totalCounterServices.getTodayExpiredCount(),
-      _totalCounterServices.getTotalBalanceCount(),
-      _totalCounterServices.getTotalPendingCount(),
-      _totalCounterServices.getTotalPaidCount(),
-    ]);
+    try {
+      final results = await Future.wait([
+        _villageServices.getVillageCount(),
+        _totalCounterServices.getOldUserCount(),
+        _totalCounterServices.getNewUserCount(),
+        _totalCounterServices.getTodayPaymentCount(),
+        _totalCounterServices.getTodayExpiredCount(),
+        _totalCounterServices.getTotalBalanceCount(),
+        _totalCounterServices.getTotalPendingCount(),
+        _totalCounterServices.getTotalPaidCount(),
+      ]);
 
-    villageCount = results[0] as int;
-    totalOldCustomersCount = results[1] as int;
-    totalNewCustomersCount = results[2] as int;
-    todayPaymentCount = results[3] as int;
-    todayExpiredCount = results[4] as int;
-    totalBalanceCount = results[5] as int;
-    totalPendingCount = results[6] as int;
-    totalPaidCount = results[7] as int;
-    isLoading = false;
-    notifyListeners();
+      villageCount = results[0] as int;
+      totalOldCustomersCount = results[1] as int;
+      totalNewCustomersCount = results[2] as int;
+      todayPaymentCount = results[3] as int;
+      todayExpiredCount = results[4] as int;
+      totalBalanceCount = results[5] as int;
+      totalPendingCount = results[6] as int;
+      totalPaidCount = results[7] as int;
+    } catch (_) {
+      villageCount = 0;
+      totalOldCustomersCount = 0;
+      totalNewCustomersCount = 0;
+      todayPaymentCount = 0;
+      todayExpiredCount = 0;
+      totalBalanceCount = 0;
+      totalPendingCount = 0;
+      totalPaidCount = 0;
+    } finally {
+      isLoading = false;
+      notifyListeners();
+    }
   }
 
   Future<void> refreshCounts() async {

@@ -1,7 +1,9 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:mrs_dth_diary_v1/scr/helpers/app_settings.dart';
+import 'package:mrs_dth_diary_v1/scr/helpers/auth_service.dart';
 import 'package:mrs_dth_diary_v1/scr/helpers/passcode_storage.dart';
 import 'package:mrs_dth_diary_v1/scr/ui/DashBoard/MyAccountsScreen.dart';
 import 'package:mrs_dth_diary_v1/scr/ui/records_screen.dart';
@@ -209,10 +211,68 @@ class _SettingsScreenState extends State<SettingsScreen>
     }
 
     final appSettings = context.watch<AppSettings>();
+    final user = FirebaseAuth.instance.currentUser;
 
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
+        const Text(
+          'Profile settings',
+          style: TextStyle(
+              fontSize: 22, fontWeight: FontWeight.bold, color: kIndigoDark),
+        ),
+        const SizedBox(height: 12),
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(14),
+            child: Row(
+              children: [
+                CircleAvatar(
+                  radius: 28,
+                  backgroundColor: kPrimaryLightColor,
+                  backgroundImage: user?.photoURL != null
+                      ? NetworkImage(user!.photoURL!)
+                      : null,
+                  child: user?.photoURL == null
+                      ? const Icon(Icons.person, color: kPrimaryColor, size: 28)
+                      : null,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        user?.displayName ?? 'Guest user',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          color: kIndigoDark,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        user?.email ?? 'No email',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: kIndigoLight,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                FilledButton.tonal(
+                  onPressed: () async {
+                    await AuthService().signOut();
+                  },
+                  child: const Text('Logout'),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
         const Text(
           'Settings',
           style: TextStyle(
@@ -255,7 +315,9 @@ class _SettingsScreenState extends State<SettingsScreen>
                 leading: const Icon(Icons.translate_rounded),
                 title: const Text('Language'),
                 subtitle: Text(
-                  appSettings.locale.languageCode == 'ta' ? 'Tamil' : 'English',
+                  appSettings.locale.languageCode == 'ta'
+                      ? 'Tamil & English'
+                      : 'English',
                 ),
                 onTap: () => _showComingSoonAlert(context, 'Language'),
               ),

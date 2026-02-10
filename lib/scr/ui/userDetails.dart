@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:mrs_dth_diary_v1/scr/helpers/owner_service.dart';
 import 'package:flutter_switch/flutter_switch.dart';
 import 'package:intl/intl.dart';
 import 'package:mrs_dth_diary_v1/scr/helpers/operations.dart';
@@ -168,6 +169,7 @@ class _UserDetailsState extends State<UserDetails> {
     var firestore = FirebaseFirestore.instance;
     var stream = firestore
         .collection('PaymentRecords')
+        .where('ownerId', isEqualTo: requireOwnerId())
         .where('USER_ID', isEqualTo: widget.userId)
         .orderBy('CREATE_AT', descending: true)
         .snapshots();

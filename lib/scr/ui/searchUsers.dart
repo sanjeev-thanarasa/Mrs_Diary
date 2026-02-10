@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:mrs_dth_diary_v1/scr/helpers/owner_service.dart';
 import 'package:mrs_dth_diary_v1/scr/helpers/createUser.dart';
 import 'package:mrs_dth_diary_v1/scr/models/dropDownModel.dart';
 import 'package:mrs_dth_diary_v1/scr/ui/userDetails.dart';
@@ -630,10 +631,18 @@ class _SearchUsersScreenState extends State<SearchUsersScreen> {
   }
 
   Widget _buildResultsList() {
-    final oldStream =
-        FirebaseFirestore.instance.collection('OldUser').snapshots();
-    final newStream =
-        FirebaseFirestore.instance.collection('NewUser').snapshots();
+    final ownerId = currentOwnerId();
+    if (ownerId == null) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    final oldStream = FirebaseFirestore.instance
+        .collection('OldUser')
+        .where('ownerId', isEqualTo: ownerId)
+        .snapshots();
+    final newStream = FirebaseFirestore.instance
+        .collection('NewUser')
+        .where('ownerId', isEqualTo: ownerId)
+        .snapshots();
 
     return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
       stream: oldStream,

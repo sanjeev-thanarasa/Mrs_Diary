@@ -2,6 +2,7 @@
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:mrs_dth_diary_v1/scr/helpers/owner_service.dart';
 import 'package:mrs_dth_diary_v1/scr/models/totalCustomers.dart';
 import 'package:mrs_dth_diary_v1/scr/ui/userDetails.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/CAppBar.dart';
@@ -59,8 +60,10 @@ class _TotalOldCustomersState extends State<TotalOldCustomers> {
       _lastDoc = null;
     });
 
+    final ownerId = requireOwnerId();
     final query = FirebaseFirestore.instance
         .collection("OldUser")
+        .where('ownerId', isEqualTo: ownerId)
         .orderBy('name')
         .limit(_pageSize);
 
@@ -82,8 +85,10 @@ class _TotalOldCustomersState extends State<TotalOldCustomers> {
       _isLoadingMore = true;
     });
 
+    final ownerId = requireOwnerId();
     final query = FirebaseFirestore.instance
         .collection("OldUser")
+        .where('ownerId', isEqualTo: ownerId)
         .orderBy('name')
         .startAfterDocument(_lastDoc!)
         .limit(_pageSize);
