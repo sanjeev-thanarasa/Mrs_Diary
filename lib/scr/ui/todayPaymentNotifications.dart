@@ -206,6 +206,19 @@ class _TodayPaymentNotificationsState extends State<TodayPaymentNotifications> {
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         elevation: 0,
+        actions: [
+          IconButton(
+            tooltip: 'Clear badge',
+            icon: const Icon(Icons.notifications_off_rounded),
+            onPressed: () async {
+              await FcmService.clearBadge();
+              if (!mounted) return;
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Badge cleared')),
+              );
+            },
+          ),
+        ],
       ),
       body: _isLoading
           ? const LoadingShimmerList()

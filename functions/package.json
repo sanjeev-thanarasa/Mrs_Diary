@@ -2,7 +2,7 @@
   "name": "mrs-diary-functions",
   "private": true,
   "engines": {
-    "node": "18"
+    "node": "20"
   },
   "main": "index.js",
   "dependencies": {

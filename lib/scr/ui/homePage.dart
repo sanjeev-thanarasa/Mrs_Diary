@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mrs_dth_diary_v1/scr/providers/village.dart';
+import 'package:mrs_dth_diary_v1/scr/helpers/fcm_service.dart';
 import 'package:mrs_dth_diary_v1/scr/ui/notes_screen.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/homeCard.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/subHelpers/responsive.dart';
@@ -355,14 +356,19 @@ class _HomeState extends State<Home> {
                     ),
                   ),
                   SizedBox(width: rs.rw(8)),
-                  _NotificationButton(
-                    count: todayCount,
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const TodayPaymentNotifications(),
-                        ),
+                  ValueListenableBuilder<int>(
+                    valueListenable: FcmService.badgeCount,
+                    builder: (context, badgeCount, _) {
+                      return _NotificationButton(
+                        count: badgeCount,
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const TodayPaymentNotifications(),
+                            ),
+                          );
+                        },
                       );
                     },
                   ),

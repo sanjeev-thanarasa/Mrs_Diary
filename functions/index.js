@@ -14,6 +14,56 @@ function formatCountMessage(title, count) {
   };
 }
 
+function formatNamesMessage(title, count, names) {
+  if (count <= 0) return null;
+  if (!names || names.length === 0) {
+    return formatCountMessage(title, count);
+  }
+  const maxNames = 5;
+  const shown = names.slice(0, maxNames);
+  const remaining = count - shown.length;
+  const suffix = remaining > 0 ? ` + ${remaining} more` : '';
+  return {
+    title,
+    body: `${shown.join(', ')}${suffix}`,
+  };
+}
+
+async function fetchUserNames(ownerId, userIds) {
+  const uniqueIds = [...new Set(userIds)].filter(Boolean);
+  if (uniqueIds.length === 0) return [];
+
+  const nameMap = new Map();
+  const chunkSize = 10;
+  const collections = ['OldUser', 'NewUser'];
+
+  for (let i = 0; i < uniqueIds.length; i += chunkSize) {
+    const chunk = uniqueIds.slice(i, i + chunkSize);
+    await Promise.all(
+      collections.map(async (collection) => {
+        const snap = await admin
+          .firestore()
+          .collection(collection)
+          .where('ownerId', '==', ownerId)
+          .where('id', 'in', chunk)
+          .get();
+        snap.forEach((doc) => {
+          const data = doc.data() || {};
+          const id = data.id;
+          const name = data.name;
+          if (id && name && !nameMap.has(id)) {
+            nameMap.set(id, name);
+          }
+        });
+      })
+    );
+  }
+
+  return uniqueIds
+    .map((id) => nameMap.get(id))
+    .filter((name) => typeof name === 'string' && name.trim().length > 0);
+}
+
 async function sendToTokens(tokens, message) {
   if (!tokens || tokens.length === 0 || !message) return;
   await admin.messaging().sendEachForMulticast({
@@ -63,13 +113,27 @@ exports.sendDailyAlerts = functions.pubsub
           const dueCount = dueSnap.size;
           const expCount = expSnap.size;
 
-          const dueMessage = formatCountMessage(
+          const dueIds = dueSnap.docs
+            .map((doc) => (doc.data() || {}).USER_ID)
+            .filter(Boolean);
+          const expIds = expSnap.docs
+            .map((doc) => (doc.data() || {}).USER_ID)
+            .filter(Boolean);
+
+          const [dueNames, expNames] = await Promise.all([
+            fetchUserNames(ownerId, dueIds),
+            fetchUserNames(ownerId, expIds),
+          ]);
+
+          const dueMessage = formatNamesMessage(
             'இன்று பணம் தர வேண்டியவர்கள்',
-            dueCount
+            dueCount,
+            dueNames
           );
-          const expMessage = formatCountMessage(
+          const expMessage = formatNamesMessage(
             'இன்று ரீசார்ஜ் முடியும் வாடிக்கையாளர்கள்',
-            expCount
+            expCount,
+            expNames
           );
 
           await sendToTokens(tokens, dueMessage);

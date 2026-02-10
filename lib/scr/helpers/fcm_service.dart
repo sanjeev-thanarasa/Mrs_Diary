@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_app_badger/flutter_app_badger.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:mrs_dth_diary_v1/scr/helpers/owner_service.dart';
@@ -26,6 +27,8 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 }
 
 class FcmService {
+  static final ValueNotifier<int> badgeCount = ValueNotifier<int>(0);
+
   static Future<void> initialize() async {
     final messaging = FirebaseMessaging.instance;
 
@@ -80,6 +83,7 @@ class FcmService {
   static Future<void> clearBadge() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt(_badgeKey, 0);
+    badgeCount.value = 0;
     if (await FlutterAppBadger.isAppBadgeSupported()) {
       FlutterAppBadger.removeBadge();
     }
@@ -89,6 +93,7 @@ class FcmService {
     final prefs = await SharedPreferences.getInstance();
     final next = (prefs.getInt(_badgeKey) ?? 0) + 1;
     await prefs.setInt(_badgeKey, next);
+    badgeCount.value = next;
     if (await FlutterAppBadger.isAppBadgeSupported()) {
       FlutterAppBadger.updateBadgeCount(next);
     }
@@ -97,6 +102,7 @@ class FcmService {
   static Future<void> _syncBadgeOnLaunch() async {
     final prefs = await SharedPreferences.getInstance();
     final count = prefs.getInt(_badgeKey) ?? 0;
+    badgeCount.value = count;
     if (count <= 0) return;
     if (await FlutterAppBadger.isAppBadgeSupported()) {
       FlutterAppBadger.updateBadgeCount(count);
