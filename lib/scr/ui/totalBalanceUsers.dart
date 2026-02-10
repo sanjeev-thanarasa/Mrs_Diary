@@ -227,6 +227,7 @@ class _TotalBalanceUsersState extends State<TotalBalanceUsers> {
           dishNumber: data['dishNumber'],
           mobileNo: data['mobileNo'],
           villageName: data['area'],
+          userId: data['id'] ?? data.id,
           onTap: () {
             changeScreenAnimated(
                 context,

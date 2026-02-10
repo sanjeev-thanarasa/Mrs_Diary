@@ -242,6 +242,7 @@ class _TodayPackageExpiredUsersState extends State<TodayPackageExpiredUsers> {
           dishNumber: data['dishNumber'],
           mobileNo: data['mobileNo'],
           villageName: data['area'],
+          userId: data['id'] ?? data.id,
           onTap: () {
             changeScreenAnimated(
                 context,

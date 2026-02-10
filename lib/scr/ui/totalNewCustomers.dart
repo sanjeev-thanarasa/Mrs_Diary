@@ -178,6 +178,7 @@ class _TotalNewCustomersState extends State<TotalNewCustomers> {
           dishNumber: data['dishNumber'],
           mobileNo: data['mobileNo'],
           villageName: data['area'],
+          userId: data['id'] ?? data.id,
           onTap: () {
             changeScreenAnimated(
                 context,

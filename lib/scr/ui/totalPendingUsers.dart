@@ -232,7 +232,8 @@ class _TotalPendingUsersState extends State<TotalPendingUsers> {
           dishNumber: data['dishNumber'],
           mobileNo: data['mobileNo'],
           villageName: data['area'],
-          amountLabel: 'Pending',
+          userId: data['id'] ?? data.id,
+          amountLabel: 'தருமதி',
           amountValue: entry.pendingAmount,
           onTap: () {
             changeScreenAnimated(

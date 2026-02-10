@@ -674,6 +674,9 @@ class _SearchUsersScreenState extends State<SearchUsersScreen> {
                   dishNumber: _field(data['dishNumber']),
                   mobileNo: _field(data['mobileNo']),
                   villageName: _field(data['area']),
+                  userId: _field(data['id']).isNotEmpty
+                      ? _field(data['id'])
+                      : entry.doc.id,
                   onTap: () {
                     changeScreenAnimated(
                       context,

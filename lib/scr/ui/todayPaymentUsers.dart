@@ -142,7 +142,10 @@ class _TodayPaymentUsersState extends State<TodayPaymentUsers> {
       final userId = paymentData["USER_ID"];
       final userDoc = userId is String ? userMap[userId] : null;
       if (userDoc != null) {
-        _entries.add(_UserEntry(userDoc));
+        _entries.add(_UserEntry(
+          userDoc,
+          pendingAmount: paymentData["PENDING_AMOUNT"],
+        ));
       }
     }
   }
@@ -237,12 +240,16 @@ class _TodayPaymentUsersState extends State<TodayPaymentUsers> {
           );
         }
 
-        final data = showResults[index].user;
+        final entry = showResults[index];
+        final data = entry.user;
         return UserDetailsTile(
           name: data['name'],
           dishNumber: data['dishNumber'],
           mobileNo: data['mobileNo'],
           villageName: data['area'],
+          userId: data['id'] ?? data.id,
+          amountLabel: 'நிலுவை',
+          amountValue: entry.pendingAmount,
           onTap: () {
             changeScreenAnimated(
                 context,
@@ -353,6 +360,7 @@ class _TodayPaymentUsersState extends State<TodayPaymentUsers> {
 
 class _UserEntry {
   final QueryDocumentSnapshot<Object?> user;
+  final dynamic pendingAmount;
 
-  _UserEntry(this.user);
+  _UserEntry(this.user, {this.pendingAmount});
 }

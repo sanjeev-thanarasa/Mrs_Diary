@@ -164,6 +164,7 @@ class _FilterVillageUserState extends State<FilterVillageUser> {
                                     dishNumber: data['dishNumber'] ?? '',
                                     mobileNo: data['mobileNo'] ?? '',
                                     villageName: data['area'] ?? '',
+                                    userId: data['id'] ?? data.id,
                                     onTap: () {
                                       changeScreenAnimated(
                                           context,
