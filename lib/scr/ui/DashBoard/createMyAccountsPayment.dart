@@ -19,6 +19,7 @@ class CreateMyAccountsPayment extends StatefulWidget {
 
 class _CreateMyAccountsPaymentState extends State<CreateMyAccountsPayment> {
   DashBoardService _dashBoardService = DashBoardService();
+  bool _showNotes = false;
 
   @override
   void dispose() {
@@ -214,7 +215,7 @@ class _CreateMyAccountsPaymentState extends State<CreateMyAccountsPayment> {
               child: CRText(
                 color2: Colors.grey,
                 size1: 16.0,
-                msg1: "கொடுமதி பணம் ",
+                msg1: "நிலுவை (தருமதி) பணம் ",
                 msg2: ":  ${_dashBoardService.pendingAmount.text} ",
                 color1: Colors.grey,
               ),
@@ -224,16 +225,37 @@ class _CreateMyAccountsPaymentState extends State<CreateMyAccountsPayment> {
               child: CRText(
                 color1: Colors.grey,
                 size1: 16.0,
-                msg1: "தருமதி பணம் ",
+                msg1: "கொடுமதி பணம் ",
                 msg2: ":  ${_dashBoardService.balanceAmount.text}",
               ),
             ),
-            CustomTextField(
-              controller: _dashBoardService.userNote,
-              hintText: "குறிப்பு ",
-              icon: Icons.note_add,
-              keyboardType: TextInputType.text,
+            Row(
+              children: [
+                const Expanded(
+                  child: Text(
+                    "குறிப்பு",
+                    style: TextStyle(
+                      fontFamily: 'TamilArima2',
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black54,
+                    ),
+                  ),
+                ),
+                Switch(
+                  value: _showNotes,
+                  activeColor: kPrimaryColor,
+                  onChanged: (val) => setState(() => _showNotes = val),
+                ),
+              ],
             ),
+            if (_showNotes)
+              CustomTextField(
+                controller: _dashBoardService.userNote,
+                hintText: "குறிப்பு ",
+                icon: Icons.note_add,
+                keyboardType: TextInputType.text,
+              ),
             const SizedBox(height: 10),
             RoundedLoading(
               btnController: _dashBoardService.btnController,
@@ -243,7 +265,11 @@ class _CreateMyAccountsPaymentState extends State<CreateMyAccountsPayment> {
               buttonHeight: 40,
               btnColor: Colors.blue,
               buttonPressed: () {
-                _dashBoardService.createRecord(dbID: widget.dbId);
+                _dashBoardService.createRecord(dbID: widget.dbId).then((_) {
+                  if (mounted) {
+                    Navigator.pop(context);
+                  }
+                });
               },
             ),
             const SizedBox(height: 20),

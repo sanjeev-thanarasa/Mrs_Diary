@@ -23,6 +23,7 @@ class CListTile extends StatefulWidget {
   final String? pendingAmount;
   final VoidCallback? onEdit;
   final VoidCallback? onDelete;
+  final bool enableEdit;
 
   const CListTile({
     super.key,
@@ -41,6 +42,7 @@ class CListTile extends StatefulWidget {
     this.pendingAmount,
     this.onEdit,
     this.onDelete,
+    this.enableEdit = true,
   });
 
   @override
@@ -52,33 +54,40 @@ class _CListTileState extends State<CListTile> {
   Widget build(BuildContext context) {
     final rs = context.rs;
     final colorScheme = Theme.of(context).colorScheme;
+    final actions = <Widget>[];
+    if (widget.enableEdit) {
+      actions.add(
+        SlidableAction(
+          onPressed: (_) {
+            if (widget.onEdit != null) {
+              widget.onEdit!.call();
+            } else if (widget.tileOnTap != null) {
+              widget.tileOnTap!.call();
+            }
+          },
+          backgroundColor: kPrimaryColor,
+          foregroundColor: white,
+          icon: Icons.edit_rounded,
+          label: "Edit",
+          borderRadius: BorderRadius.circular(rs.r(16)),
+        ),
+      );
+    }
+    actions.add(
+      SlidableAction(
+        onPressed: (_) => _handleDelete(context),
+        backgroundColor: red,
+        foregroundColor: white,
+        icon: Icons.delete_rounded,
+        label: "Delete",
+        borderRadius: BorderRadius.circular(rs.r(16)),
+      ),
+    );
+
     return Slidable(
       endActionPane: ActionPane(
         motion: const DrawerMotion(),
-        children: [
-          SlidableAction(
-            onPressed: (_) {
-              if (widget.onEdit != null) {
-                widget.onEdit!.call();
-              } else if (widget.tileOnTap != null) {
-                widget.tileOnTap!.call();
-              }
-            },
-            backgroundColor: kPrimaryColor,
-            foregroundColor: white,
-            icon: Icons.edit_rounded,
-            label: "Edit",
-            borderRadius: BorderRadius.circular(rs.r(16)),
-          ),
-          SlidableAction(
-            onPressed: (_) => _handleDelete(context),
-            backgroundColor: red,
-            foregroundColor: white,
-            icon: Icons.delete_rounded,
-            label: "Delete",
-            borderRadius: BorderRadius.circular(rs.r(16)),
-          ),
-        ],
+        children: actions,
       ),
       child: GestureDetector(
         onTap: widget.tileOnTap,

@@ -81,7 +81,7 @@ class _MyAccountsUserDetailsState extends State<MyAccountsUserDetails> {
 
             final docs = snapshot.data?.docs ?? [];
             final totals = _SummaryTotals.fromDocs(docs);
-            final itemCount = docs.isEmpty ? 3 : docs.length + 2;
+            final itemCount = docs.isEmpty ? 4 : docs.length + 3;
             return ListView.builder(
               padding: const EdgeInsets.only(bottom: 16),
               itemCount: itemCount,
@@ -94,12 +94,16 @@ class _MyAccountsUserDetailsState extends State<MyAccountsUserDetails> {
                   return _buildSummarySection(context, totals);
                 }
 
+                if (index == 2) {
+                  return _buildRecordsHeader(context);
+                }
+
                 if (docs.isEmpty) {
                   return _buildMessage(
                       context, 'No results found. Try a different keyword');
                 }
 
-                final data = docs[index - 2];
+                final data = docs[index - 3];
                 return DashBoardPaymentContainerListTile(snapshot: data);
               },
             );
@@ -222,6 +226,40 @@ class _MyAccountsUserDetailsState extends State<MyAccountsUserDetails> {
     );
   }
 
+  Widget _buildRecordsHeader(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 6),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              'கட்டண பதிவுகள்',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: kIndigoDark,
+                  ),
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: kPrimaryLightColor,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Text(
+              DateFormat.MMM().format(DateTime.now()),
+              style: const TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                color: kIndigoDark,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildSummaryCards(BuildContext context, _SummaryTotals totals) {
     final colorScheme = Theme.of(context).colorScheme;
     return LayoutBuilder(
@@ -231,10 +269,10 @@ class _MyAccountsUserDetailsState extends State<MyAccountsUserDetails> {
             ? 3
             : maxWidth > 560
                 ? 3
-                : maxWidth > 360
+                : maxWidth > 380
                     ? 2
                     : 1;
-        const spacing = 12.0;
+        const spacing = 10.0;
         final itemWidth = (maxWidth - (spacing * (columns - 1))) / columns;
 
         return Wrap(
@@ -244,8 +282,8 @@ class _MyAccountsUserDetailsState extends State<MyAccountsUserDetails> {
             SizedBox(
               width: itemWidth,
               child: _SummaryStatCard(
-                title: 'மொத்த கொடுத்த பணம்',
-                subtitle: 'Total paid',
+                title: 'கொடுத்த பணம்',
+                subtitle: 'கொடுத்தது',
                 amount: totals.paid,
                 icon: Icons.call_made_rounded,
                 accentColor: const Color(0xff2E7D32),
@@ -255,8 +293,8 @@ class _MyAccountsUserDetailsState extends State<MyAccountsUserDetails> {
             SizedBox(
               width: itemWidth,
               child: _SummaryStatCard(
-                title: 'மொத்த கொடுமதி பணம்',
-                subtitle: 'Need to give',
+                title: 'கொடுக்க வேண்டியது',
+                subtitle: 'கொடுமதி/நிலுவை',
                 amount: totals.pending,
                 icon: Icons.schedule_rounded,
                 accentColor: const Color(0xffAD1457),
@@ -266,8 +304,8 @@ class _MyAccountsUserDetailsState extends State<MyAccountsUserDetails> {
             SizedBox(
               width: itemWidth,
               child: _SummaryStatCard(
-                title: 'மொத்த தருமதி பணம்',
-                subtitle: 'Balance amount',
+                title: 'பெற வேண்டியது',
+                subtitle: 'தருமதி',
                 amount: totals.balance,
                 icon: Icons.account_balance_wallet_outlined,
                 accentColor: colorScheme.primary,
@@ -365,10 +403,10 @@ class _SummaryStatCard extends StatelessWidget {
     final theme = Theme.of(context);
     final formatter = NumberFormat.decimalPattern();
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: background,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(14),
         boxShadow: [
           BoxShadow(
             color: accentColor.withValues(alpha: 0.18),
@@ -384,12 +422,12 @@ class _SummaryStatCard extends StatelessWidget {
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(8),
+                padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
                   color: accentColor.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(10),
                 ),
-                child: Icon(icon, color: accentColor, size: 20),
+                child: Icon(icon, color: accentColor, size: 18),
               ),
               const SizedBox(width: 10),
               Expanded(
@@ -398,6 +436,7 @@ class _SummaryStatCard extends StatelessWidget {
                   style: theme.textTheme.titleSmall?.copyWith(
                     fontWeight: FontWeight.w700,
                     color: kIndigoDark,
+                    fontSize: 12,
                   ),
                 ),
               ),
@@ -409,6 +448,7 @@ class _SummaryStatCard extends StatelessWidget {
             style: theme.textTheme.headlineSmall?.copyWith(
               fontWeight: FontWeight.w800,
               color: accentColor,
+              fontSize: 18,
             ),
           ),
           const SizedBox(height: 4),
@@ -417,6 +457,7 @@ class _SummaryStatCard extends StatelessWidget {
             style: theme.textTheme.bodySmall?.copyWith(
               color: kIndigoLight,
               fontWeight: FontWeight.w600,
+              fontSize: 11,
             ),
           ),
         ],

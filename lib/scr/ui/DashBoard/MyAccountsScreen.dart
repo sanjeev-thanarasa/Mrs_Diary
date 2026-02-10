@@ -215,40 +215,19 @@ class _MyAccountsScreenState extends State<MyAccountsScreen> {
           ),
         ],
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: white.withValues(alpha: 0.18),
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: const Icon(Icons.account_balance_wallet_outlined,
-                color: white, size: 28),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  "எனது கணக்கு விபரங்கள்",
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                    color: white,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                const Text(
-                  "Topup பதிவுகள் மற்றும் கட்டண விவரங்கள்",
-                  style: TextStyle(color: white, fontSize: 13),
-                ),
-                const SizedBox(height: 12),
-                _buildHeaderStats(totals, isLoading),
-              ],
+          const Text(
+            "Overall analysis",
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              color: white,
             ),
           ),
+          const SizedBox(height: 12),
+          _buildHeaderStats(totals, isLoading),
         ],
       ),
     );
@@ -277,7 +256,7 @@ class _MyAccountsScreenState extends State<MyAccountsScreen> {
             SizedBox(
               width: itemWidth,
               child: _HeaderStatChip(
-                label: "மொத்த கொடுத்த பணம்",
+                label: "இதுவரை பெறப்பட்ட தொகை",
                 value: paid,
                 icon: Icons.call_made_rounded,
                 color: const Color(0xff1B5E20),
@@ -286,7 +265,7 @@ class _MyAccountsScreenState extends State<MyAccountsScreen> {
             SizedBox(
               width: itemWidth,
               child: _HeaderStatChip(
-                label: "மொத்த கொடுமதி பணம்",
+                label: "மீதமுள்ள நிலுவைத் தொகை",
                 value: pending,
                 icon: Icons.schedule_rounded,
                 color: const Color(0xffAD1457),
@@ -295,7 +274,7 @@ class _MyAccountsScreenState extends State<MyAccountsScreen> {
             SizedBox(
               width: itemWidth,
               child: _HeaderStatChip(
-                label: "மொத்த தருமதி பணம்",
+                label: "மொத்த தருமதி தொகை",
                 value: balance,
                 icon: Icons.account_balance_wallet_outlined,
                 color: const Color(0xff0D47A1),
@@ -329,12 +308,17 @@ class _MyAccountsScreenState extends State<MyAccountsScreen> {
   String? _buildPendingChipText(_AccountSummary? summary) {
     if (summary == null) return null;
     if (summary.pending > 0) {
-      return 'Pending ${_formatAmount(summary.pending)}';
+      return 'கொடுமதி ${_formatAmount(summary.pending)}';
     }
     if (summary.balance > 0) {
-      return 'Balance ${_formatAmount(summary.balance)}';
+      return 'கொடுமதி ${_formatAmount(summary.balance)}';
     }
     return null;
+  }
+
+  bool _canEditSummary(_AccountSummary? summary) {
+    if (summary == null) return true;
+    return summary.pending > 0 || summary.balance > 0;
   }
 
   void _showCreateTopupDialog() {

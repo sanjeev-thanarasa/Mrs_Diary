@@ -43,6 +43,9 @@ class _DashBoardPaymentContainerListTileState
     final showPaid = _hasAmount(widget.snapshot['PAID_AMOUNT']);
     final showPending = _hasAmount(widget.snapshot['PENDING_AMOUNT']);
     final showBalance = _hasAmount(widget.snapshot['BALANCE_AMOUNT']);
+    final canEdit = showPending || showBalance;
+    final history = _extractHistory(widget.snapshot['PAYMENT_HISTORY']);
+    final maxChipWidth = MediaQuery.of(context).size.width * 0.45;
 
     return GestureDetector(
       onLongPress: () => showAlertDialog(
@@ -88,7 +91,7 @@ class _DashBoardPaymentContainerListTileState
                         color: kPrimaryLightColor,
                         borderRadius: BorderRadius.circular(14),
                       ),
-                      child: statusCheck(
+                      child: _statusIcon(
                         widget.snapshot['PENDING_AMOUNT']?.toString(),
                         widget.snapshot['BALANCE_AMOUNT']?.toString(),
                       ),
@@ -100,8 +103,8 @@ class _DashBoardPaymentContainerListTileState
                         children: <Widget>[
                           Row(
                             children: [
-                              Image.asset("assets/images/dish.png",
-                                  height: 22, width: 22),
+                              Icon(Icons.location_on_rounded,
+                                  color: kIndigoDark, size: 20),
                               const SizedBox(width: 6),
                               Expanded(
                                 child: CText(
@@ -125,23 +128,19 @@ class _DashBoardPaymentContainerListTileState
                             spacing: 6,
                             runSpacing: 6,
                             children: [
-                              if (showPaid)
-                                _buildChip(
-                                  label: 'Paid',
-                                  value: paidAmount,
-                                  color: const Color(0xff2E7D32),
-                                ),
                               if (showPending)
                                 _buildChip(
-                                  label: 'Pending',
+                                  label: 'கொடுமதி',
                                   value: pendingAmount,
                                   color: const Color(0xffAD1457),
+                                  maxWidth: maxChipWidth,
                                 ),
                               if (showBalance)
                                 _buildChip(
-                                  label: 'Balance',
+                                  label: 'தருமதி',
                                   value: balanceAmount,
                                   color: const Color(0xff0D47A1),
+                                  maxWidth: maxChipWidth,
                                 ),
                             ],
                           ),
@@ -204,33 +203,35 @@ class _DashBoardPaymentContainerListTileState
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 CText(
-                                  msg: "Payment Details",
+                                  msg: "Payment details",
                                   color: kIndigoDark,
                                   size: 16,
                                   weight: FontWeight.w700,
                                 ),
-                                GestureDetector(
-                                  onTap: () => changeScreen(
-                                      context,
-                                      EditMyAccountsPayment(
-                                        snapshot: widget.snapshot,
-                                        dbId: widget.snapshot.id,
-                                      )),
-                                  child: const Icon(Icons.edit, size: 18),
-                                ),
+                                if (canEdit)
+                                  GestureDetector(
+                                    onTap: () => changeScreen(
+                                        context,
+                                        EditMyAccountsPayment(
+                                          snapshot: widget.snapshot,
+                                          dbId: widget.snapshot.id,
+                                        )),
+                                    child: const Icon(Icons.edit, size: 18),
+                                  ),
                               ],
                             ),
                             const SizedBox(height: 8),
                             const Divider(height: 1),
                             const SizedBox(height: 10),
-                            _buildDetailRow(
-                              label: 'கொடுத்த பணம்',
-                              value: paidAmount,
-                              color: const Color(0xff2E7D32),
-                            ),
+                            if (showPaid && (showPending || showBalance))
+                              _buildDetailRow(
+                                label: 'கொடுத்த பணம்',
+                                value: paidAmount,
+                                color: const Color(0xff2E7D32),
+                              ),
                             if (showPending)
                               _buildDetailRow(
-                                label: 'கொடுமதி பணம்',
+                                label: 'கொடுக்க வேண்டிய பணம்',
                                 value: pendingAmount,
                                 color: const Color(0xffAD1457),
                               ),
@@ -263,6 +264,19 @@ class _DashBoardPaymentContainerListTileState
                                   color: kIndigoLight,
                                 ),
                               ),
+                            if (history.isNotEmpty) ...[
+                              const SizedBox(height: 10),
+                              const Divider(height: 1),
+                              const SizedBox(height: 8),
+                              CText(
+                                msg: 'Payment history',
+                                size: 14,
+                                weight: FontWeight.w700,
+                                color: kIndigoDark,
+                              ),
+                              const SizedBox(height: 6),
+                              ...history.map(_buildHistoryRow),
+                            ],
                           ],
                         ),
                       ),
@@ -284,19 +298,17 @@ class _DashBoardPaymentContainerListTileState
     );
   }
 
-  Widget statusCheck(String? pending, String? balance) {
+  Widget _statusIcon(String? pending, String? balance) {
     if (pending != null && pending.isNotEmpty) {
-      return Image.asset("assets/images/wrong.png", height: 30, width: 30);
+      return const Icon(Icons.pending_actions_rounded,
+          color: Color(0xffAD1457), size: 28);
     }
     if (balance != null && balance.isNotEmpty) {
-      return Image.asset(
-        "assets/images/correct.png",
-        height: 30,
-        width: 30,
-        color: Colors.blue,
-      );
+      return const Icon(Icons.savings_rounded,
+          color: Color(0xff0D47A1), size: 28);
     }
-    return Image.asset("assets/images/correct.png", height: 30, width: 30);
+    return const Icon(Icons.check_circle_rounded,
+        color: Color(0xff2E7D32), size: 28);
   }
 
   bool _hasAmount(dynamic value) {
@@ -330,32 +342,43 @@ class _DashBoardPaymentContainerListTileState
     required String label,
     required String value,
     required Color color,
+    required double maxWidth,
   }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 6,
-            height: 6,
-            decoration: BoxDecoration(
-              color: color,
-              shape: BoxShape.circle,
+    return ConstrainedBox(
+      constraints: BoxConstraints(maxWidth: maxWidth),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 6,
+              height: 6,
+              decoration: BoxDecoration(
+                color: color,
+                shape: BoxShape.circle,
+              ),
             ),
-          ),
-          const SizedBox(width: 6),
-          CText(
-            msg: '$label $value',
-            color: color,
-            size: 11,
-            weight: FontWeight.w700,
-          ),
-        ],
+            const SizedBox(width: 6),
+            Flexible(
+              child: Text(
+                '$label $value',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: color,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  fontFamily: 'TamilArima2',
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -381,6 +404,61 @@ class _DashBoardPaymentContainerListTileState
             size: 14,
             weight: FontWeight.w700,
             color: color,
+          ),
+        ],
+      ),
+    );
+  }
+
+  List<Map<String, dynamic>> _extractHistory(dynamic value) {
+    if (value is! List) return [];
+    final history = <Map<String, dynamic>>[];
+    for (final item in value) {
+      if (item is Map) {
+        history.add(Map<String, dynamic>.from(item));
+      }
+    }
+    history.sort((a, b) {
+      final aDate = _toDate(a['PAID_AT']);
+      final bDate = _toDate(b['PAID_AT']);
+      return bDate.compareTo(aDate);
+    });
+    return history;
+  }
+
+  DateTime _toDate(dynamic value) {
+    if (value is Timestamp) return value.toDate();
+    if (value is DateTime) return value;
+    return DateTime.fromMillisecondsSinceEpoch(0);
+  }
+
+  Widget _buildHistoryRow(Map<String, dynamic> item) {
+    final amount = _formatAmount(item['AMOUNT']);
+    final date = _toDate(item['PAID_AT']);
+    final dateText = date == DateTime.fromMillisecondsSinceEpoch(0)
+        ? ''
+        : DateFormat('dd MMM yyyy, hh:mm a').format(date);
+    final note = item['NOTE']?.toString().trim() ?? '';
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Expanded(
+            child: CText(
+              msg: note.isNotEmpty
+                  ? note
+                  : (dateText.isEmpty ? 'பணம் பெற்ற நேரம்' : dateText),
+              size: 12,
+              weight: FontWeight.w600,
+              color: kIndigoLight,
+            ),
+          ),
+          CText(
+            msg: amount,
+            size: 12,
+            weight: FontWeight.w700,
+            color: kIndigoDark,
           ),
         ],
       ),
