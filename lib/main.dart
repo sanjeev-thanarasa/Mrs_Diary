@@ -156,6 +156,7 @@ class AppRoot extends StatefulWidget {
 class _AppRootState extends State<AppRoot> with WidgetsBindingObserver {
   final StreamController<bool> _verificationNotifier =
       StreamController<bool>.broadcast();
+  final ValueNotifier<bool> _lockVisibleNotifier = ValueNotifier<bool>(false);
   bool _lockVisible = false;
 
   @override
@@ -169,24 +170,27 @@ class _AppRootState extends State<AppRoot> with WidgetsBindingObserver {
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _verificationNotifier.close();
+    _lockVisibleNotifier.dispose();
     super.dispose();
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      _checkAndLock();
+      _checkAndLock(force: true);
     }
   }
 
-  Future<void> _checkAndLock() async {
+  Future<void> _checkAndLock({bool force = true}) async {
     if (_lockVisible) return;
     final enabled = await PasscodeStorage.isEnabled();
     final passcode = await PasscodeStorage.getPasscode();
     if (!enabled || passcode == null || passcode.isEmpty) return;
+    if (!force) return;
     if (!mounted) return;
 
     _lockVisible = true;
+    _lockVisibleNotifier.value = true;
     await Navigator.of(context).push(
       PageRouteBuilder(
         opaque: false,
@@ -221,12 +225,14 @@ class _AppRootState extends State<AppRoot> with WidgetsBindingObserver {
       ),
     );
     _lockVisible = false;
+    _lockVisibleNotifier.value = false;
   }
 
   @override
   Widget build(BuildContext context) {
-    return const SplashScreen(
-      secondScreen: AuthGate(),
+    return SplashScreen(
+      secondScreen: const AuthGate(),
+      lockVisibleListenable: _lockVisibleNotifier,
     );
   }
 }

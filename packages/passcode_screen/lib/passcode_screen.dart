@@ -101,6 +101,9 @@ class _PasscodeScreenState extends State<PasscodeScreen> {
     final digits =
         widget.digits ?? ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'];
 
+    final h = MediaQuery.sizeOf(context).height;
+    final w = MediaQuery.sizeOf(context).width;
+
     return Scaffold(
       backgroundColor: widget.backgroundColor,
       body: SafeArea(
@@ -117,9 +120,9 @@ class _PasscodeScreenState extends State<PasscodeScreen> {
                       child: Column(
                         children: [
                           Image.asset(
-                            'assets/images/mrslogo.png',
-                            height: logoSize,
-                            fit: BoxFit.contain,
+                            'assets/images/MRS-LOGO.png',
+                            height: w * 0.4,
+                            width: w * 0.4,
                           ),
                           const SizedBox(height: 12),
                           widget.title,

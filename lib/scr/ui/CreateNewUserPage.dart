@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:mrs_dth_diary_v1/scr/helpers/createUser.dart';
@@ -6,7 +5,6 @@ import 'package:mrs_dth_diary_v1/scr/models/dropDownModel.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/CDropDownList.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/CTextField.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/RoundedLoadingButton.dart';
-import 'package:mrs_dth_diary_v1/scr/widgets/datePicker.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/subHelpers/responsive.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/subHelpers/styles.dart';
 
@@ -20,6 +18,25 @@ class _CreateNewUserState extends State<CreateNewUser> {
   USerServices _uSerServices = USerServices();
   bool mNoVisible = false;
   IconData icon = Icons.add_circle_outline_rounded;
+
+  Future<void> _pickDate({
+    required DateTime? initial,
+    required ValueChanged<DateTime> onSelected,
+    required TextEditingController controller,
+  }) async {
+    final now = DateTime.now();
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: initial ?? now,
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2100),
+    );
+    if (picked == null) return;
+    setState(() {
+      onSelected(picked);
+      controller.text = DateFormat('dd-MM-yyyy').format(picked);
+    });
+  }
 
   @override
   void initState() {
@@ -228,18 +245,11 @@ class _CreateNewUserState extends State<CreateNewUser> {
             animatedIconButtonStratIcon: Icons.date_range,
             animatedIconButtonEndIcon: Icons.date_range_outlined,
             animatedIconButtonOnTap: () {
-              showCupertinoModalPopup(
-                  context: context,
-                  builder: (_) => DatePicker(
-                        onDateTimeChanged: (val) {
-                          setState(() {
-                            print(val);
-                            _uSerServices.registerDate = val;
-                            _uSerServices.registerDateController.text =
-                                DateFormat('dd-MM-yyyy hh:mm a').format(val);
-                          });
-                        },
-                      ));
+              _pickDate(
+                initial: _uSerServices.registerDate,
+                controller: _uSerServices.registerDateController,
+                onSelected: (val) => _uSerServices.registerDate = val,
+              );
             },
           ),
         ),
@@ -257,17 +267,11 @@ class _CreateNewUserState extends State<CreateNewUser> {
             animatedIconButtonStratIcon: Icons.date_range,
             animatedIconButtonEndIcon: Icons.date_range_outlined,
             animatedIconButtonOnTap: () {
-              showCupertinoModalPopup(
-                  context: context,
-                  builder: (_) => DatePicker(
-                        onDateTimeChanged: (val) {
-                          setState(() {
-                            _uSerServices.expiredDate = val;
-                            _uSerServices.expiredDateController.text =
-                                DateFormat('dd-MM-yyyy hh:mm a').format(val);
-                          });
-                        },
-                      ));
+              _pickDate(
+                initial: _uSerServices.expiredDate,
+                controller: _uSerServices.expiredDateController,
+                onSelected: (val) => _uSerServices.expiredDate = val,
+              );
             },
           ),
         ),

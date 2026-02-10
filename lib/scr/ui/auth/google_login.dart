@@ -71,40 +71,40 @@ class _GoogleLoginScreenState extends State<GoogleLoginScreen> {
                       Container(
                         padding: EdgeInsets.all(rs.r(14)),
                         decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.15),
+                          color: Colors.white.withValues(alpha: 0.25),
                           borderRadius: BorderRadius.circular(rs.r(20)),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.2),
-                              blurRadius: rs.r(30),
-                              offset: Offset(0, rs.rh(8)),
-                            ),
-                          ],
+                          // boxShadow: [
+                          //   BoxShadow(
+                          //     color: Colors.black.withValues(alpha: 0.2),
+                          //     blurRadius: rs.r(30),
+                          //     offset: Offset(0, rs.rh(8)),
+                          //   ),
+                          // ],
                         ),
                         child: Image.asset(
                           'assets/images/mrslogo.png',
-                          height: rs.r(90),
-                          width: rs.r(90),
+                          height: rs.r(120),
+                          width: rs.r(120),
                         ),
                       ),
                       SizedBox(height: rs.rh(18)),
                       Text(
                         'MRS Diary',
                         style: TextStyle(
-                          fontSize: rs.sp(26),
+                          fontSize: rs.sp(28),
                           fontWeight: FontWeight.w800,
                           color: colorScheme.onPrimary,
                           letterSpacing: 0.4,
                           fontFamily: 'TamilArima',
                         ),
                       ),
-                      SizedBox(height: rs.rh(6)),
+                      // SizedBox(height: rs.rh(2)),
                       Text(
                         'Your smart payment diary',
                         textAlign: TextAlign.center,
                         style: TextStyle(
-                          fontSize: rs.sp(14),
-                          color: colorScheme.onPrimary.withValues(alpha: 0.85),
+                          fontSize: rs.sp(16),
+                          color: colorScheme.onPrimary,
                           fontFamily: 'TamilArima2',
                         ),
                       ),
@@ -125,7 +125,7 @@ class _GoogleLoginScreenState extends State<GoogleLoginScreen> {
                         child: Column(
                           children: [
                             SvgPicture.asset(
-                              'assets/icons/chat.svg',
+                              'assets/icons/personal-finance.svg',
                               height: rs.r(120),
                             ),
                             SizedBox(height: rs.rh(18)),
