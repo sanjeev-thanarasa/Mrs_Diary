@@ -19,6 +19,9 @@ class _AstrologyChartScreenState extends State<AstrologyChartScreen> {
   late List<_ChartBoxData> _gocharamBoxes;
   Map<String, String> _planetDegrees = {};
   bool _showInnerOnTop = true;
+  final List<_GocharamParvaEntry> _gocharamParvaEntries = [];
+  int _nextGocharamParvaNumber = 1;
+  String? _expandedParvaId;
 
   static const Map<String, String> _kattamShortNames = {
     'லக்னம்': 'லக்',
@@ -99,6 +102,7 @@ class _AstrologyChartScreenState extends State<AstrologyChartScreen> {
     _gocharamBoxes = List.generate(12, (_) => _ChartBoxData.empty());
     _loadPlanetDegrees();
     _loadGocharamBoxes();
+    _loadGocharamParvaEntries();
   }
 
   Future<void> _loadPlanetDegrees() async {
@@ -146,6 +150,39 @@ class _AstrologyChartScreenState extends State<AstrologyChartScreen> {
     });
   }
 
+  Future<void> _loadGocharamParvaEntries() async {
+    final doc = await FirebaseFirestore.instance
+        .collection('AstrologyProfiles')
+        .doc(widget.profile.id)
+        .get();
+    if (!doc.exists) return;
+    final data = doc.data();
+    if (data == null || !data.containsKey('gocharamParvaEntries')) return;
+    final raw = data['gocharamParvaEntries'];
+    if (raw is! List) return;
+    final mapped =
+        raw.whereType<Map>().map(_GocharamParvaEntry.fromMap).toList();
+    var maxNumber = 0;
+    var fallbackNumber = 1;
+    for (var i = 0; i < mapped.length; i++) {
+      final entry = mapped[i];
+      if (entry.number <= 0) {
+        mapped[i] = entry.copyWith(number: fallbackNumber);
+        fallbackNumber += 1;
+      }
+      if (mapped[i].number > maxNumber) {
+        maxNumber = mapped[i].number;
+      }
+    }
+    if (!mounted) return;
+    setState(() {
+      _gocharamParvaEntries
+        ..clear()
+        ..addAll(mapped);
+      _nextGocharamParvaNumber = maxNumber + 1;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final rs = context.rs;
@@ -170,6 +207,8 @@ class _AstrologyChartScreenState extends State<AstrologyChartScreen> {
             _buildHeader(),
             SizedBox(height: rs.rh(16)),
             _buildJathagaKattaSection(),
+            SizedBox(height: rs.rh(16)),
+            _buildGocharamParvaSection(),
             SizedBox(height: rs.rh(16)),
             _buildGocharamSection(),
           ],
@@ -424,11 +463,8 @@ class _AstrologyChartScreenState extends State<AstrologyChartScreen> {
                 ),
                 Container(
                   decoration: BoxDecoration(
-                    color: kPrimaryColor.withValues(alpha: 0.18),
+                    color: kPrimaryColor.withValues(alpha: 0.08),
                     shape: BoxShape.circle,
-                    border: Border.all(
-                      color: kPrimaryColor.withValues(alpha: 0.5),
-                    ),
                   ),
                   child: IconButton(
                     onPressed: _openPlanetDegreesSheet,
@@ -510,6 +546,266 @@ class _AstrologyChartScreenState extends State<AstrologyChartScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildGocharamParvaSection() {
+    final rs = context.rs;
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(rs.r(14)),
+      decoration: BoxDecoration(
+        color: white,
+        borderRadius: BorderRadius.circular(rs.r(16)),
+        border: Border.all(color: kPrimaryLightColor, width: 1.2),
+        boxShadow: [
+          BoxShadow(
+            color: kPrimaryColor.withValues(alpha: 0.08),
+            blurRadius: rs.r(10),
+            offset: Offset(0, rs.rh(4)),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: EdgeInsets.symmetric(
+              horizontal: rs.rw(10),
+              vertical: rs.rh(6),
+            ),
+            decoration: BoxDecoration(
+              color: kPrimaryColor.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(rs.r(12)),
+              border: Border.all(
+                color: kPrimaryColor.withValues(alpha: 0.01),
+              ),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'கோச்சார பார்வைகள்',
+                    style: TextStyle(
+                      fontFamily: 'TamilArima',
+                      fontSize: rs.sp(16),
+                      fontWeight: FontWeight.w700,
+                      color: kIndigoDark,
+                    ),
+                  ),
+                ),
+                Container(
+                  decoration: BoxDecoration(
+                    color: kPrimaryColor.withValues(alpha: 0.08),
+                    shape: BoxShape.circle,
+                  ),
+                  child: IconButton(
+                    onPressed: _openGocharamParvaSheet,
+                    icon: Icon(
+                      Icons.add_circle_outline,
+                      color: kPrimaryColor,
+                      size: rs.r(22),
+                    ),
+                    tooltip: 'Add',
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (_gocharamParvaEntries.isEmpty)
+            Padding(
+              padding: EdgeInsets.only(top: rs.rh(8)),
+              child: Text(
+                'பார்வை விவரங்கள் சேர்க்கப்படவில்லை',
+                style: TextStyle(
+                  fontFamily: 'TamilArima',
+                  fontSize: rs.sp(12.5),
+                  color: kIndigoLight.withValues(alpha: 0.75),
+                ),
+              ),
+            )
+          else
+            ..._gocharamParvaEntries
+                .map((entry) => _buildGocharamParvaTile(entry)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGocharamParvaTile(_GocharamParvaEntry entry) {
+    final rs = context.rs;
+    final numberLabel = entry.number.toString().padLeft(2, '0');
+    return Padding(
+      padding: EdgeInsets.only(top: rs.rh(8)),
+      child: Dismissible(
+        key: ValueKey('gocharam-parva-${entry.id}'),
+        direction: DismissDirection.horizontal,
+        confirmDismiss: (direction) async {
+          if (direction == DismissDirection.startToEnd) {
+            await _openGocharamParvaSheet(editId: entry.id);
+            return false;
+          }
+          return _confirmGocharamParvaDelete();
+        },
+        onDismissed: (direction) {
+          setState(() {
+            _gocharamParvaEntries.removeWhere((item) => item.id == entry.id);
+          });
+          _saveGocharamParvaEntries();
+        },
+        background: Container(
+          decoration: BoxDecoration(
+            color: kPrimaryColor.withValues(alpha: 0.15),
+            borderRadius: BorderRadius.circular(rs.r(12)),
+          ),
+          alignment: Alignment.centerLeft,
+          padding: EdgeInsets.only(left: rs.rw(16)),
+          child: Row(
+            children: [
+              Icon(Icons.edit, color: kPrimaryColor, size: rs.r(18)),
+              SizedBox(width: rs.rw(6)),
+              Text(
+                'Edit',
+                style: TextStyle(
+                  fontFamily: 'TamilArima',
+                  fontSize: rs.sp(12.5),
+                  fontWeight: FontWeight.w600,
+                  color: kPrimaryColor,
+                ),
+              ),
+            ],
+          ),
+        ),
+        secondaryBackground: Container(
+          decoration: BoxDecoration(
+            color: Colors.red.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(rs.r(12)),
+          ),
+          alignment: Alignment.centerRight,
+          padding: EdgeInsets.only(right: rs.rw(16)),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Delete',
+                style: TextStyle(
+                  fontFamily: 'TamilArima',
+                  fontSize: rs.sp(12.5),
+                  fontWeight: FontWeight.w600,
+                  color: Colors.red,
+                ),
+              ),
+              SizedBox(width: rs.rw(6)),
+              Icon(Icons.delete_outline, color: Colors.red, size: rs.r(18)),
+            ],
+          ),
+        ),
+        child: Container(
+          padding: EdgeInsets.symmetric(
+            horizontal: rs.rw(14),
+            vertical: rs.rh(12),
+          ),
+          decoration: BoxDecoration(
+            color: white,
+            borderRadius: BorderRadius.circular(rs.r(14)),
+            border: Border.all(color: kPrimaryLightColor),
+            boxShadow: [
+              BoxShadow(
+                color: kPrimaryColor.withValues(alpha: 0.08),
+                blurRadius: rs.r(8),
+                offset: Offset(0, rs.rh(3)),
+              ),
+            ],
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              CircleAvatar(
+                radius: rs.r(16),
+                backgroundColor: kPrimaryColor.withValues(alpha: 0.18),
+                child: Text(
+                  numberLabel,
+                  style: TextStyle(
+                    fontFamily: 'TamilArima',
+                    fontSize: rs.sp(12.5),
+                    fontWeight: FontWeight.w800,
+                    color: kIndigoDark,
+                  ),
+                ),
+              ),
+              SizedBox(width: rs.rw(12)),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Text(
+                          'கோச்சார விவரம்',
+                          style: TextStyle(
+                            fontFamily: 'TamilArima',
+                            fontSize: rs.sp(13.5),
+                            fontWeight: FontWeight.w800,
+                            color: kIndigoDark,
+                          ),
+                        ),
+                        SizedBox(width: rs.rw(6)),
+                        Icon(
+                          Icons.auto_awesome,
+                          size: rs.r(16),
+                          color: kPrimaryColor,
+                        ),
+                        const Spacer(),
+                        Icon(
+                          Icons.keyboard_arrow_down_rounded,
+                          size: rs.r(22),
+                          color: kIndigoLight.withValues(alpha: 0.8),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: rs.rh(6)),
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.event,
+                          size: rs.r(16),
+                          color: kPrimaryColor,
+                        ),
+                        SizedBox(width: rs.rw(6)),
+                        Text(
+                          _formatDate(entry.date),
+                          style: TextStyle(
+                            fontFamily: 'TamilArima',
+                            fontSize: rs.sp(12.5),
+                            fontWeight: FontWeight.w600,
+                            color: kIndigoDark,
+                          ),
+                        ),
+                        const Spacer(),
+                        Icon(
+                          Icons.access_time,
+                          size: rs.r(16),
+                          color: kPrimaryColor,
+                        ),
+                        SizedBox(width: rs.rw(6)),
+                        Text(
+                          _formatTime(entry.time),
+                          style: TextStyle(
+                            fontFamily: 'TamilArima',
+                            fontSize: rs.sp(12.5),
+                            fontWeight: FontWeight.w600,
+                            color: kIndigoDark,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -702,7 +998,172 @@ class _AstrologyChartScreenState extends State<AstrologyChartScreen> {
     );
   }
 
-  Widget _buildGocharamOuterBox({
+  Widget _buildGocharamChartForParva({
+    required List<_ChartBoxData> boxData,
+    required int parvaNumber,
+    required Function(int, _ChartBoxData) onBoxUpdate,
+  }) {
+    final rs = context.rs;
+    final outerLabels =
+        _kattamOrder.map((value) => 'CO-$value').toList(growable: false);
+    final innerData = _kattamBoxes;
+    final outerData = boxData;
+
+    return AspectRatio(
+      aspectRatio: 1,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final spacingOuter = rs.r(6);
+          final outerCellSize =
+              (constraints.maxWidth - spacingOuter * 3) / 4;
+
+          final innerScale = 0.66;
+          final innerCellSize = outerCellSize * innerScale;
+          final innerSpacing = spacingOuter * innerScale;
+          final innerSize = innerCellSize * 4 + innerSpacing * 3;
+          final innerOffset = (constraints.maxWidth - innerSize) / 2;
+
+          final centerSize = innerCellSize * 2 + innerSpacing;
+          final centerOffset = innerOffset + innerCellSize + innerSpacing;
+
+          List<Widget> buildOuterRing(
+            List<String> labels,
+            List<_ChartBoxData> data,
+            double offset,
+            double cellSize,
+            double spacing,
+          ) {
+            final boxes = <Widget>[];
+            var ringIndex = 0;
+            for (var row = 0; row < 4; row++) {
+              for (var col = 0; col < 4; col++) {
+                final isCenter =
+                    row >= 1 && row <= 2 && col >= 1 && col <= 2;
+                if (isCenter) continue;
+                final label = labels[ringIndex];
+                final boxData = data[ringIndex];
+                final boxIndex = ringIndex;
+                ringIndex += 1;
+                boxes.add(
+                  Positioned(
+                    left: offset + col * (cellSize + spacing),
+                    top: offset + row * (cellSize + spacing),
+                    child: _buildGocharamOuterBox(
+                      label: label,
+                      data: boxData,
+                      size: cellSize,
+                      onTap: () {
+                        // For parva tiles, we can open selection sheet
+                        // but we need to handle the update differently
+                      },
+                    ),
+                  ),
+                );
+              }
+            }
+            return boxes;
+          }
+
+          List<Widget> buildDataRing(
+            List<_ChartBoxData> data,
+            double offset,
+            double cellSize,
+            double spacing,
+          ) {
+            final boxes = <Widget>[];
+            var ringIndex = 0;
+            for (var row = 0; row < 4; row++) {
+              for (var col = 0; col < 4; col++) {
+                final isCenter =
+                    row >= 1 && row <= 2 && col >= 1 && col <= 2;
+                if (isCenter) continue;
+                final boxData = data[ringIndex];
+                ringIndex += 1;
+                boxes.add(
+                  Positioned(
+                    left: offset + col * (cellSize + spacing),
+                    top: offset + row * (cellSize + spacing),
+                    child: _buildGocharamDataBox(
+                      data: boxData,
+                      size: cellSize,
+                    ),
+                  ),
+                );
+              }
+            }
+            return boxes;
+          }
+
+          final widgets = <Widget>[];
+          if (!_showInnerOnTop) {
+            widgets.addAll(
+              buildDataRing(
+                innerData,
+                innerOffset,
+                innerCellSize,
+                innerSpacing,
+              ),
+            );
+          }
+          widgets.addAll(
+            buildOuterRing(
+              outerLabels,
+              outerData,
+              0,
+              outerCellSize,
+              spacingOuter,
+            ),
+          );
+          if (_showInnerOnTop) {
+            widgets.addAll(
+              buildDataRing(
+                innerData,
+                innerOffset,
+                innerCellSize,
+                innerSpacing,
+              ),
+            );
+          }
+          widgets.add(
+            Positioned(
+              left: centerOffset,
+              top: centerOffset,
+              child: InkWell(
+                onTap: () {
+                  setState(() {
+                    _showInnerOnTop = !_showInnerOnTop;
+                  });
+                },
+                borderRadius: BorderRadius.circular(rs.r(8)),
+                child: Container(
+                  width: centerSize,
+                  height: centerSize,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: white,
+                    borderRadius: BorderRadius.circular(rs.r(8)),
+                    border: Border.all(color: kPrimaryLightColor),
+                  ),
+                  child: Transform.scale(
+                    scale: 0.8,
+                    alignment: Alignment.center,
+                    child: _buildCenterPlanetSummary(
+                      fontScale: 0.9,
+                      singleLine: true,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          );
+
+          return Stack(children: widgets);
+        },
+      ),
+    );
+  }
+
+
     required String label,
     required _ChartBoxData data,
     required double size,
@@ -981,6 +1442,251 @@ class _AstrologyChartScreenState extends State<AstrologyChartScreen> {
     });
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Saved')),
+    );
+  }
+
+  Future<void> _openGocharamParvaSheet({String? editId}) async {
+    final existing = editId == null
+        ? null
+        : _gocharamParvaEntries
+            .where((entry) => entry.id == editId)
+            .cast<_GocharamParvaEntry?>()
+            .firstWhere((entry) => entry != null, orElse: () => null);
+    DateTime? selectedDate = existing?.date;
+    TimeOfDay? selectedTime = existing?.time;
+
+    final saved = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        final rs = context.rs;
+        final viewInsets = MediaQuery.viewInsetsOf(context);
+        return Padding(
+          padding: EdgeInsets.only(bottom: viewInsets.bottom),
+          child: Container(
+            decoration: BoxDecoration(
+              color: white,
+              borderRadius: BorderRadius.vertical(
+                top: Radius.circular(rs.r(20)),
+              ),
+            ),
+            child: SafeArea(
+              top: false,
+              child: StatefulBuilder(
+                builder: (context, setSheetState) {
+                  Future<void> pickDate() async {
+                    final now = DateTime.now();
+                    final initial = selectedDate ?? now;
+                    final picked = await showDatePicker(
+                      context: context,
+                      initialDate: initial,
+                      firstDate: DateTime(now.year - 5),
+                      lastDate: DateTime(now.year + 5),
+                    );
+                    if (picked == null) return;
+                    setSheetState(() {
+                      selectedDate = picked;
+                    });
+                  }
+
+                  Future<void> pickTime() async {
+                    final picked = await showTimePicker(
+                      context: context,
+                      initialTime: selectedTime ??
+                          TimeOfDay.fromDateTime(DateTime.now()),
+                    );
+                    if (picked == null) return;
+                    setSheetState(() {
+                      selectedTime = picked;
+                    });
+                  }
+
+                  final canSave = selectedDate != null && selectedTime != null;
+
+                  return SingleChildScrollView(
+                    padding: EdgeInsets.fromLTRB(
+                      rs.rw(16),
+                      rs.rh(16),
+                      rs.rw(16),
+                      rs.rh(24),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'கோச்சாரம்',
+                          style: TextStyle(
+                            fontFamily: 'TamilArima',
+                            fontSize: rs.sp(16),
+                            fontWeight: FontWeight.w700,
+                            color: kIndigoDark,
+                          ),
+                        ),
+                        SizedBox(height: rs.rh(12)),
+                        _buildPickField(
+                          label: 'பார்க்க வந்த தேதி',
+                          value: selectedDate == null
+                              ? 'தேர்வு செய்யவும்'
+                              : _formatDate(selectedDate!),
+                          onTap: pickDate,
+                        ),
+                        SizedBox(height: rs.rh(10)),
+                        _buildPickField(
+                          label: 'பார்க்க வந்த நேரம்',
+                          value: selectedTime == null
+                              ? 'தேர்வு செய்யவும்'
+                              : _formatTime(selectedTime!),
+                          onTap: pickTime,
+                        ),
+                        SizedBox(height: rs.rh(16)),
+                        SizedBox(
+                          width: double.infinity,
+                          child: FilledButton(
+                            onPressed: canSave
+                                ? () => Navigator.pop(context, true)
+                                : null,
+                            child: const Text('Save'),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ),
+          ),
+        );
+      },
+    );
+
+    if (saved != true || selectedDate == null || selectedTime == null) return;
+
+    setState(() {
+      if (existing != null) {
+        final updated = existing.copyWith(
+          date: selectedDate!,
+          time: selectedTime!,
+        );
+        final index = _gocharamParvaEntries
+            .indexWhere((entry) => entry.id == existing.id);
+        if (index >= 0) {
+          _gocharamParvaEntries[index] = updated;
+        }
+      } else {
+        _gocharamParvaEntries.add(
+          _GocharamParvaEntry(
+            id: DateTime.now().microsecondsSinceEpoch.toString(),
+            number: _nextGocharamParvaNumber,
+            date: selectedDate!,
+            time: selectedTime!,
+          ),
+        );
+        _nextGocharamParvaNumber += 1;
+      }
+    });
+    await _saveGocharamParvaEntries();
+  }
+
+  Future<bool> _confirmGocharamParvaDelete() async {
+    final rs = context.rs;
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text(
+            'நீக்க வேண்டுமா?',
+            style: TextStyle(
+              fontFamily: 'TamilArima',
+              fontSize: rs.sp(14),
+              fontWeight: FontWeight.w700,
+              color: kIndigoDark,
+            ),
+          ),
+          content: Text(
+            'இந்த பதிவை நீக்க விரும்புகிறீர்களா?',
+            style: TextStyle(
+              fontFamily: 'TamilArima',
+              fontSize: rs.sp(12.5),
+              color: kIndigoDark,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('No'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Yes'),
+            ),
+          ],
+        );
+      },
+    );
+    return result ?? false;
+  }
+
+  Future<void> _saveGocharamParvaEntries() async {
+    final collection =
+        FirebaseFirestore.instance.collection('AstrologyProfiles');
+    await collection.doc(widget.profile.id).update({
+      'gocharamParvaEntries':
+          _gocharamParvaEntries.map((entry) => entry.toMap()).toList(),
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  Widget _buildPickField({
+    required String label,
+    required String value,
+    required VoidCallback onTap,
+  }) {
+    final rs = context.rs;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(rs.r(10)),
+      child: Container(
+        padding: EdgeInsets.symmetric(
+          horizontal: rs.rw(12),
+          vertical: rs.rh(12),
+        ),
+        decoration: BoxDecoration(
+          color: kPrimaryLightColor.withValues(alpha: 0.2),
+          borderRadius: BorderRadius.circular(rs.r(10)),
+          border: Border.all(color: kPrimaryLightColor),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontFamily: 'TamilArima',
+                  fontSize: rs.sp(12.5),
+                  fontWeight: FontWeight.w600,
+                  color: kIndigoDark,
+                ),
+              ),
+            ),
+            Text(
+              value,
+              style: TextStyle(
+                fontFamily: 'TamilArima',
+                fontSize: rs.sp(12.5),
+                fontWeight: FontWeight.w700,
+                color: kIndigoDark,
+              ),
+            ),
+            SizedBox(width: rs.rw(6)),
+            Icon(
+              Icons.calendar_today,
+              size: rs.r(16),
+              color: kPrimaryColor,
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -1890,6 +2596,86 @@ class _PositionedValue extends StatelessWidget {
                 ),
         ),
       ),
+    );
+  }
+}
+
+class _GocharamParvaEntry {
+  final String id;
+  final int number;
+  final DateTime date;
+  final TimeOfDay time;
+  final List<_ChartBoxData> gocharamBoxes;
+
+  const _GocharamParvaEntry({
+    required this.id,
+    required this.number,
+    required this.date,
+    required this.time,
+    required this.gocharamBoxes,
+  });
+
+  factory _GocharamParvaEntry.fromMap(Map<dynamic, dynamic> map) {
+    final rawDate = map['date'];
+    final dateValue = rawDate is Timestamp
+        ? rawDate.toDate()
+        : DateTime.tryParse((rawDate ?? '').toString());
+    final rawTime = (map['time'] ?? '').toString();
+    final parts = rawTime.split(':');
+    final hour = parts.isNotEmpty ? int.tryParse(parts[0]) ?? 0 : 0;
+    final minute = parts.length > 1 ? int.tryParse(parts[1]) ?? 0 : 0;
+
+    // Parse gocharamBoxes
+    List<_ChartBoxData> boxes = [];
+    final rawBoxes = map['gocharamBoxes'];
+    if (rawBoxes is List) {
+      boxes = rawBoxes
+          .whereType<Map>()
+          .map((box) => _ChartBoxData.fromMap(Map<String, String>.from(
+              box.map((k, v) => MapEntry(k.toString(), v.toString())))))
+          .toList();
+    }
+    // Ensure we have exactly 12 boxes
+    while (boxes.length < 12) {
+      boxes.add(_ChartBoxData.empty());
+    }
+    if (boxes.length > 12) {
+      boxes = boxes.take(12).toList();
+    }
+
+    return _GocharamParvaEntry(
+      id: (map['id'] ?? DateTime.now().microsecondsSinceEpoch.toString())
+          .toString(),
+      number: int.tryParse((map['number'] ?? '').toString()) ?? 0,
+      date: dateValue ?? DateTime.now(),
+      time: TimeOfDay(hour: hour, minute: minute),
+      gocharamBoxes: boxes,
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'number': number,
+      'date': Timestamp.fromDate(date),
+      'time':
+          '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}',
+      'gocharamBoxes': gocharamBoxes.map((box) => box.toMap()).toList(),
+    };
+  }
+
+  _GocharamParvaEntry copyWith({
+    int? number,
+    DateTime? date,
+    TimeOfDay? time,
+    List<_ChartBoxData>? gocharamBoxes,
+  }) {
+    return _GocharamParvaEntry(
+      id: id,
+      number: number ?? this.number,
+      date: date ?? this.date,
+      time: time ?? this.time,
+      gocharamBoxes: gocharamBoxes ?? this.gocharamBoxes,
     );
   }
 }
