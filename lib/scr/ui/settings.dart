@@ -9,6 +9,7 @@ import 'package:mrs_dth_diary_v1/scr/ui/DashBoard/MyAccountsScreen.dart';
 import 'package:mrs_dth_diary_v1/scr/ui/notes_screen.dart';
 import 'package:mrs_dth_diary_v1/scr/ui/records_screen.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/customText.dart';
+import 'package:mrs_dth_diary_v1/scr/widgets/subHelpers/responsive.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/subHelpers/styles.dart';
 import 'package:provider/provider.dart';
 
@@ -72,51 +73,67 @@ class _SettingsScreenState extends State<SettingsScreen>
       isScrollControlled: true,
       showDragHandle: true,
       builder: (context) {
+        final rs = context.rs;
         return Padding(
           padding: EdgeInsets.only(
-            left: 20,
-            right: 20,
-            top: 12,
-            bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+            left: rs.rw(20),
+            right: rs.rw(20),
+            top: rs.rh(12),
+            bottom: MediaQuery.of(context).viewInsets.bottom + rs.rh(20),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(height: 4),
-              const Text(
+              SizedBox(height: rs.rh(4)),
+              Text(
                 'Set App Passcode',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
+                style: TextStyle(
+                  fontSize: rs.sp(18),
+                  fontWeight: FontWeight.w600,
+                ),
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: rs.rh(16)),
               TextField(
                 controller: controller,
                 keyboardType: TextInputType.number,
                 maxLength: 6,
                 obscureText: true,
-                style: const TextStyle(color: Colors.black),
-                decoration: const InputDecoration(
+                style: TextStyle(color: Colors.black, fontSize: rs.sp(14)),
+                decoration: InputDecoration(
                   labelText: 'New 6-digit passcode',
                   border: OutlineInputBorder(),
-                  labelStyle: TextStyle(color: Colors.black),
-                  floatingLabelStyle: TextStyle(color: Colors.black),
+                  labelStyle: TextStyle(
+                    color: Colors.black,
+                    fontSize: rs.sp(13.5),
+                  ),
+                  floatingLabelStyle: TextStyle(
+                    color: Colors.black,
+                    fontSize: rs.sp(13.5),
+                  ),
                 ),
               ),
-              const SizedBox(height: 12),
+              SizedBox(height: rs.rh(12)),
               TextField(
                 controller: confirmController,
                 keyboardType: TextInputType.number,
                 maxLength: 6,
                 obscureText: true,
-                style: const TextStyle(color: Colors.black),
-                decoration: const InputDecoration(
+                style: TextStyle(color: Colors.black, fontSize: rs.sp(14)),
+                decoration: InputDecoration(
                   labelText: 'Confirm passcode',
                   border: OutlineInputBorder(),
-                  labelStyle: TextStyle(color: Colors.black),
-                  floatingLabelStyle: TextStyle(color: Colors.black),
+                  labelStyle: TextStyle(
+                    color: Colors.black,
+                    fontSize: rs.sp(13.5),
+                  ),
+                  floatingLabelStyle: TextStyle(
+                    color: Colors.black,
+                    fontSize: rs.sp(13.5),
+                  ),
                 ),
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: rs.rh(16)),
               SizedBox(
                 width: double.infinity,
                 child: FilledButton(
@@ -135,10 +152,13 @@ class _SettingsScreenState extends State<SettingsScreen>
                     if (!context.mounted) return;
                     Navigator.pop(context, true);
                   },
-                  child: const Text('Save Passcode'),
+                  child: Text(
+                    'Save Passcode',
+                    style: TextStyle(fontSize: rs.sp(14.5)),
+                  ),
                 ),
               ),
-              const SizedBox(height: 12),
+              SizedBox(height: rs.rh(12)),
             ],
           ),
         );
@@ -153,24 +173,37 @@ class _SettingsScreenState extends State<SettingsScreen>
     final result = await showDialog<bool>(
       context: context,
       builder: (context) {
+        final rs = context.rs;
         return AlertDialog(
-          title: const Text('Disable Passcode'),
+          title: Text(
+            'Disable Passcode',
+            style: TextStyle(fontSize: rs.sp(17.5)),
+          ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text('Enter your current passcode to disable security.'),
-              const SizedBox(height: 12),
+              Text(
+                'Enter your current passcode to disable security.',
+                style: TextStyle(fontSize: rs.sp(13.5)),
+              ),
+              SizedBox(height: rs.rh(12)),
               TextField(
                 controller: controller,
                 keyboardType: TextInputType.number,
                 maxLength: 6,
                 obscureText: true,
-                style: const TextStyle(color: Colors.black),
-                decoration: const InputDecoration(
+                style: TextStyle(color: Colors.black, fontSize: rs.sp(14)),
+                decoration: InputDecoration(
                   labelText: 'Current passcode',
                   border: OutlineInputBorder(),
-                  labelStyle: TextStyle(color: Colors.black),
-                  floatingLabelStyle: TextStyle(color: Colors.black),
+                  labelStyle: TextStyle(
+                    color: Colors.black,
+                    fontSize: rs.sp(13.5),
+                  ),
+                  floatingLabelStyle: TextStyle(
+                    color: Colors.black,
+                    fontSize: rs.sp(13.5),
+                  ),
                 ),
               ),
             ],
@@ -178,7 +211,7 @@ class _SettingsScreenState extends State<SettingsScreen>
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context, false),
-              child: const Text('Cancel'),
+              child: Text('Cancel', style: TextStyle(fontSize: rs.sp(13.5))),
             ),
             FilledButton(
               onPressed: () async {
@@ -190,7 +223,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                 if (!context.mounted) return;
                 Navigator.pop(context, true);
               },
-              child: const Text('Disable'),
+              child: Text('Disable', style: TextStyle(fontSize: rs.sp(13.5))),
             ),
           ],
         );
@@ -213,49 +246,58 @@ class _SettingsScreenState extends State<SettingsScreen>
 
     final appSettings = context.watch<AppSettings>();
     final user = FirebaseAuth.instance.currentUser;
+    final rs = context.rs;
+    final switchScale = rs.textScale(min: 0.85, max: 1.0);
 
     return ListView(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(rs.r(16)),
       children: [
-        const Text(
+        Text(
           'Profile settings',
           style: TextStyle(
-              fontSize: 22, fontWeight: FontWeight.bold, color: kIndigoDark),
+            fontSize: rs.sp(20),
+            fontWeight: FontWeight.bold,
+            color: kIndigoDark,
+          ),
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: rs.rh(12)),
         Card(
           child: Padding(
-            padding: const EdgeInsets.all(14),
+            padding: EdgeInsets.all(rs.r(14)),
             child: Row(
               children: [
                 CircleAvatar(
-                  radius: 28,
+                  radius: rs.r(24),
                   backgroundColor: kPrimaryLightColor,
                   backgroundImage: user?.photoURL != null
                       ? NetworkImage(user!.photoURL!)
                       : null,
                   child: user?.photoURL == null
-                      ? const Icon(Icons.person, color: kPrimaryColor, size: 28)
+                      ? Icon(
+                          Icons.person,
+                          color: kPrimaryColor,
+                          size: rs.r(24),
+                        )
                       : null,
                 ),
-                const SizedBox(width: 12),
+                SizedBox(width: rs.rw(12)),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         user?.displayName ?? 'Guest user',
-                        style: const TextStyle(
-                          fontSize: 16,
+                        style: TextStyle(
+                          fontSize: rs.sp(15.5),
                           fontWeight: FontWeight.w700,
                           color: kIndigoDark,
                         ),
                       ),
-                      const SizedBox(height: 4),
+                      SizedBox(height: rs.rh(4)),
                       Text(
                         user?.email ?? 'No email',
-                        style: const TextStyle(
-                          fontSize: 12,
+                        style: TextStyle(
+                          fontSize: rs.sp(12),
                           fontWeight: FontWeight.w600,
                           color: kIndigoLight,
                         ),
@@ -267,84 +309,109 @@ class _SettingsScreenState extends State<SettingsScreen>
                   onPressed: () async {
                     await AuthService().signOut();
                   },
-                  child: const Text('Logout'),
+                  child: Text('Logout', style: TextStyle(fontSize: rs.sp(13))),
                 ),
               ],
             ),
           ),
         ),
-        const SizedBox(height: 16),
-        const Text(
+        SizedBox(height: rs.rh(16)),
+        Text(
           'Settings',
           style: TextStyle(
-              fontSize: 26, fontWeight: FontWeight.bold, color: kIndigoDark),
+            fontSize: rs.sp(22.5),
+            fontWeight: FontWeight.bold,
+            color: kIndigoDark,
+          ),
         ),
-        const SizedBox(height: 16),
+        SizedBox(height: rs.rh(10)),
         Card(
           child: Padding(
-            padding: const EdgeInsets.all(12),
+            padding: EdgeInsets.all(rs.r(12)),
             child: Column(
               children: [
                 ListTile(
-                  leading: const Icon(Icons.lock_outline),
-                  title: const Text('App Passcode'),
+                  leading: Icon(Icons.lock_outline, size: rs.r(20)),
+                  title: Text(
+                    'App Passcode',
+                    style: TextStyle(fontSize: rs.sp(15.5)),
+                  ),
                   subtitle: Text(
                     _passcodeEnabled
                         ? 'Passcode required on app open'
                         : 'No passcode set',
+                    style: TextStyle(fontSize: rs.sp(13)),
                   ),
-                  trailing: Switch.adaptive(
-                    value: _passcodeEnabled,
-                    onChanged: _togglePasscode,
+                  trailing: Transform.scale(
+                    scale: switchScale,
+                    alignment: Alignment.centerRight,
+                    child: Switch.adaptive(
+                      value: _passcodeEnabled,
+                      onChanged: _togglePasscode,
+                    ),
                   ),
                 ),
                 if (_passcodeEnabled)
                   ListTile(
-                    leading: const Icon(Icons.password_outlined),
-                    title: const Text('Change passcode'),
+                    leading: Icon(Icons.password_outlined, size: rs.r(20)),
+                    title: Text(
+                      'Change passcode',
+                      style: TextStyle(fontSize: rs.sp(15.5)),
+                    ),
                     onTap: _showSetPasscodeSheet,
                   ),
               ],
             ),
           ),
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: rs.rh(1)),
         Card(
           child: Column(
             children: [
               ListTile(
-                leading: const Icon(Icons.translate_rounded),
-                title: const Text('Language'),
+                leading: Icon(Icons.translate_rounded, size: rs.r(20)),
+                title:
+                    Text('Language', style: TextStyle(fontSize: rs.sp(15.5))),
                 subtitle: Text(
                   appSettings.locale.languageCode == 'ta'
                       ? 'Tamil & English'
                       : 'English',
+                  style: TextStyle(fontSize: rs.sp(13)),
                 ),
                 onTap: () => _showComingSoonAlert(context, 'Language'),
               ),
               ListTile(
-                leading: const Icon(Icons.dark_mode_outlined),
-                title: const Text('Dark mode'),
+                leading: Icon(Icons.dark_mode_outlined, size: rs.r(20)),
+                title:
+                    Text('Dark mode', style: TextStyle(fontSize: rs.sp(15.5))),
                 subtitle: Text(
                   appSettings.isDarkMode
                       ? 'Dark mode enabled'
                       : 'Light mode enabled',
+                  style: TextStyle(fontSize: rs.sp(13)),
                 ),
-                trailing: Switch.adaptive(
-                  value: appSettings.isDarkMode,
-                  onChanged: (value) =>
-                      _showComingSoonAlert(context, 'Dark mode'),
+                trailing: Transform.scale(
+                  scale: switchScale,
+                  alignment: Alignment.centerRight,
+                  child: Switch.adaptive(
+                    value: appSettings.isDarkMode,
+                    onChanged: (value) =>
+                        _showComingSoonAlert(context, 'Dark mode'),
+                  ),
                 ),
               ),
             ],
           ),
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: rs.rh(1)),
         Card(
           child: ListTile(
-            leading: const Icon(Icons.note_alt_outlined),
-            title: const Text('Note App'),
-            subtitle: const Text('Open your notes'),
+            leading: Icon(Icons.note_alt_outlined, size: rs.r(20)),
+            title: Text('Note App', style: TextStyle(fontSize: rs.sp(15.5))),
+            subtitle: Text(
+              'Open your notes',
+              style: TextStyle(fontSize: rs.sp(13)),
+            ),
             onTap: () {
               Navigator.of(context).push(
                 MaterialPageRoute(
@@ -354,12 +421,19 @@ class _SettingsScreenState extends State<SettingsScreen>
             },
           ),
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: rs.rh(1)),
         Card(
           child: ListTile(
-            leading: const Icon(Icons.account_balance_wallet_outlined),
-            title: const Text('எனது கணக்கு விவரங்கள்'),
-            subtitle: const Text('View topup summary and payments'),
+            leading:
+                Icon(Icons.account_balance_wallet_outlined, size: rs.r(20)),
+            title: Text(
+              'எனது கணக்கு விவரங்கள்',
+              style: TextStyle(fontSize: rs.sp(15.5)),
+            ),
+            subtitle: Text(
+              'View topup summary and payments',
+              style: TextStyle(fontSize: rs.sp(13)),
+            ),
             onTap: () {
               Navigator.of(context).push(
                 MaterialPageRoute(
@@ -369,13 +443,18 @@ class _SettingsScreenState extends State<SettingsScreen>
             },
           ),
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: rs.rh(1)),
         Card(
           child: ListTile(
-            leading: const Icon(Icons.assessment_outlined),
-            title: const Text('Records & Reports'),
-            subtitle:
-                const Text('Monthly, daily reports and transaction history'),
+            leading: Icon(Icons.assessment_outlined, size: rs.r(20)),
+            title: Text(
+              'Records & Reports',
+              style: TextStyle(fontSize: rs.sp(15.5)),
+            ),
+            subtitle: Text(
+              'Monthly, daily reports and transaction history',
+              style: TextStyle(fontSize: rs.sp(13)),
+            ),
             onTap: () {
               Navigator.of(context).push(
                 MaterialPageRoute(
@@ -385,7 +464,7 @@ class _SettingsScreenState extends State<SettingsScreen>
             },
           ),
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: rs.rh(3)),
         Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(
@@ -396,43 +475,59 @@ class _SettingsScreenState extends State<SettingsScreen>
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: kPrimaryColor.withValues(alpha: 0.18),
-                blurRadius: 12,
-                offset: const Offset(0, 6),
-              ),
-            ],
+            borderRadius: BorderRadius.circular(rs.r(16)),
+            // boxShadow: [
+            //   BoxShadow(
+            //     color: kPrimaryColor.withValues(alpha: 0.18),
+            //     blurRadius: rs.r(12),
+            //     offset: Offset(0, rs.rh(6)),
+            //   ),
+            // ],
           ),
           child: ListTile(
             leading: CircleAvatar(
               backgroundColor: white,
-              child: const Icon(Icons.psychology_rounded, color: kPrimaryColor),
+              child: Icon(
+                Icons.psychology_rounded,
+                color: kPrimaryColor,
+                size: rs.r(20),
+              ),
             ),
-            title: const Text(
+            title: Text(
               'Developed by',
-              style: TextStyle(fontWeight: FontWeight.w700),
+              style: TextStyle(
+                fontWeight: FontWeight.w700,
+                fontSize: rs.sp(15.5),
+              ),
             ),
-            subtitle: const Text('SANJEEV THANANRASA'),
-            trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 16),
+            subtitle: Text(
+              'SANJEEV THANANRASA',
+              style: TextStyle(fontSize: rs.sp(13)),
+            ),
+            trailing: Icon(Icons.arrow_forward_ios_rounded, size: rs.r(14)),
             onTap: () => _showDeveloperDialog(context),
           ),
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: rs.rh(3)),
         Card(
           child: ListTile(
-            leading: const Icon(Icons.info_outline_rounded),
-            title: const Text('About App'),
-            subtitle: const Text('MRS DIARY · v2.0'),
+            leading: Icon(Icons.info_outline_rounded, size: rs.r(20)),
+            title: Text('About App', style: TextStyle(fontSize: rs.sp(15.5))),
+            subtitle: Text(
+              'MRS DIARY · v2.1.0',
+              style: TextStyle(fontSize: rs.sp(13)),
+            ),
           ),
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: rs.rh(1)),
         Card(
           child: ListTile(
-            leading: const Icon(Icons.exit_to_app_rounded),
-            title: const Text('Exit'),
-            subtitle: const Text('Close the app'),
+            leading: Icon(Icons.exit_to_app_rounded, size: rs.r(20)),
+            title: Text('Exit', style: TextStyle(fontSize: rs.sp(15.5))),
+            subtitle: Text(
+              'Close the app',
+              style: TextStyle(fontSize: rs.sp(13)),
+            ),
             onTap: () => _confirmExit(context),
           ),
         ),
@@ -445,15 +540,21 @@ class _SettingsScreenState extends State<SettingsScreen>
     await showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Coming Soon'),
+        title: Text(
+          'Coming Soon',
+          style: TextStyle(fontSize: context.rs.sp(17.5)),
+        ),
         content: Text(
           'The $feature feature will be available soon.',
-          style: const TextStyle(color: kIndigoDark),
+          style: TextStyle(
+            color: kIndigoDark,
+            fontSize: context.rs.sp(13.5),
+          ),
         ),
         actions: [
           FilledButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('OK'),
+            child: Text('OK', style: TextStyle(fontSize: context.rs.sp(13.5))),
           ),
         ],
       ),
@@ -464,19 +565,27 @@ class _SettingsScreenState extends State<SettingsScreen>
     final result = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Exit'),
-        content: const Text(
+        title: Text('Exit', style: TextStyle(fontSize: context.rs.sp(17.5))),
+        content: Text(
           'Do you want to close the app?',
-          style: TextStyle(fontFamily: 'TamilArima2', color: Colors.blueGrey),
+          style: TextStyle(
+            fontFamily: 'TamilArima2',
+            color: Colors.blueGrey,
+            fontSize: context.rs.sp(13.5),
+          ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: Text(
+              'Cancel',
+              style: TextStyle(fontSize: context.rs.sp(13.5)),
+            ),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Exit'),
+            child:
+                Text('Exit', style: TextStyle(fontSize: context.rs.sp(13.5))),
           ),
         ],
       ),
@@ -493,41 +602,44 @@ class _SettingsScreenState extends State<SettingsScreen>
     await showDialog<void>(
       context: context,
       builder: (context) {
+        final rs = context.rs;
         return AlertDialog(
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          contentPadding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(rs.r(20)),
+          ),
+          contentPadding:
+              EdgeInsets.fromLTRB(rs.rw(20), rs.rh(20), rs.rw(20), rs.rh(12)),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               ClipRRect(
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(rs.r(16)),
                 child: _buildShimmerImage(
                   'assets/images/sanjeev.jpg',
-                  height: 120,
-                  width: 120,
+                  height: rs.r(110),
+                  width: rs.r(110),
                 ),
               ),
-              const SizedBox(height: 16),
-              const Text(
+              SizedBox(height: rs.rh(16)),
+              Text(
                 'Sanjeev Thananrasa',
                 style: TextStyle(
-                  fontSize: 18,
+                  fontSize: rs.sp(16.5),
                   fontWeight: FontWeight.w700,
                   color: kIndigoDark,
                 ),
               ),
-              const SizedBox(height: 6),
+              SizedBox(height: rs.rh(6)),
               Text(
                 'Software Engineer',
-                style: TextStyle(color: kIndigoLight),
+                style: TextStyle(color: kIndigoLight, fontSize: rs.sp(13.5)),
               ),
-              const SizedBox(height: 14),
+              SizedBox(height: rs.rh(14)),
               _buildContactRow(Icons.phone_outlined, '+94 77 970 2687'),
-              const SizedBox(height: 8),
+              SizedBox(height: rs.rh(8)),
               _buildContactRow(
                   Icons.email_outlined, 'sanjeev.thanarasa@gmail.com'),
-              const SizedBox(height: 8),
+              SizedBox(height: rs.rh(8)),
               _buildContactRow(
                   Icons.location_on_outlined, 'Colombo, Sri Lanka'),
             ],
@@ -536,7 +648,7 @@ class _SettingsScreenState extends State<SettingsScreen>
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Close'),
+              child: Text('Close', style: TextStyle(fontSize: rs.sp(13.5))),
             ),
           ],
         );
@@ -545,16 +657,18 @@ class _SettingsScreenState extends State<SettingsScreen>
   }
 
   Widget _buildContactRow(IconData icon, String value) {
+    final rs = context.rs;
     return Row(
       children: [
-        Icon(icon, size: 18, color: kPrimaryColor),
-        const SizedBox(width: 8),
+        Icon(icon, size: rs.r(18), color: kPrimaryColor),
+        SizedBox(width: rs.rw(8)),
         Expanded(
           child: Text(
             value,
-            style: const TextStyle(
+            style: TextStyle(
               fontWeight: FontWeight.w600,
               color: kIndigoDark,
+              fontSize: rs.sp(12.5),
             ),
           ),
         ),
