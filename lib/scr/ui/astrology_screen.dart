@@ -33,7 +33,7 @@ class _AstrologyScreenState extends State<AstrologyScreen> {
         elevation: 0,
         foregroundColor: kIndigoDark,
         title: Text(
-          'Astrology',
+          'Clients Astro Records',
           style: TextStyle(
             fontSize: rs.sp(22),
             fontWeight: FontWeight.w800,
@@ -43,7 +43,7 @@ class _AstrologyScreenState extends State<AstrologyScreen> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: _openCreateForm,
-        backgroundColor: kPrimaryColor,
+        backgroundColor: kPrimaryColor.withValues(alpha: 0.9),
         child: Icon(Icons.add, color: Colors.white, size: rs.r(24)),
       ),
       body: SafeArea(
@@ -83,14 +83,10 @@ class _AstrologyScreenState extends State<AstrologyScreen> {
         }
 
         return ListView.separated(
-          padding: EdgeInsets.fromLTRB(
-            context.rs.rw(16),
-            0,
-            context.rs.rw(16),
-            context.rs.rh(16),
-          ),
+          padding:
+              EdgeInsets.fromLTRB(context.rs.rw(12), 0, context.rs.rw(12), 0),
           itemCount: filtered.length,
-          separatorBuilder: (_, __) => SizedBox(height: context.rs.rh(10)),
+          separatorBuilder: (_, __) => SizedBox(height: context.rs.rh(1)),
           itemBuilder: (context, index) {
             return _buildProfileTile(filtered[index]);
           },
