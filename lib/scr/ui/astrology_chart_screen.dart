@@ -16,7 +16,9 @@ class AstrologyChartScreen extends StatefulWidget {
 
 class _AstrologyChartScreenState extends State<AstrologyChartScreen> {
   late final List<_ChartBoxData> _kattamBoxes;
+  late List<_ChartBoxData> _gocharamBoxes;
   Map<String, String> _planetDegrees = {};
+  bool _showInnerOnTop = true;
 
   static const Map<String, String> _kattamShortNames = {
     'லக்னம்': 'லக்',
@@ -94,7 +96,9 @@ class _AstrologyChartScreenState extends State<AstrologyChartScreen> {
   void initState() {
     super.initState();
     _kattamBoxes = _normalizeBoxes(widget.profile.kattamBoxes);
+    _gocharamBoxes = List.generate(12, (_) => _ChartBoxData.empty());
     _loadPlanetDegrees();
+    _loadGocharamBoxes();
   }
 
   Future<void> _loadPlanetDegrees() async {
@@ -111,6 +115,34 @@ class _AstrologyChartScreenState extends State<AstrologyChartScreen> {
       _planetDegrees = raw.map(
         (key, value) => MapEntry(key.toString(), (value ?? '').toString()),
       );
+    });
+  }
+
+  Future<void> _loadGocharamBoxes() async {
+    final doc = await FirebaseFirestore.instance
+        .collection('AstrologyProfiles')
+        .doc(widget.profile.id)
+        .get();
+    if (!doc.exists) return;
+    final data = doc.data();
+    if (data == null || !data.containsKey('gocharamBoxes')) return;
+    final raw = data['gocharamBoxes'];
+    if (raw is! List) return;
+    final mapped = raw
+        .whereType<Map>()
+        .map(
+          (box) => {
+            'topLeft': (box['topLeft'] ?? '').toString(),
+            'topRight': (box['topRight'] ?? '').toString(),
+            'bottomLeft': (box['bottomLeft'] ?? '').toString(),
+            'bottomRight': (box['bottomRight'] ?? '').toString(),
+            'center': (box['center'] ?? '').toString(),
+          },
+        )
+        .toList();
+    if (!mounted) return;
+    setState(() {
+      _gocharamBoxes = _normalizeBoxes(mapped);
     });
   }
 
@@ -138,6 +170,8 @@ class _AstrologyChartScreenState extends State<AstrologyChartScreen> {
             _buildHeader(),
             SizedBox(height: rs.rh(16)),
             _buildJathagaKattaSection(),
+            SizedBox(height: rs.rh(16)),
+            _buildGocharamSection(),
           ],
         ),
       ),
@@ -215,7 +249,10 @@ class _AstrologyChartScreenState extends State<AstrologyChartScreen> {
     );
   }
 
-  Widget _buildCenterPlanetSummary() {
+  Widget _buildCenterPlanetSummary({
+    double fontScale = 1.0,
+    bool singleLine = false,
+  }) {
     final rs = context.rs;
     final shortLabels = <String, String>{
       'sun': 'சூரி',
@@ -251,7 +288,7 @@ class _AstrologyChartScreenState extends State<AstrologyChartScreen> {
           'தகவல் இல்லை',
           style: TextStyle(
             fontFamily: 'TamilArima',
-            fontSize: rs.sp(11.5),
+            fontSize: rs.sp(11.5) * fontScale,
             fontWeight: FontWeight.w600,
             color: kIndigoLight.withValues(alpha: 0.8),
           ),
@@ -295,16 +332,20 @@ class _AstrologyChartScreenState extends State<AstrologyChartScreen> {
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
                                   fontFamily: 'TamilArima',
-                                  fontSize: rs.sp(10.5),
+                                  fontSize: rs.sp(9.5) * fontScale,
                                   color: kIndigoLight.withValues(alpha: 0.9),
                                 ),
+                                maxLines: singleLine ? 1 : null,
+                                overflow: singleLine
+                                    ? TextOverflow.ellipsis
+                                    : TextOverflow.visible,
                               ),
                             ),
                             Text(
                               '  ||  ',
                               style: TextStyle(
                                 fontFamily: 'TamilArima',
-                                fontSize: rs.sp(10.5),
+                                fontSize: rs.sp(9.5) * fontScale,
                                 color: kIndigoLight.withValues(alpha: 0.9),
                               ),
                             ),
@@ -314,9 +355,13 @@ class _AstrologyChartScreenState extends State<AstrologyChartScreen> {
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
                                   fontFamily: 'TamilArima',
-                                  fontSize: rs.sp(10.5),
+                                  fontSize: rs.sp(9.5) * fontScale,
                                   color: kIndigoLight.withValues(alpha: 0.9),
                                 ),
+                                maxLines: singleLine ? 1 : null,
+                                overflow: singleLine
+                                    ? TextOverflow.ellipsis
+                                    : TextOverflow.visible,
                               ),
                             ),
                           ],
@@ -352,29 +397,51 @@ class _AstrologyChartScreenState extends State<AstrologyChartScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  'ராசி கட்டம்',
-                  style: TextStyle(
-                    fontFamily: 'TamilArima',
-                    fontSize: rs.sp(16),
-                    fontWeight: FontWeight.w700,
-                    color: kIndigoDark,
+          Container(
+            padding: EdgeInsets.symmetric(
+              horizontal: rs.rw(10),
+              vertical: rs.rh(6),
+            ),
+            decoration: BoxDecoration(
+              color: kPrimaryColor.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(rs.r(12)),
+              border: Border.all(
+                color: kPrimaryColor.withValues(alpha: 0.35),
+              ),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'ராசி கட்டம்',
+                    style: TextStyle(
+                      fontFamily: 'TamilArima',
+                      fontSize: rs.sp(16),
+                      fontWeight: FontWeight.w700,
+                      color: kIndigoDark,
+                    ),
                   ),
                 ),
-              ),
-              IconButton(
-                onPressed: _openPlanetDegreesSheet,
-                icon: Icon(
-                  Icons.edit_rounded,
-                  color: kPrimaryColor,
-                  size: rs.r(20),
+                Container(
+                  decoration: BoxDecoration(
+                    color: kPrimaryColor.withValues(alpha: 0.18),
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: kPrimaryColor.withValues(alpha: 0.5),
+                    ),
+                  ),
+                  child: IconButton(
+                    onPressed: _openPlanetDegreesSheet,
+                    icon: Icon(
+                      Icons.edit_rounded,
+                      color: kPrimaryColor,
+                      size: rs.r(20),
+                    ),
+                    tooltip: 'Edit',
+                  ),
                 ),
-                tooltip: 'Edit',
-              ),
-            ],
+              ],
+            ),
           ),
           SizedBox(height: rs.rh(12)),
           AspectRatio(
@@ -429,7 +496,11 @@ class _AstrologyChartScreenState extends State<AstrologyChartScreen> {
                         borderRadius: BorderRadius.circular(rs.r(8)),
                         border: Border.all(color: kPrimaryLightColor),
                       ),
-                      child: _buildCenterPlanetSummary(),
+                      child: Transform.scale(
+                        scale: 0.95,
+                        alignment: Alignment.center,
+                        child: _buildCenterPlanetSummary(),
+                      ),
                     ),
                   ),
                 );
@@ -439,6 +510,358 @@ class _AstrologyChartScreenState extends State<AstrologyChartScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildGocharamSection() {
+    final rs = context.rs;
+    final outerLabels =
+        _kattamOrder.map((value) => 'CO-$value').toList(growable: false);
+    final innerData = _kattamBoxes;
+    final outerData = _gocharamBoxes;
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(rs.r(14)),
+      decoration: BoxDecoration(
+        color: white,
+        borderRadius: BorderRadius.circular(rs.r(16)),
+        border: Border.all(color: kPrimaryLightColor, width: 1.2),
+        boxShadow: [
+          BoxShadow(
+            color: kPrimaryColor.withValues(alpha: 0.08),
+            blurRadius: rs.r(10),
+            offset: Offset(0, rs.rh(4)),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'கோச்சாரம்',
+            style: TextStyle(
+              fontFamily: 'TamilArima',
+              fontSize: rs.sp(16),
+              fontWeight: FontWeight.w700,
+              color: kIndigoDark,
+            ),
+          ),
+          SizedBox(height: rs.rh(10)),
+          AspectRatio(
+            aspectRatio: 1,
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final spacingOuter = rs.r(6);
+                final outerCellSize =
+                    (constraints.maxWidth - spacingOuter * 3) / 4;
+
+                final innerScale = 0.66;
+                final innerCellSize = outerCellSize * innerScale;
+                final innerSpacing = spacingOuter * innerScale;
+                final innerSize = innerCellSize * 4 + innerSpacing * 3;
+                final innerOffset = (constraints.maxWidth - innerSize) / 2;
+
+                final centerSize = innerCellSize * 2 + innerSpacing;
+                final centerOffset = innerOffset + innerCellSize + innerSpacing;
+
+                List<Widget> buildOuterRing(
+                  List<String> labels,
+                  List<_ChartBoxData> data,
+                  double offset,
+                  double cellSize,
+                  double spacing,
+                ) {
+                  final boxes = <Widget>[];
+                  var ringIndex = 0;
+                  for (var row = 0; row < 4; row++) {
+                    for (var col = 0; col < 4; col++) {
+                      final isCenter =
+                          row >= 1 && row <= 2 && col >= 1 && col <= 2;
+                      if (isCenter) continue;
+                      final label = labels[ringIndex];
+                      final boxData = data[ringIndex];
+                      final boxIndex = ringIndex;
+                      ringIndex += 1;
+                      boxes.add(
+                        Positioned(
+                          left: offset + col * (cellSize + spacing),
+                          top: offset + row * (cellSize + spacing),
+                          child: _buildGocharamOuterBox(
+                            label: label,
+                            data: boxData,
+                            size: cellSize,
+                            onTap: () => _openGocharamSelectionSheet(boxIndex),
+                          ),
+                        ),
+                      );
+                    }
+                  }
+                  return boxes;
+                }
+
+                List<Widget> buildDataRing(
+                  List<_ChartBoxData> data,
+                  double offset,
+                  double cellSize,
+                  double spacing,
+                ) {
+                  final boxes = <Widget>[];
+                  var ringIndex = 0;
+                  for (var row = 0; row < 4; row++) {
+                    for (var col = 0; col < 4; col++) {
+                      final isCenter =
+                          row >= 1 && row <= 2 && col >= 1 && col <= 2;
+                      if (isCenter) continue;
+                      final boxData = data[ringIndex];
+                      ringIndex += 1;
+                      boxes.add(
+                        Positioned(
+                          left: offset + col * (cellSize + spacing),
+                          top: offset + row * (cellSize + spacing),
+                          child: _buildGocharamDataBox(
+                            data: boxData,
+                            size: cellSize,
+                          ),
+                        ),
+                      );
+                    }
+                  }
+                  return boxes;
+                }
+
+                final widgets = <Widget>[];
+                if (!_showInnerOnTop) {
+                  widgets.addAll(
+                    buildDataRing(
+                      innerData,
+                      innerOffset,
+                      innerCellSize,
+                      innerSpacing,
+                    ),
+                  );
+                }
+                widgets.addAll(
+                  buildOuterRing(
+                    outerLabels,
+                    outerData,
+                    0,
+                    outerCellSize,
+                    spacingOuter,
+                  ),
+                );
+                if (_showInnerOnTop) {
+                  widgets.addAll(
+                    buildDataRing(
+                      innerData,
+                      innerOffset,
+                      innerCellSize,
+                      innerSpacing,
+                    ),
+                  );
+                }
+                widgets.add(
+                  Positioned(
+                    left: centerOffset,
+                    top: centerOffset,
+                    child: InkWell(
+                      onTap: () {
+                        setState(() {
+                          _showInnerOnTop = !_showInnerOnTop;
+                        });
+                      },
+                      borderRadius: BorderRadius.circular(rs.r(8)),
+                      child: Container(
+                        width: centerSize,
+                        height: centerSize,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: white,
+                          borderRadius: BorderRadius.circular(rs.r(8)),
+                          border: Border.all(color: kPrimaryLightColor),
+                        ),
+                        child: Transform.scale(
+                          scale: 0.8,
+                          alignment: Alignment.center,
+                          child: _buildCenterPlanetSummary(
+                            fontScale: 0.9,
+                            singleLine: true,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+
+                return Stack(children: widgets);
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGocharamOuterBox({
+    required String label,
+    required _ChartBoxData data,
+    required double size,
+    required VoidCallback onTap,
+  }) {
+    final rs = context.rs;
+    final isEmpty = data.topLeft.trim().isEmpty &&
+        data.topRight.trim().isEmpty &&
+        data.bottomLeft.trim().isEmpty &&
+        data.bottomRight.trim().isEmpty &&
+        data.center.trim().isEmpty;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(rs.r(6)),
+      child: Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          color: white,
+          borderRadius: BorderRadius.circular(rs.r(6)),
+          border: Border.all(color: kPrimaryLightColor),
+        ),
+        child: Padding(
+          padding: EdgeInsets.all(rs.r(3)),
+          child: Stack(
+            children: [
+              if (isEmpty)
+                Align(
+                  alignment: Alignment.center,
+                  child: Text(
+                    label,
+                    style: TextStyle(
+                      fontFamily: 'TamilArima',
+                      fontSize: rs.sp(11),
+                      fontWeight: FontWeight.w700,
+                      color: kIndigoLight.withValues(alpha: 0.8),
+                    ),
+                  ),
+                ),
+              _PositionedValue(
+                alignment: Alignment.topLeft,
+                value: data.topLeft,
+                onTap: () {},
+                enabled: false,
+                hideEmptyPlus: true,
+                fontScale: 0.75,
+              ),
+              _PositionedValue(
+                alignment: Alignment.topRight,
+                value: data.topRight,
+                onTap: () {},
+                enabled: false,
+                hideEmptyPlus: true,
+                fontScale: 0.75,
+              ),
+              _PositionedValue(
+                alignment: Alignment.bottomLeft,
+                value: data.bottomLeft,
+                onTap: () {},
+                enabled: false,
+                hideEmptyPlus: true,
+                fontScale: 0.75,
+              ),
+              _PositionedValue(
+                alignment: Alignment.bottomRight,
+                value: data.bottomRight,
+                onTap: () {},
+                enabled: false,
+                hideEmptyPlus: true,
+                fontScale: 0.75,
+              ),
+              _PositionedValue(
+                alignment: Alignment.center,
+                value: data.center,
+                onTap: () {},
+                enabled: false,
+                hideEmptyPlus: true,
+                isCenter: true,
+                fontScale: 0.75,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGocharamDataBox({
+    required _ChartBoxData data,
+    required double size,
+  }) {
+    final rs = context.rs;
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        color: white,
+        borderRadius: BorderRadius.circular(rs.r(6)),
+        border: Border.all(color: kPrimaryLightColor, width: 1.2),
+      ),
+      child: Padding(
+        padding: EdgeInsets.all(rs.r(2)),
+        child: Container(
+          decoration: BoxDecoration(
+            color: white,
+            borderRadius: BorderRadius.circular(rs.r(5)),
+            border: Border.all(color: kPrimaryLightColor, width: 1.0),
+          ),
+          child: Stack(
+            children: [
+              _PositionedValue(
+                alignment: Alignment.topLeft,
+                value: data.topLeft,
+                onTap: () {},
+                enabled: false,
+                hideEmptyPlus: true,
+                valueColor: _kattamColorForValue,
+                fontScale: 0.7,
+              ),
+              _PositionedValue(
+                alignment: Alignment.topRight,
+                value: data.topRight,
+                onTap: () {},
+                enabled: false,
+                hideEmptyPlus: true,
+                valueColor: _kattamColorForValue,
+                fontScale: 0.7,
+              ),
+              _PositionedValue(
+                alignment: Alignment.bottomLeft,
+                value: data.bottomLeft,
+                onTap: () {},
+                enabled: false,
+                hideEmptyPlus: true,
+                valueColor: _kattamColorForValue,
+                fontScale: 0.7,
+              ),
+              _PositionedValue(
+                alignment: Alignment.bottomRight,
+                value: data.bottomRight,
+                onTap: () {},
+                enabled: false,
+                hideEmptyPlus: true,
+                valueColor: _kattamColorForValue,
+                fontScale: 0.7,
+              ),
+              _PositionedValue(
+                alignment: Alignment.center,
+                value: data.center,
+                onTap: () {},
+                enabled: false,
+                hideEmptyPlus: true,
+                isCenter: true,
+                valueColor: _kattamColorForValue,
+                fontScale: 0.7,
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -815,6 +1238,264 @@ class _AstrologyChartScreenState extends State<AstrologyChartScreen> {
     await _saveKattam();
   }
 
+  Future<void> _openGocharamSelectionSheet(int boxIndex) async {
+    final rs = context.rs;
+    final shortMap = _kattamShortNames;
+    final reverseMap = _kattamShortNames.map(
+      (key, value) => MapEntry(value, key),
+    );
+    final selectedOrder = <String>[];
+    final existingBox = _gocharamBoxes[boxIndex];
+    final existingValues = [
+      existingBox.topLeft,
+      existingBox.topRight,
+      existingBox.center,
+      existingBox.bottomLeft,
+      existingBox.bottomRight,
+    ];
+    for (final value in existingValues) {
+      final trimmed = value.trim();
+      if (trimmed.isEmpty) continue;
+      for (final code in trimmed.split(RegExp(r'\s+'))) {
+        final full = reverseMap[code.trim()];
+        if (full != null) {
+          selectedOrder.add(full);
+        }
+      }
+    }
+
+    final initialSet = selectedOrder.toSet();
+    selectedOrder
+      ..clear()
+      ..addAll(initialSet);
+
+    final saved = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        final viewInsets = MediaQuery.viewInsetsOf(context);
+        return Padding(
+          padding: EdgeInsets.only(bottom: viewInsets.bottom),
+          child: Container(
+            decoration: BoxDecoration(
+              color: white,
+              borderRadius: BorderRadius.vertical(
+                top: Radius.circular(rs.r(20)),
+              ),
+            ),
+            child: SafeArea(
+              top: false,
+              child: StatefulBuilder(
+                builder: (context, setSheetState) {
+                  return SingleChildScrollView(
+                    padding: EdgeInsets.fromLTRB(
+                      rs.rw(16),
+                      rs.rh(16),
+                      rs.rw(16),
+                      rs.rh(24),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: rs.rw(12),
+                            vertical: rs.rh(8),
+                          ),
+                          decoration: BoxDecoration(
+                            color: kPrimaryColor.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(rs.r(12)),
+                          ),
+                          child: Text(
+                            'CO ${_kattamNumberForBox(boxIndex)}',
+                            style: TextStyle(
+                              fontFamily: 'TamilArima',
+                              fontSize: rs.sp(18),
+                              fontWeight: FontWeight.w800,
+                              color: kIndigoDark,
+                            ),
+                          ),
+                        ),
+                        SizedBox(height: rs.rh(12)),
+                        _buildChipSection(
+                          title: 'லக்னம்',
+                          items: const ['லக்னம்'],
+                          selected: selectedOrder.toSet(),
+                          onToggle: (value) {
+                            setSheetState(() {
+                              _toggleSelection(value, selectedOrder);
+                            });
+                          },
+                        ),
+                        SizedBox(height: rs.rh(12)),
+                        _buildChipSection(
+                          title: 'நவகிரகங்கள்',
+                          items: const [
+                            'சூரியன்',
+                            'சந்திரன்',
+                            'செவ்வாய்',
+                            'புதன்',
+                            'குரு',
+                            'சுக்கிரன்',
+                            'சனி',
+                            'ராகு',
+                            'கேது',
+                          ],
+                          selected: selectedOrder.toSet(),
+                          onToggle: (value) {
+                            setSheetState(() {
+                              _toggleSelection(value, selectedOrder);
+                            });
+                          },
+                        ),
+                        SizedBox(height: rs.rh(12)),
+                        _buildChipSection(
+                          title: 'உபகிரகங்கள் / கூட பார்க்கப்படும் புள்ளிகள்',
+                          items: const [
+                            'மாந்தி (குளிகன்)',
+                            'யமகண்டம்',
+                            'அர்த்தப்ரஹரன்',
+                            'தூர்முகம்',
+                            'காலன்',
+                            'ம்ருத்யு',
+                          ],
+                          selected: selectedOrder.toSet(),
+                          onToggle: (value) {
+                            setSheetState(() {
+                              _toggleSelection(value, selectedOrder);
+                            });
+                          },
+                        ),
+                        SizedBox(height: rs.rh(12)),
+                        _buildChipSection(
+                          title: 'வெளிக்கிரகங்கள்',
+                          items: const ['யுரேனஸ்', 'நெப்டியூன்', 'புளூட்டோ'],
+                          selected: selectedOrder.toSet(),
+                          onToggle: (value) {
+                            setSheetState(() {
+                              _toggleSelection(value, selectedOrder);
+                            });
+                          },
+                        ),
+                        SizedBox(height: rs.rh(12)),
+                        SizedBox(
+                          width: double.infinity,
+                          child: FilledButton(
+                            onPressed: () => Navigator.pop(context, true),
+                            child: const Text('Save'),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ),
+          ),
+        );
+      },
+    );
+
+    if (saved != true) return;
+
+    final selectedCodes = selectedOrder
+        .map((value) => shortMap[value] ?? value)
+        .toList(growable: false);
+
+    final coNumber = _kattamNumberForBox(boxIndex);
+    final orderedPositions = _gocharamOrderForCo(coNumber);
+    final values = List<String>.filled(5, '', growable: false);
+    for (var i = 0; i < values.length && i < selectedCodes.length; i++) {
+      values[i] = selectedCodes[i];
+    }
+    final valueMap = <_ChartPosition, String>{
+      for (var i = 0; i < orderedPositions.length; i++)
+        orderedPositions[i]: values[i],
+    };
+    setState(() {
+      _gocharamBoxes[boxIndex] = _gocharamBoxes[boxIndex]
+          .copyWith(
+              _ChartPosition.center, valueMap[_ChartPosition.center] ?? '')
+          .copyWith(
+              _ChartPosition.topLeft, valueMap[_ChartPosition.topLeft] ?? '')
+          .copyWith(
+              _ChartPosition.topRight, valueMap[_ChartPosition.topRight] ?? '')
+          .copyWith(_ChartPosition.bottomLeft,
+              valueMap[_ChartPosition.bottomLeft] ?? '')
+          .copyWith(_ChartPosition.bottomRight,
+              valueMap[_ChartPosition.bottomRight] ?? '');
+    });
+    await _saveGocharam();
+  }
+
+  List<_ChartPosition> _gocharamOrderForCo(int coNumber) {
+    switch (coNumber) {
+      case 12:
+        return const [
+          _ChartPosition.center,
+          _ChartPosition.topLeft,
+          _ChartPosition.topRight,
+          _ChartPosition.bottomLeft,
+          _ChartPosition.bottomRight,
+        ];
+      case 1:
+      case 2:
+      case 3:
+        return const [
+          _ChartPosition.center,
+          _ChartPosition.topLeft,
+          _ChartPosition.topRight,
+          _ChartPosition.bottomRight,
+          _ChartPosition.bottomLeft,
+        ];
+      case 4:
+      case 5:
+        return const [
+          _ChartPosition.center,
+          _ChartPosition.topRight,
+          _ChartPosition.bottomRight,
+          _ChartPosition.bottomLeft,
+          _ChartPosition.topLeft,
+        ];
+      case 6:
+        return const [
+          _ChartPosition.center,
+          _ChartPosition.bottomRight,
+          _ChartPosition.topRight,
+          _ChartPosition.bottomLeft,
+          _ChartPosition.topLeft,
+        ];
+      case 7:
+      case 8:
+      case 9:
+        return const [
+          _ChartPosition.center,
+          _ChartPosition.bottomLeft,
+          _ChartPosition.bottomRight,
+          _ChartPosition.topLeft,
+          _ChartPosition.topRight,
+        ];
+      case 10:
+      case 11:
+        return const [
+          _ChartPosition.center,
+          _ChartPosition.topLeft,
+          _ChartPosition.bottomLeft,
+          _ChartPosition.bottomRight,
+          _ChartPosition.topRight,
+        ];
+      default:
+        return const [
+          _ChartPosition.center,
+          _ChartPosition.topLeft,
+          _ChartPosition.topRight,
+          _ChartPosition.bottomLeft,
+          _ChartPosition.bottomRight,
+        ];
+    }
+  }
+
   void _toggleSelection(String value, List<String> selectedOrder) {
     if (selectedOrder.contains(value)) {
       selectedOrder.remove(value);
@@ -891,6 +1572,15 @@ class _AstrologyChartScreenState extends State<AstrologyChartScreen> {
         FirebaseFirestore.instance.collection('AstrologyProfiles');
     await collection.doc(widget.profile.id).update({
       'kattamBoxes': _kattamBoxes.map((box) => box.toMap()).toList(),
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  Future<void> _saveGocharam() async {
+    final collection =
+        FirebaseFirestore.instance.collection('AstrologyProfiles');
+    await collection.doc(widget.profile.id).update({
+      'gocharamBoxes': _gocharamBoxes.map((box) => box.toMap()).toList(),
       'updatedAt': FieldValue.serverTimestamp(),
     });
   }
@@ -1139,6 +1829,7 @@ class _PositionedValue extends StatelessWidget {
     this.enabled = true,
     this.hideEmptyPlus = false,
     this.valueColor,
+    this.fontScale = 1.0,
   });
 
   final Alignment alignment;
@@ -1148,6 +1839,7 @@ class _PositionedValue extends StatelessWidget {
   final bool enabled;
   final bool hideEmptyPlus;
   final Color? Function(String value)? valueColor;
+  final double fontScale;
 
   @override
   Widget build(BuildContext context) {
@@ -1160,7 +1852,8 @@ class _PositionedValue extends StatelessWidget {
         .toList();
     final fallbackColor = value.isEmpty ? kIndigoLight : kIndigoDark;
     final baseFontSize =
-        isCenter ? (tokens.length > 1 ? rs.sp(11) : rs.sp(13.5)) : rs.sp(12);
+        (isCenter ? (tokens.length > 1 ? rs.sp(11) : rs.sp(13.5)) : rs.sp(12)) *
+            fontScale;
     final textStyle = TextStyle(
       fontSize: baseFontSize,
       fontWeight: FontWeight.w600,
