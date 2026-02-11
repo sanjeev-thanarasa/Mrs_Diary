@@ -73,7 +73,7 @@ class VillageProvider with ChangeNotifier {
         "id": id,
         "name": editControllerName.text.trim(),
       };
-      _villageServices.createVillage(data: data);
+      await _villageServices.createVillage(data: data);
       return true;
     } catch (e) {
       print(e.toString());
@@ -83,5 +83,11 @@ class VillageProvider with ChangeNotifier {
 
   clear() {
     editControllerName.clear();
+  }
+
+  @override
+  void dispose() {
+    editControllerName.dispose();
+    super.dispose();
   }
 }

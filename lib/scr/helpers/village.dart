@@ -8,9 +8,9 @@ class VillageServices {
 
   List<VillageModel> searchVillages = [];
 
-  Future createVillage({required Map data}) async {
+  Future<void> createVillage({required Map data}) async {
     final ownerId = requireOwnerId();
-    _firestore.collection(collection).doc(data['id']).set({
+    await _firestore.collection(collection).doc(data['id']).set({
       "id": data['id'],
       "ownerId": ownerId,
       "name": data['name'],
@@ -41,6 +41,7 @@ class VillageServices {
 
   Future<List<VillageModel>> searchVillage({required String name}) {
     String searchKey = name[0].toUpperCase() + name.substring(1);
+    searchVillages = [];
     return _firestore
         .collection(collection)
         .where('ownerId', isEqualTo: requireOwnerId())

@@ -6,6 +6,7 @@ import 'package:mrs_dth_diary_v1/scr/widgets/RoundedLoadingButton.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/SimpleCalc.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/customText.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/subHelpers/styles.dart';
+import 'package:mrs_dth_diary_v1/scr/widgets/subHelpers/responsive.dart';
 
 class CreateMyAccountsPayment extends StatefulWidget {
   final String dbId;
@@ -44,23 +45,27 @@ class _CreateMyAccountsPaymentState extends State<CreateMyAccountsPayment> {
 
   @override
   Widget build(BuildContext context) {
+    final rs = context.rs;
     return Scaffold(
       backgroundColor: background,
       appBar: AppBar(
         backgroundColor: white,
         elevation: 0,
         foregroundColor: kIndigoDark,
-        title: const Text(
+        title: Text(
           "New Topup",
-          style: TextStyle(fontWeight: FontWeight.w700, fontSize: 18),
+          style: TextStyle(
+            fontWeight: FontWeight.w700,
+            fontSize: rs.sp(18),
+          ),
         ),
         actions: [
           Padding(
-            padding: EdgeInsets.only(right: 8.0),
+            padding: EdgeInsets.only(right: rs.rw(8)),
             child: IconButton(
               icon: Icon(
                 Icons.calculate_rounded,
-                size: 30.0,
+                size: rs.r(30),
               ),
               onPressed: () {
                 showModalBottomSheet<void>(
@@ -76,10 +81,15 @@ class _CreateMyAccountsPaymentState extends State<CreateMyAccountsPayment> {
         ],
       ),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+        padding: EdgeInsets.fromLTRB(
+          rs.rw(16),
+          rs.rh(12),
+          rs.rw(16),
+          rs.rh(24),
+        ),
         children: [
           _buildHeaderCard(context),
-          const SizedBox(height: 16),
+          SizedBox(height: rs.rh(16)),
           _buildContentUI(context),
         ],
       ),
@@ -87,11 +97,12 @@ class _CreateMyAccountsPaymentState extends State<CreateMyAccountsPayment> {
   }
 
   Widget _buildHeaderCard(BuildContext context) {
+    final rs = context.rs;
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(rs.r(16)),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(rs.r(18)),
         gradient: LinearGradient(
           colors: [kPrimaryColor, kPrimaryColor.withValues(alpha: 0.8)],
           begin: Alignment.topLeft,
@@ -100,38 +111,38 @@ class _CreateMyAccountsPaymentState extends State<CreateMyAccountsPayment> {
         boxShadow: [
           BoxShadow(
             color: kPrimaryColor.withValues(alpha: 0.25),
-            blurRadius: 16,
-            offset: const Offset(0, 8),
+            blurRadius: rs.r(16),
+            offset: Offset(0, rs.rh(8)),
           ),
         ],
       ),
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(12),
+            padding: EdgeInsets.all(rs.r(12)),
             decoration: BoxDecoration(
               color: white.withValues(alpha: 0.18),
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(rs.r(14)),
             ),
-            child: const Icon(Icons.add_card, color: white, size: 28),
+            child: Icon(Icons.add_card, color: white, size: rs.r(28)),
           ),
-          const SizedBox(width: 12),
+          SizedBox(width: rs.rw(12)),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                Text(
                   "Create New Record",
                   style: TextStyle(
-                    fontSize: 18,
+                    fontSize: rs.sp(18),
                     fontWeight: FontWeight.w700,
                     color: white,
                   ),
                 ),
-                const SizedBox(height: 6),
+                SizedBox(height: rs.rh(6)),
                 Text(
                   _dashBoardService.createAtController.text,
-                  style: const TextStyle(color: white, fontSize: 13),
+                  style: TextStyle(color: white, fontSize: rs.sp(13)),
                 ),
               ],
             ),
@@ -140,10 +151,17 @@ class _CreateMyAccountsPaymentState extends State<CreateMyAccountsPayment> {
             style: OutlinedButton.styleFrom(
               foregroundColor: white,
               side: BorderSide(color: white.withValues(alpha: 0.6)),
+              padding: EdgeInsets.symmetric(
+                horizontal: rs.rw(12),
+                vertical: rs.rh(8),
+              ),
             ),
             onPressed: _onRefresh,
-            icon: const Icon(Icons.refresh, size: 16),
-            label: const Text("Reset"),
+            icon: Icon(Icons.refresh, size: rs.r(16)),
+            label: Text(
+              "Reset",
+              style: TextStyle(fontSize: rs.sp(12.5)),
+            ),
           ),
         ],
       ),
@@ -151,15 +169,18 @@ class _CreateMyAccountsPaymentState extends State<CreateMyAccountsPayment> {
   }
 
   Widget _buildContentUI(BuildContext context) {
+    final rs = context.rs;
     return Card(
       elevation: 0,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(rs.r(16)),
+      ),
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: EdgeInsets.all(rs.r(16)),
         child: Column(
           children: [
-            const SizedBox(height: 5),
-            const Divider(thickness: 1.0),
+            SizedBox(height: rs.rh(5)),
+            Divider(thickness: rs.r(1)),
             CustomTextField(
               controller: _dashBoardService.rechargePlace,
               hintText: "எடுத்த இடம் ???",
@@ -214,7 +235,7 @@ class _CreateMyAccountsPaymentState extends State<CreateMyAccountsPayment> {
               visible: _dashBoardService.pending,
               child: CRText(
                 color2: Colors.grey,
-                size1: 16.0,
+                size1: rs.sp(16),
                 msg1: "நிலுவை (தருமதி) பணம் ",
                 msg2: ":  ${_dashBoardService.pendingAmount.text} ",
                 color1: Colors.grey,
@@ -224,19 +245,19 @@ class _CreateMyAccountsPaymentState extends State<CreateMyAccountsPayment> {
               visible: _dashBoardService.balance,
               child: CRText(
                 color1: Colors.grey,
-                size1: 16.0,
+                size1: rs.sp(16),
                 msg1: "கொடுமதி பணம் ",
                 msg2: ":  ${_dashBoardService.balanceAmount.text}",
               ),
             ),
             Row(
               children: [
-                const Expanded(
+                Expanded(
                   child: Text(
                     "குறிப்பு",
                     style: TextStyle(
                       fontFamily: 'TamilArima2',
-                      fontSize: 13,
+                      fontSize: rs.sp(13),
                       fontWeight: FontWeight.w600,
                       color: Colors.black54,
                     ),
@@ -256,13 +277,13 @@ class _CreateMyAccountsPaymentState extends State<CreateMyAccountsPayment> {
                 icon: Icons.note_add,
                 keyboardType: TextInputType.text,
               ),
-            const SizedBox(height: 10),
+            SizedBox(height: rs.rh(10)),
             RoundedLoading(
               btnController: _dashBoardService.btnController,
-              paddingLeft: 10.0,
-              paddingRight: 10.0,
-              paddingTop: 8.0,
-              buttonHeight: 40,
+              paddingLeft: rs.rw(10),
+              paddingRight: rs.rw(10),
+              paddingTop: rs.rh(8),
+              buttonHeight: rs.r(40),
               btnColor: Colors.blue,
               buttonPressed: () {
                 _dashBoardService.createRecord(dbID: widget.dbId).then((_) {
@@ -272,7 +293,7 @@ class _CreateMyAccountsPaymentState extends State<CreateMyAccountsPayment> {
                 });
               },
             ),
-            const SizedBox(height: 20),
+            SizedBox(height: rs.rh(20)),
           ],
         ),
       ),

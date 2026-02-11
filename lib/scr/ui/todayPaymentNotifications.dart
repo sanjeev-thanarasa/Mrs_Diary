@@ -68,7 +68,14 @@ class _TodayPaymentNotificationsState extends State<TodayPaymentNotifications> {
   }
 
   Future<void> _fetchInitial() async {
-    if (_ownerId == null) return;
+    if (_ownerId == null) {
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+        _hasMore = false;
+      });
+      return;
+    }
     setState(() {
       _isLoading = true;
       _hasMore = true;

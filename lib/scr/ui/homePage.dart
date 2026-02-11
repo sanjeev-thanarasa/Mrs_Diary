@@ -20,7 +20,6 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  ScrollController controller = ScrollController();
   static int _lastSelectedIndex = 0;
   int _selectedIndex = _lastSelectedIndex;
 
@@ -50,7 +49,7 @@ class _HomePageState extends State<HomePage> {
           ? FloatingActionButton(
               backgroundColor: colorScheme.primary,
               onPressed: () => _showCreateMenu(context),
-              child: const Icon(Icons.add, color: Colors.white),
+              child: Icon(Icons.add, color: Colors.white, size: rs.r(22)),
             )
           : null,
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
@@ -192,26 +191,35 @@ class _HomePageState extends State<HomePage> {
   void _showCreateMenu(BuildContext context) {
     showModalBottomSheet<void>(
       context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(context.rs.r(20)),
+        ),
       ),
       builder: (context) {
+        final rs = context.rs;
         return SafeArea(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const SizedBox(height: 8),
+              SizedBox(height: rs.rh(8)),
               ListTile(
-                leading: const Icon(Icons.location_city_rounded),
-                title: const Text('Create village'),
+                leading: Icon(Icons.location_city_rounded, size: rs.r(20)),
+                title: Text(
+                  'Create village',
+                  style: TextStyle(fontSize: rs.sp(14.5)),
+                ),
                 onTap: () {
                   Navigator.pop(context);
                   _showCreateVillageDialog(context.read<VillageProvider>());
                 },
               ),
               ListTile(
-                leading: const Icon(Icons.person_add_alt_1_rounded),
-                title: const Text('Create user'),
+                leading: Icon(Icons.person_add_alt_1_rounded, size: rs.r(20)),
+                title: Text(
+                  'Create user',
+                  style: TextStyle(fontSize: rs.sp(14.5)),
+                ),
                 onTap: () {
                   Navigator.pop(context);
                   Navigator.push(
@@ -220,39 +228,11 @@ class _HomePageState extends State<HomePage> {
                   );
                 },
               ),
-              const SizedBox(height: 8),
+              SizedBox(height: rs.rh(8)),
             ],
           ),
         );
       },
-    );
-  }
-}
-
-class SearchPlaceholder extends StatelessWidget {
-  const SearchPlaceholder({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const Center(
-      child: Text(
-        'Search screen coming soon',
-        style: TextStyle(fontSize: 16),
-      ),
-    );
-  }
-}
-
-class RecordsPlaceholder extends StatelessWidget {
-  const RecordsPlaceholder({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const Center(
-      child: Text(
-        'Records screen coming soon',
-        style: TextStyle(fontSize: 16),
-      ),
     );
   }
 }
@@ -263,7 +243,7 @@ class Home extends StatefulWidget {
 }
 
 class _HomeState extends State<Home> {
-  RefreshController _refreshController =
+  final RefreshController _refreshController =
       RefreshController(initialRefresh: false);
 
   @override
@@ -277,9 +257,7 @@ class _HomeState extends State<Home> {
   }
 
   void _onRefresh() async {
-    ///ToDO Update Counter
     await context.read<VillageProvider>().refreshCounts();
-    print("___On Refresh_______________");
     await Future.delayed(Duration(milliseconds: 1000));
     _refreshController.refreshCompleted(resetFooterState: true);
   }
@@ -287,23 +265,28 @@ class _HomeState extends State<Home> {
   void _onLoading() async {
     setState(() {});
     await Future.delayed(Duration(milliseconds: 1000));
-    print("___On Loading_______________");
     _refreshController.loadComplete();
+  }
+
+  @override
+  void dispose() {
+    _refreshController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final rs = context.rs;
-    final todayCount = context.watch<VillageProvider>().todayPaymentCount;
     return SmartRefresher(
       controller: _refreshController,
       onRefresh: _onRefresh,
       onLoading: _onLoading,
       enablePullDown: true,
-      child: SingleChildScrollView(
-        child: Column(
-          children: [
-            Container(
+      child: CustomScrollView(
+        physics: const BouncingScrollPhysics(),
+        slivers: [
+          SliverToBoxAdapter(
+            child: Container(
               padding: EdgeInsets.symmetric(
                 horizontal: rs.rw(16),
                 vertical: rs.rh(20),
@@ -379,10 +362,14 @@ class _HomeState extends State<Home> {
                 ],
               ),
             ),
-            SizedBox(height: rs.rh(12)),
-            HomeCard(context: context),
-          ],
-        ),
+          ),
+          SliverPadding(
+            padding: EdgeInsets.only(top: rs.rh(12)),
+            sliver: SliverToBoxAdapter(
+              child: HomeCard(context: context),
+            ),
+          ),
+        ],
       ),
     );
   }

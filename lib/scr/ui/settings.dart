@@ -443,28 +443,28 @@ class _SettingsScreenState extends State<SettingsScreen>
             },
           ),
         ),
-        SizedBox(height: rs.rh(1)),
-        Card(
-          child: ListTile(
-            leading: Icon(Icons.assessment_outlined, size: rs.r(20)),
-            title: Text(
-              'Records & Reports',
-              style: TextStyle(fontSize: rs.sp(15.5)),
-            ),
-            subtitle: Text(
-              'Monthly, daily reports and transaction history',
-              style: TextStyle(fontSize: rs.sp(13)),
-            ),
-            onTap: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => const RecordsScreen(),
-                ),
-              );
-            },
-          ),
-        ),
         SizedBox(height: rs.rh(3)),
+        // Card(
+        //   child: ListTile(
+        //     leading: Icon(Icons.assessment_outlined, size: rs.r(20)),
+        //     title: Text(
+        //       'Records & Reports',
+        //       style: TextStyle(fontSize: rs.sp(15.5)),
+        //     ),
+        //     subtitle: Text(
+        //       'Monthly, daily reports and transaction history',
+        //       style: TextStyle(fontSize: rs.sp(13)),
+        //     ),
+        //     onTap: () {
+        //       Navigator.of(context).push(
+        //         MaterialPageRoute(
+        //           builder: (_) => const RecordsScreen(),
+        //         ),
+        //       );
+        //     },
+        //   ),
+        // ),
+        // SizedBox(height: rs.rh(3)),
         Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(

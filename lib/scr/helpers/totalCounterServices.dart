@@ -4,10 +4,14 @@ import 'package:mrs_dth_diary_v1/scr/helpers/owner_service.dart';
 
 class TotalCounterServices {
   FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  DateTime _dateTodayStart =
-      DateTime.parse("${DateFormat('yyyyMMdd').format(DateTime.now())}T000000");
-  DateTime _dateTodayEnd =
-      DateTime.parse("${DateFormat('yyyyMMdd').format(DateTime.now())}T235959");
+
+  DateTime _dateTodayStart() => DateTime.parse(
+        "${DateFormat('yyyyMMdd').format(DateTime.now())}T000000",
+      );
+
+  DateTime _dateTodayEnd() => DateTime.parse(
+        "${DateFormat('yyyyMMdd').format(DateTime.now())}T235959",
+      );
 
   Future<int> _count(Query query) async {
     try {
@@ -39,24 +43,28 @@ class TotalCounterServices {
   Future<int> getTodayPaymentCount() async {
     final ownerId = currentOwnerId();
     if (ownerId == null) return 0;
+    final dateStart = _dateTodayStart();
+    final dateEnd = _dateTodayEnd();
     return _count(
       _firestore
           .collection("PaymentRecords")
           .where('ownerId', isEqualTo: ownerId)
-          .where("PENDING_DATE", isGreaterThanOrEqualTo: _dateTodayStart)
-          .where("PENDING_DATE", isLessThanOrEqualTo: _dateTodayEnd),
+          .where("PENDING_DATE", isGreaterThanOrEqualTo: dateStart)
+          .where("PENDING_DATE", isLessThanOrEqualTo: dateEnd),
     );
   }
 
   Future<int> getTodayExpiredCount() async {
     final ownerId = currentOwnerId();
     if (ownerId == null) return 0;
+    final dateStart = _dateTodayStart();
+    final dateEnd = _dateTodayEnd();
     return _count(
       _firestore
           .collection("PaymentRecords")
           .where('ownerId', isEqualTo: ownerId)
-          .where("EXPIRED_AT", isGreaterThanOrEqualTo: _dateTodayStart)
-          .where("EXPIRED_AT", isLessThanOrEqualTo: _dateTodayEnd),
+          .where("EXPIRED_AT", isGreaterThanOrEqualTo: dateStart)
+          .where("EXPIRED_AT", isLessThanOrEqualTo: dateEnd),
     );
   }
 

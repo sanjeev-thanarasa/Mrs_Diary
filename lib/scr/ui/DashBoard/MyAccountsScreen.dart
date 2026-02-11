@@ -5,6 +5,7 @@ import 'package:mrs_dth_diary_v1/scr/helpers/owner_service.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/CustomListTile.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/subHelpers/screen_navigation.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/subHelpers/styles.dart';
+import 'package:mrs_dth_diary_v1/scr/widgets/subHelpers/responsive.dart';
 import 'package:uuid/uuid.dart';
 
 import 'MyAccountsUserDetails.dart';
@@ -35,20 +36,29 @@ class _MyAccountsScreenState extends State<MyAccountsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final rs = context.rs;
     return Scaffold(
       backgroundColor: background,
       appBar: AppBar(
         backgroundColor: white,
         elevation: 0,
         foregroundColor: kIndigoDark,
-        title: const Text(
+        title: Text(
           "எனது கணக்கு விபரங்கள்",
-          style: TextStyle(fontWeight: FontWeight.w700, fontSize: 18),
+          style: TextStyle(
+            fontWeight: FontWeight.w700,
+            fontSize: rs.sp(16),
+          ),
         ),
       ),
       body: SingleChildScrollView(
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+          padding: EdgeInsets.fromLTRB(
+            rs.rw(16),
+            rs.rh(12),
+            rs.rw(16),
+            rs.rh(24),
+          ),
           child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
             stream: paymentsReference
                 .where('ownerId', isEqualTo: requireOwnerId())
@@ -72,7 +82,7 @@ class _MyAccountsScreenState extends State<MyAccountsScreen> {
                     totals: totals,
                     isLoading: isLoading,
                   ),
-                  const SizedBox(height: 16),
+                  SizedBox(height: rs.rh(16)),
                   _buildAccountsSection(summaries),
                 ],
               );
@@ -81,14 +91,18 @@ class _MyAccountsScreenState extends State<MyAccountsScreen> {
         ),
       ),
       floatingActionButton: Padding(
-        padding: const EdgeInsets.only(left: 16, bottom: 16),
+        padding: EdgeInsets.only(left: rs.rw(16), bottom: rs.rh(16)),
         child: FloatingActionButton.extended(
           backgroundColor: kPrimaryColor,
           onPressed: _showCreateTopupDialog,
-          icon: const Icon(Icons.add, color: white),
-          label: const Text(
+          icon: Icon(Icons.add, color: white, size: rs.r(20)),
+          label: Text(
             "New Topup",
-            style: TextStyle(color: white, fontWeight: FontWeight.w600),
+            style: TextStyle(
+              color: white,
+              fontWeight: FontWeight.w600,
+              fontSize: rs.sp(12.5),
+            ),
           ),
         ),
       ),
@@ -103,12 +117,13 @@ class _MyAccountsScreenState extends State<MyAccountsScreen> {
           .snapshots(),
       builder: (context, snap) {
         final colorScheme = Theme.of(context).colorScheme;
+        final rs = context.rs;
         if (snap.hasError) {
           return Center(
             child: Text(
               'Something went wrong!!!',
               style: TextStyle(
-                fontSize: 16,
+                fontSize: rs.sp(16),
                 fontWeight: FontWeight.w600,
                 color: colorScheme.onSurfaceVariant,
               ),
@@ -132,7 +147,7 @@ class _MyAccountsScreenState extends State<MyAccountsScreen> {
             child: Text(
               'No results found. Try a different keyword',
               style: TextStyle(
-                fontSize: 16,
+                fontSize: rs.sp(16),
                 fontWeight: FontWeight.w600,
                 color: colorScheme.onSurfaceVariant,
               ),
@@ -151,9 +166,12 @@ class _MyAccountsScreenState extends State<MyAccountsScreen> {
           children: [
             Text(
               "All Accounts (${docs.length})",
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+              style: TextStyle(
+                fontSize: rs.sp(16),
+                fontWeight: FontWeight.w700,
+              ),
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: rs.rh(8)),
             ListView.builder(
               scrollDirection: Axis.vertical,
               controller: _controller,
@@ -202,11 +220,12 @@ class _MyAccountsScreenState extends State<MyAccountsScreen> {
     required _SummaryTotals totals,
     required bool isLoading,
   }) {
+    final rs = context.rs;
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(rs.r(16)),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(rs.r(18)),
         gradient: LinearGradient(
           colors: [kPrimaryColor, kPrimaryColor.withValues(alpha: 0.8)],
           begin: Alignment.topLeft,
@@ -215,23 +234,23 @@ class _MyAccountsScreenState extends State<MyAccountsScreen> {
         boxShadow: [
           BoxShadow(
             color: kPrimaryColor.withValues(alpha: 0.25),
-            blurRadius: 16,
-            offset: const Offset(0, 8),
+            blurRadius: rs.r(16),
+            offset: Offset(0, rs.rh(8)),
           ),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             "Overall analysis",
             style: TextStyle(
-              fontSize: 18,
+              fontSize: rs.sp(18),
               fontWeight: FontWeight.w700,
               color: white,
             ),
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: rs.rh(12)),
           _buildHeaderStats(totals, isLoading),
         ],
       ),
@@ -242,7 +261,7 @@ class _MyAccountsScreenState extends State<MyAccountsScreen> {
     final paid = isLoading ? '...' : _formatAmount(totals.paid);
     final pending = isLoading ? '...' : _formatAmount(totals.pending);
     final balance = isLoading ? '...' : _formatAmount(totals.balance);
-    const spacing = 8.0;
+    final spacing = context.rs.r(8);
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -327,6 +346,7 @@ class _MyAccountsScreenState extends State<MyAccountsScreen> {
   }
 
   void _showCreateTopupDialog() {
+    final rs = context.rs;
     final controller = TextEditingController();
     String? errorText;
 
@@ -336,12 +356,17 @@ class _MyAccountsScreenState extends State<MyAccountsScreen> {
         return StatefulBuilder(
           builder: (context, setLocalState) {
             return AlertDialog(
-              insetPadding:
-                  const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+              insetPadding: EdgeInsets.symmetric(
+                  horizontal: rs.rw(24), vertical: rs.rh(24)),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(rs.r(16)),
               ),
-              contentPadding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
+              contentPadding: EdgeInsets.fromLTRB(
+                rs.rw(20),
+                rs.rh(20),
+                rs.rw(20),
+                rs.rh(8),
+              ),
               content: SizedBox(
                 width: MediaQuery.of(context).size.width * 0.8,
                 child: TextField(
@@ -354,24 +379,34 @@ class _MyAccountsScreenState extends State<MyAccountsScreen> {
                   ),
                 ),
               ),
-              actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+              actionsPadding: EdgeInsets.fromLTRB(
+                rs.rw(16),
+                0,
+                rs.rw(16),
+                rs.rh(12),
+              ),
               actionsAlignment: MainAxisAlignment.spaceBetween,
               actions: <Widget>[
                 TextButton(
                   onPressed: () => Navigator.pop(dialogContext),
-                  child: const Text(
+                  child: Text(
                     'CANCEL',
-                    style: TextStyle(fontWeight: FontWeight.w600),
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: rs.sp(12.5),
+                    ),
                   ),
                 ),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Theme.of(context).colorScheme.primary,
                     foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 20, vertical: 10),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: rs.rw(20),
+                      vertical: rs.rh(10),
+                    ),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(rs.r(12)),
                     ),
                   ),
                   onPressed: () {
@@ -391,9 +426,12 @@ class _MyAccountsScreenState extends State<MyAccountsScreen> {
                     });
                     Navigator.pop(dialogContext);
                   },
-                  child: const Text(
+                  child: Text(
                     'CREATE',
-                    style: TextStyle(fontWeight: FontWeight.w700),
+                    style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: rs.sp(12.5),
+                    ),
                   ),
                 ),
               ],
@@ -409,53 +447,70 @@ class _MyAccountsScreenState extends State<MyAccountsScreen> {
     String docId,
     String currentName,
   ) {
+    final rs = context.rs;
     final controller = TextEditingController(text: currentName);
     final colorScheme = Theme.of(context).colorScheme;
 
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        contentPadding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
+        insetPadding: EdgeInsets.symmetric(
+          horizontal: rs.rw(24),
+          vertical: rs.rh(24),
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(rs.r(16)),
+        ),
+        contentPadding: EdgeInsets.fromLTRB(
+          rs.rw(20),
+          rs.rh(20),
+          rs.rw(20),
+          rs.rh(8),
+        ),
         content: SizedBox(
           width: MediaQuery.of(context).size.width * 0.8,
           child: TextField(
             controller: controller,
             autofocus: true,
-            style: const TextStyle(
+            style: TextStyle(
               color: Colors.black,
-              fontSize: 16,
+              fontSize: rs.sp(16),
               fontFamily: 'TamilArima',
             ),
-            decoration: const InputDecoration(
+            decoration: InputDecoration(
               hintText: "TopUp Name",
               labelText: "Edit TopUP",
               labelStyle: TextStyle(
                 color: Colors.black,
-                fontSize: 16,
+                fontSize: rs.sp(16),
                 fontFamily: 'TamilArima',
                 fontWeight: FontWeight.w600,
               ),
               floatingLabelStyle: TextStyle(
                 color: Colors.black,
-                fontSize: 16,
+                fontSize: rs.sp(16),
                 fontFamily: 'TamilArima',
                 fontWeight: FontWeight.w600,
               ),
             ),
           ),
         ),
-        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+        actionsPadding: EdgeInsets.fromLTRB(
+          rs.rw(16),
+          0,
+          rs.rw(16),
+          rs.rh(12),
+        ),
         actionsAlignment: MainAxisAlignment.spaceBetween,
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text(
+            child: Text(
               'CANCEL',
               style: TextStyle(
                 fontFamily: 'TamilArima',
                 fontWeight: FontWeight.w600,
+                fontSize: rs.sp(12.5),
               ),
             ),
           ),
@@ -463,9 +518,12 @@ class _MyAccountsScreenState extends State<MyAccountsScreen> {
             style: ElevatedButton.styleFrom(
               backgroundColor: colorScheme.primary,
               foregroundColor: colorScheme.onPrimary,
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              padding: EdgeInsets.symmetric(
+                horizontal: rs.rw(20),
+                vertical: rs.rh(10),
+              ),
               shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12)),
+                  borderRadius: BorderRadius.circular(rs.r(12))),
             ),
             onPressed: () {
               final nextName = controller.text.trim();
@@ -474,11 +532,12 @@ class _MyAccountsScreenState extends State<MyAccountsScreen> {
               }
               Navigator.pop(context);
             },
-            child: const Text(
+            child: Text(
               'UPDATE',
               style: TextStyle(
                 fontFamily: 'TamilArima',
                 fontWeight: FontWeight.w700,
+                fontSize: rs.sp(12.5),
               ),
             ),
           ),
@@ -579,24 +638,25 @@ class _HeaderStatChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final rs = context.rs;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+      padding: EdgeInsets.symmetric(horizontal: rs.rw(8), vertical: rs.rh(8)),
       decoration: BoxDecoration(
         color: white.withValues(alpha: 0.95),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(rs.r(12)),
         border: Border.all(color: white.withValues(alpha: 0.6)),
       ),
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(6),
+            padding: EdgeInsets.all(rs.r(6)),
             decoration: BoxDecoration(
               color: color.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(rs.r(8)),
             ),
-            child: Icon(icon, size: 16, color: color),
+            child: Icon(icon, size: rs.r(16), color: color),
           ),
-          const SizedBox(width: 8),
+          SizedBox(width: rs.rw(8)),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -605,20 +665,20 @@ class _HeaderStatChip extends StatelessWidget {
                   label,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: kIndigoLight,
-                    fontSize: 11,
+                    fontSize: rs.sp(11),
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-                const SizedBox(height: 4),
+                SizedBox(height: rs.rh(4)),
                 Text(
                   value,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: kIndigoDark,
-                    fontSize: 13,
+                    fontSize: rs.sp(13),
                     fontWeight: FontWeight.w800,
                   ),
                 ),
