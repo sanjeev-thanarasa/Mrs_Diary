@@ -3,7 +3,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:mrs_dth_diary_v1/scr/helpers/owner_service.dart';
-import 'package:mrs_dth_diary_v1/scr/widgets/CToast.dart';
 import 'package:rounded_loading_button/rounded_loading_button.dart';
 
 class PaymentServices {
@@ -35,15 +34,30 @@ class PaymentServices {
 
   String collection = "PaymentRecords";
 
+  Future<DateTime?> getLatestCreateAt({required String userId}) async {
+    final ownerId = requireOwnerId();
+    final latest = await databaseReference
+        .collection(collection)
+        .where('ownerId', isEqualTo: ownerId)
+        .where("USER_ID", isEqualTo: userId)
+        .orderBy("CREATE_AT", descending: true)
+        .limit(1)
+        .get();
+
+    if (latest.docs.isEmpty) return null;
+    final data = latest.docs.first.data();
+    final createdAt = data["CREATE_AT"];
+    if (createdAt is Timestamp) return createdAt.toDate();
+    if (createdAt is DateTime) return createdAt;
+    return null;
+  }
+
   Future<bool> createPaymentRecord({required String userId}) async {
     final rechargeValue = _parseAmount(rechargeAmount.text);
     final paidValue = _parseAmount(giveAmount.text);
     final ownerId = requireOwnerId();
 
-    double prevPending = 0;
     double prevBalance = 0;
-    double prevPaid = 0;
-    double prevAmount = 0;
     DocumentReference<Map<String, dynamic>>? prevRef;
 
     final latest = await databaseReference
@@ -58,44 +72,31 @@ class PaymentServices {
       final doc = latest.docs.first;
       final data = doc.data();
       prevRef = doc.reference;
-      prevPending = _parseAmount(data["PENDING_AMOUNT"]);
       prevBalance = _parseAmount(data["BALANCE_AMOUNT"]);
-      prevPaid = _parseAmount(data["PAID_AMOUNT"]);
-      prevAmount = _parseAmount(data["AMOUNT"]);
     }
 
-    final appliedToPending = prevPending > 0
-        ? (paidValue >= prevPending ? prevPending : paidValue)
-        : 0;
-    final pendingRemaining = prevPending - appliedToPending;
-    if (pendingRemaining > 0) {
-      CToast.show(
-          message:
-              'Clear previous pending Rs.${pendingRemaining.toInt()} before new payment');
-      return false;
-    }
-
-    final paidRemaining = paidValue - appliedToPending;
+    final paidRemaining = paidValue;
 
     if (prevRef != null) {
       final updates = <String, dynamic>{};
-      if (prevPending > 0) {
-        final newPaid = (prevPaid + appliedToPending);
-        updates["PAID_AMOUNT"] = _formatAmountForStorage(newPaid);
-        updates["PENDING_AMOUNT"] = '';
-        updates["PENDING_DATE"] = null;
-      }
       if (prevBalance > 0) {
         updates["BALANCE_AMOUNT"] = '';
+        updates["PAYMENT_HISTORY"] = FieldValue.arrayUnion([
+          {
+            "AMOUNT": _formatAmountForStorage(prevBalance),
+            "PAID_AT": Timestamp.fromDate(createDate ?? DateTime.now()),
+            "NOTE": "Balance moved to next payment",
+          }
+        ]);
       }
       if (updates.isNotEmpty) {
         await prevRef.update(updates);
       }
     }
 
-    final appliedBalance = prevBalance > 0
+    final double appliedBalance = prevBalance > 0
         ? (prevBalance >= rechargeValue ? rechargeValue : prevBalance)
-        : 0;
+        : 0.0;
     final remainingBalance =
         prevBalance > appliedBalance ? (prevBalance - appliedBalance) : 0;
 
@@ -113,11 +114,38 @@ class PaymentServices {
       newBalance += remainingBalance;
     }
 
+    double appliedToPreviousPending = 0;
+    if (newBalance > 0) {
+      final result = await _applyBalanceToPending(
+        ownerId: ownerId,
+        userId: userId,
+        availableBalance: newBalance,
+        paidAt: createDate ?? DateTime.now(),
+      );
+      appliedToPreviousPending = result.applied;
+      newBalance = result.remaining;
+    }
+
     final history = <Map<String, dynamic>>[];
     if (paidRemaining > 0) {
       history.add({
         "AMOUNT": _formatAmountForStorage(paidRemaining),
         "PAID_AT": Timestamp.fromDate(createDate ?? DateTime.now()),
+        "NOTE": "Paid amount",
+      });
+    }
+    if (appliedBalance > 0) {
+      history.add({
+        "AMOUNT": _formatAmountForStorage(appliedBalance),
+        "PAID_AT": Timestamp.fromDate(createDate ?? DateTime.now()),
+        "NOTE": "Balance from previous payment",
+      });
+    }
+    if (appliedToPreviousPending > 0) {
+      history.add({
+        "AMOUNT": _formatAmountForStorage(appliedToPreviousPending),
+        "PAID_AT": Timestamp.fromDate(createDate ?? DateTime.now()),
+        "NOTE": "Applied to previous pending",
       });
     }
 
@@ -133,7 +161,7 @@ class PaymentServices {
       "PAYMENT_HISTORY": history,
       "USER_NOTE": userNote.text,
       "USER_NOTE2": userNote2.text,
-      "CREATE_AT": DateTime.now(),
+      "CREATE_AT": createDate ?? DateTime.now(),
       "EXPIRED_AT": expiredDate,
     };
 
@@ -141,6 +169,78 @@ class PaymentServices {
     btnController.success();
     clearRecords();
     return true;
+  }
+
+  Future<_BalanceApplyResult> _applyBalanceToPending({
+    required String ownerId,
+    required String userId,
+    required double availableBalance,
+    required DateTime paidAt,
+  }) async {
+    if (availableBalance <= 0) {
+      return const _BalanceApplyResult(applied: 0, remaining: 0);
+    }
+
+    final snapshot = await databaseReference
+        .collection(collection)
+        .where('ownerId', isEqualTo: ownerId)
+        .where('USER_ID', isEqualTo: userId)
+        .get();
+
+    final docs = snapshot.docs.toList();
+    docs.sort((a, b) {
+      final aDate = a.data()["CREATE_AT"];
+      final bDate = b.data()["CREATE_AT"];
+      DateTime? aDt;
+      DateTime? bDt;
+      if (aDate is Timestamp) {
+        aDt = aDate.toDate();
+      } else if (aDate is DateTime) {
+        aDt = aDate;
+      }
+      if (bDate is Timestamp) {
+        bDt = bDate.toDate();
+      } else if (bDate is DateTime) {
+        bDt = bDate;
+      }
+      if (aDt == null && bDt == null) return 0;
+      if (aDt == null) return -1;
+      if (bDt == null) return 1;
+      return aDt.compareTo(bDt);
+    });
+
+    double remaining = availableBalance;
+    double appliedTotal = 0;
+
+    for (final doc in docs) {
+      if (remaining <= 0) break;
+      final data = doc.data();
+      final pendingValue = _parseAmount(data["PENDING_AMOUNT"]);
+      if (pendingValue <= 0) continue;
+
+      final paidValue = _parseAmount(data["PAID_AMOUNT"]);
+      final applied = pendingValue >= remaining ? remaining : pendingValue;
+      final newPending = pendingValue - applied;
+      final newPaid = paidValue + applied;
+
+      await doc.reference.update({
+        "PAID_AMOUNT": _formatAmountForStorage(newPaid),
+        "PENDING_AMOUNT": _formatAmountForStorage(newPending),
+        "PENDING_DATE": newPending > 0 ? data["PENDING_DATE"] : null,
+        "PAYMENT_HISTORY": FieldValue.arrayUnion([
+          {
+            "AMOUNT": _formatAmountForStorage(applied),
+            "PAID_AT": Timestamp.fromDate(paidAt),
+            "NOTE": "Pending cleared by newer payment",
+          }
+        ]),
+      });
+
+      remaining -= applied;
+      appliedTotal += applied;
+    }
+
+    return _BalanceApplyResult(applied: appliedTotal, remaining: remaining);
   }
 
   Future<void> updatePaymentRecord(
@@ -225,4 +325,11 @@ class PaymentServices {
     final rounded = value.round();
     return rounded.toString();
   }
+}
+
+class _BalanceApplyResult {
+  final double applied;
+  final double remaining;
+
+  const _BalanceApplyResult({required this.applied, required this.remaining});
 }

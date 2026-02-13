@@ -686,6 +686,7 @@ class _SearchUsersScreenState extends State<SearchUsersScreen> {
                   userId: _field(data['id']).isNotEmpty
                       ? _field(data['id'])
                       : entry.doc.id,
+                  collectionName: entry.collection,
                   onTap: () {
                     changeScreenAnimated(
                       context,

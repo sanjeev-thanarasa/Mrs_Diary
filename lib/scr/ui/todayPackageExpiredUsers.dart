@@ -188,7 +188,7 @@ class _TodayPackageExpiredUsersState extends State<TodayPackageExpiredUsers> {
       final userDoc = userMap[userId];
       if (userDoc != null) {
         _seenUserIds.add(userId);
-        _entries.add(_UserEntry(userDoc));
+        _entries.add(_UserEntry(userDoc, "OldUser"));
       }
     }
   }
@@ -299,11 +299,12 @@ class _TodayPackageExpiredUsersState extends State<TodayPackageExpiredUsers> {
           mobileNo: data['mobileNo'],
           villageName: data['area'],
           userId: data['id'] ?? data.id,
+          collectionName: showResults[index].collectionName,
           onTap: () {
             changeScreenAnimated(
                 context,
                 UserDetails(
-                  collectionName: "OldUser",
+                  collectionName: showResults[index].collectionName,
                   userId: data.id,
                 ));
           },
@@ -419,6 +420,7 @@ class _TodayPackageExpiredUsersState extends State<TodayPackageExpiredUsers> {
 
 class _UserEntry {
   final QueryDocumentSnapshot<Object?> user;
+  final String collectionName;
 
-  _UserEntry(this.user);
+  _UserEntry(this.user, this.collectionName);
 }

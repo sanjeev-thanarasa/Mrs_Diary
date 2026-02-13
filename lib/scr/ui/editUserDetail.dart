@@ -11,14 +11,14 @@ import 'package:mrs_dth_diary_v1/scr/widgets/subHelpers/styles.dart';
 class EditUserDetail extends StatefulWidget {
   final String userId;
   final String collectionName;
-  final List data;
-  final int index;
+  final List? data;
+  final int? index;
 
   const EditUserDetail({
     super.key,
     required this.userId,
-    required this.data,
-    required this.index,
+    this.data,
+    this.index,
     required this.collectionName,
   });
   @override
@@ -27,6 +27,8 @@ class EditUserDetail extends StatefulWidget {
 
 class _EditUserDetailState extends State<EditUserDetail> {
   USerServices _uSerServices = USerServices();
+  Map<String, dynamic>? _userData;
+  bool _isLoadingData = false;
 
   String _formatDate(DateTime? value) {
     if (value == null) {
@@ -36,7 +38,13 @@ class _EditUserDetailState extends State<EditUserDetail> {
   }
 
   Map<String, dynamic> _getItemMap() {
-    final item = widget.data[widget.index];
+    if (_userData != null) {
+      return _userData!;
+    }
+    if (widget.data == null || widget.index == null) {
+      return <String, dynamic>{};
+    }
+    final item = widget.data![widget.index!];
     if (item is Map<String, dynamic>) {
       return item;
     }
@@ -49,10 +57,42 @@ class _EditUserDetailState extends State<EditUserDetail> {
     return <String, dynamic>{};
   }
 
+  Future<void> _fetchUserData() async {
+    if (widget.data != null && widget.index != null) {
+      return; // Data already provided
+    }
+    setState(() {
+      _isLoadingData = true;
+    });
+    try {
+      final doc = await FirebaseFirestore.instance
+          .collection(widget.collectionName)
+          .doc(widget.userId)
+          .get();
+      if (doc.exists && mounted) {
+        setState(() {
+          _userData = doc.data();
+          _isLoadingData = false;
+        });
+        editInitialize();
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoadingData = false;
+        });
+      }
+    }
+  }
+
   @override
   void initState() {
     _uSerServices.getVillageName();
-    editInitialize();
+    if (widget.data != null && widget.index != null) {
+      editInitialize();
+    } else {
+      _fetchUserData();
+    }
     print(widget.collectionName);
     print(widget.userId);
     print(widget.data);

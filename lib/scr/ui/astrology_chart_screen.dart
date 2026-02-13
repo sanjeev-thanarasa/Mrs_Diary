@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mrs_dth_diary_v1/scr/ui/astrology_form_screen.dart';
+import 'package:mrs_dth_diary_v1/scr/helpers/owner_service.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/subHelpers/responsive.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/subHelpers/styles.dart';
 import 'package:record/record.dart';
@@ -10,6 +11,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'dart:io';
 import 'dart:async';
 
@@ -1836,6 +1838,8 @@ class _GocharamParvaDetailsScreenState
   int? _playingNoteIndex; // Track which saved note is playing
   Duration _savedNoteDuration = Duration.zero;
   Duration _savedNotePosition = Duration.zero;
+  bool _isUploading = false;
+  double _uploadProgress = 0.0;
 
   @override
   void initState() {
@@ -2096,11 +2100,13 @@ class _GocharamParvaDetailsScreenState
   }
 
   Future<void> _saveNotes() async {
+    if (_isUploading) return; // Prevent multiple saves
+
     try {
       final textNote = _textController.text.trim();
-      final voiceUrl = _recordedFilePath;
+      final voiceFilePath = _recordedFilePath;
 
-      if (textNote.isEmpty && voiceUrl == null) {
+      if (textNote.isEmpty && voiceFilePath == null) {
         Fluttertoast.showToast(
           msg: 'Please add a note first',
           backgroundColor: Colors.orange,
@@ -2109,10 +2115,55 @@ class _GocharamParvaDetailsScreenState
         return;
       }
 
+      setState(() {
+        _isUploading = true;
+        _uploadProgress = 0.0;
+      });
+
+      String? uploadedVoiceUrl;
+
+      // Upload voice file to Firebase Storage if exists
+      if (voiceFilePath != null && File(voiceFilePath).existsSync()) {
+        try {
+          final file = File(voiceFilePath);
+          final ownerId = requireOwnerId();
+          final fileName =
+              'users/$ownerId/voice_notes/${widget.entry.profileId}/${DateTime.now().millisecondsSinceEpoch}.m4a';
+          final storageRef = FirebaseStorage.instance.ref().child(fileName);
+          final uploadTask = storageRef.putFile(file);
+
+          // Listen to upload progress
+          uploadTask.snapshotEvents.listen((taskSnapshot) {
+            final progress =
+                taskSnapshot.bytesTransferred / taskSnapshot.totalBytes;
+            if (mounted) {
+              setState(() {
+                _uploadProgress = progress;
+              });
+            }
+          });
+
+          // Wait for upload to complete
+          final snapshot = await uploadTask;
+          uploadedVoiceUrl = await snapshot.ref.getDownloadURL();
+        } catch (e) {
+          setState(() {
+            _isUploading = false;
+            _uploadProgress = 0.0;
+          });
+          Fluttertoast.showToast(
+            msg: 'Error uploading voice note: $e',
+            backgroundColor: Colors.red,
+            textColor: white,
+          );
+          return;
+        }
+      }
+
       final newNote = _SavedNote(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
         textNote: textNote.isNotEmpty ? textNote : null,
-        voiceNoteUrl: voiceUrl,
+        voiceNoteUrl: uploadedVoiceUrl ?? _savedVoiceNoteUrl,
         createdAt: DateTime.now(),
       );
 
@@ -2131,6 +2182,10 @@ class _GocharamParvaDetailsScreenState
       final profileDoc = await collection.doc(widget.entry.profileId).get();
 
       if (!profileDoc.exists) {
+        setState(() {
+          _isUploading = false;
+          _uploadProgress = 0.0;
+        });
         Fluttertoast.showToast(
           msg: 'Error: Profile not found',
           backgroundColor: Colors.red,
@@ -2165,16 +2220,22 @@ class _GocharamParvaDetailsScreenState
           _savedVoiceNoteUrl = null;
           _isVoiceMode = false;
           _recordingSeconds = 0;
+          _isUploading = false;
+          _uploadProgress = 0.0;
         });
 
         Fluttertoast.showToast(
-          msg: 'Saved',
+          msg: 'Uploaded successfully',
           backgroundColor: kPrimaryColor,
           textColor: white,
           toastLength: Toast.LENGTH_SHORT,
         );
       }
     } catch (e) {
+      setState(() {
+        _isUploading = false;
+        _uploadProgress = 0.0;
+      });
       Fluttertoast.showToast(
         msg: 'Error saving notes: $e',
         backgroundColor: Colors.red,
@@ -2196,53 +2257,65 @@ class _GocharamParvaDetailsScreenState
   @override
   Widget build(BuildContext context) {
     final rs = context.rs;
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          'கோச்சார முழு விவரங்கள்',
-          style: TextStyle(
-            fontFamily: 'TamilArima',
-            fontSize: rs.sp(16),
-            fontWeight: FontWeight.w800,
-            letterSpacing: 0.2,
+    return PopScope(
+      canPop: !_isUploading,
+      onPopInvoked: (didPop) {
+        if (!didPop && _isUploading) {
+          Fluttertoast.showToast(
+            msg: 'Please wait, uploading voice note...',
+            backgroundColor: Colors.orange,
+            textColor: white,
+          );
+        }
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(
+            'கோச்சார முழு விவரங்கள்',
+            style: TextStyle(
+              fontFamily: 'TamilArima',
+              fontSize: rs.sp(16),
+              fontWeight: FontWeight.w800,
+              letterSpacing: 0.2,
+            ),
           ),
         ),
-      ),
-      body: SafeArea(
-        child: ListView(
-          padding: EdgeInsets.all(rs.r(16)),
-          children: [
-            _buildDetailCard(rs),
-            SizedBox(height: rs.rh(16)),
-            Text(
-              'கோச்சார சார்ட்',
-              style: TextStyle(
-                fontFamily: 'TamilArima',
-                fontSize: rs.sp(15.5),
-                fontWeight: FontWeight.w700,
-                color: kIndigoDark,
+        body: SafeArea(
+          child: ListView(
+            padding: EdgeInsets.all(rs.r(16)),
+            children: [
+              _buildDetailCard(rs),
+              SizedBox(height: rs.rh(16)),
+              Text(
+                'கோச்சார சார்ட்',
+                style: TextStyle(
+                  fontFamily: 'TamilArima',
+                  fontSize: rs.sp(15.5),
+                  fontWeight: FontWeight.w700,
+                  color: kIndigoDark,
+                ),
               ),
-            ),
-            SizedBox(height: rs.rh(10)),
-            _GocharamChartView(
-              innerData: widget.kattamBoxes,
-              outerData: _gocharamBoxes,
-              planetDegrees: widget.planetDegrees,
-              onEditBox: (boxIndex, boxData) async {
-                await widget.onEditBox(
-                  boxIndex,
-                  boxData,
-                  (updatedBox) {
-                    setState(() {
-                      _gocharamBoxes[boxIndex] = updatedBox;
-                    });
-                  },
-                );
-              },
-            ),
-            SizedBox(height: rs.rh(20)),
-            _buildNotesSection(rs),
-          ],
+              SizedBox(height: rs.rh(10)),
+              _GocharamChartView(
+                innerData: widget.kattamBoxes,
+                outerData: _gocharamBoxes,
+                planetDegrees: widget.planetDegrees,
+                onEditBox: (boxIndex, boxData) async {
+                  await widget.onEditBox(
+                    boxIndex,
+                    boxData,
+                    (updatedBox) {
+                      setState(() {
+                        _gocharamBoxes[boxIndex] = updatedBox;
+                      });
+                    },
+                  );
+                },
+              ),
+              SizedBox(height: rs.rh(20)),
+              _buildNotesSection(rs),
+            ],
+          ),
         ),
       ),
     );
@@ -3078,23 +3151,47 @@ class _GocharamParvaDetailsScreenState
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton(
-        onPressed: _saveNotes,
+        onPressed: _isUploading ? null : _saveNotes,
         style: ElevatedButton.styleFrom(
-          backgroundColor: kPrimaryColor,
+          backgroundColor: _isUploading ? Colors.grey : kPrimaryColor,
           foregroundColor: white,
           padding: EdgeInsets.symmetric(vertical: rs.rh(14)),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(rs.r(12)),
           ),
         ),
-        child: Text(
-          'சேமி',
-          style: TextStyle(
-            fontFamily: 'TamilArima',
-            fontSize: rs.sp(14),
-            fontWeight: FontWeight.w700,
-          ),
-        ),
+        child: _isUploading
+            ? Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  SizedBox(
+                    width: rs.r(16),
+                    height: rs.r(16),
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(white),
+                      value: _uploadProgress,
+                    ),
+                  ),
+                  SizedBox(width: rs.rw(10)),
+                  Text(
+                    'பதிவேற்றுகிறது... ${(_uploadProgress * 100).toInt()}%',
+                    style: TextStyle(
+                      fontFamily: 'TamilArima',
+                      fontSize: rs.sp(14),
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              )
+            : Text(
+                'சேமி',
+                style: TextStyle(
+                  fontFamily: 'TamilArima',
+                  fontSize: rs.sp(14),
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
       ),
     );
   }

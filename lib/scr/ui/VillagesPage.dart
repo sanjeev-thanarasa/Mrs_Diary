@@ -67,7 +67,45 @@ class _VillagesListState extends State<VillagesList> {
     return (oldUserCount.count ?? 0) + (newUserCount.count ?? 0);
   }
 
-  Future<void> _confirmDelete(String villageId) async {
+  Future<void> _confirmDelete(String villageId, String villageName) async {
+    // Check if village has any users before allowing deletion
+    final hasUsers = await _checkVillageHasUsers(villageName);
+
+    if (hasUsers) {
+      if (mounted) {
+        await showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text(
+              'Cannot delete village',
+              style: TextStyle(
+                fontFamily: 'TamilArima',
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            content: const Text(
+              'This village has users. Please delete all users from this village first, then you can delete the village.',
+              style: TextStyle(
+                fontFamily: 'TamilArima2',
+                fontSize: 14,
+              ),
+            ),
+            actions: [
+              ElevatedButton(
+                onPressed: () => Navigator.pop(context),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blue,
+                  foregroundColor: Colors.white,
+                ),
+                child: const Text('OK'),
+              ),
+            ],
+          ),
+        );
+      }
+      return;
+    }
+
     await showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
@@ -86,6 +124,10 @@ class _VillagesListState extends State<VillagesList> {
               );
               if (mounted) {
                 Navigator.pop(context);
+                showSnackbar(
+                  'Village deleted',
+                  'Village has been successfully deleted',
+                );
               }
             },
             child: const Text('Delete'),
@@ -95,10 +137,75 @@ class _VillagesListState extends State<VillagesList> {
     );
   }
 
+  Future<bool> _checkVillageHasUsers(String villageName) async {
+    final firestore = FirebaseFirestore.instance;
+    final ownerId = requireOwnerId();
+
+    // Check OldUser collection
+    final oldUsersQuery = await firestore
+        .collection('OldUser')
+        .where('ownerId', isEqualTo: ownerId)
+        .where('area', isEqualTo: villageName.trim())
+        .limit(1)
+        .get();
+
+    if (oldUsersQuery.docs.isNotEmpty) {
+      return true;
+    }
+
+    // Check NewUser collection
+    final newUsersQuery = await firestore
+        .collection('NewUser')
+        .where('ownerId', isEqualTo: ownerId)
+        .where('area', isEqualTo: villageName.trim())
+        .limit(1)
+        .get();
+
+    return newUsersQuery.docs.isNotEmpty;
+  }
+
   Future<void> _showEditDialog({
     required String villageId,
     required String currentName,
   }) async {
+    // Check if village has any users before allowing edit
+    final hasUsers = await _checkVillageHasUsers(currentName);
+
+    if (hasUsers) {
+      if (mounted) {
+        await showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text(
+              'Cannot edit village',
+              style: TextStyle(
+                fontFamily: 'TamilArima',
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            content: const Text(
+              'This village has users. Please delete all users from this village first, then you can edit the village.',
+              style: TextStyle(
+                fontFamily: 'TamilArima2',
+                fontSize: 14,
+              ),
+            ),
+            actions: [
+              ElevatedButton(
+                onPressed: () => Navigator.pop(context),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blue,
+                  foregroundColor: Colors.white,
+                ),
+                child: const Text('OK'),
+              ),
+            ],
+          ),
+        );
+      }
+      return;
+    }
+
     final controller = TextEditingController(text: currentName);
     await showDialog<void>(
       context: context,
@@ -287,7 +394,8 @@ class _VillagesListState extends State<VillagesList> {
                               villageId: villageId,
                               currentName: villageName,
                             ),
-                            onDelete: () => _confirmDelete(villageId),
+                            onDelete: () =>
+                                _confirmDelete(villageId, villageName),
                             countFuture: _loadVillageUserCount(villageName),
                           );
                         },

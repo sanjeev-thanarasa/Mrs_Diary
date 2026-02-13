@@ -168,6 +168,7 @@ class _TotalPendingUsersState extends State<TotalPendingUsers> {
         _entries.add(_UserEntry(
           userDoc,
           pendingAmount: paymentData["PENDING_AMOUNT"],
+          collectionName: "OldUser",
         ));
       }
     }
@@ -279,13 +280,14 @@ class _TotalPendingUsersState extends State<TotalPendingUsers> {
           mobileNo: data['mobileNo'],
           villageName: data['area'],
           userId: data['id'] ?? data.id,
-          amountLabel: 'தருமதி',
-          amountValue: entry.pendingAmount,
+          collectionName: showResults[index].collectionName,
+          amountLabel: 'நிலுவை',
+          amountValue: showResults[index].pendingAmount,
           onTap: () {
             changeScreenAnimated(
                 context,
                 UserDetails(
-                  collectionName: "OldUser",
+                  collectionName: showResults[index].collectionName,
                   userId: data.id,
                 ));
           },
@@ -402,6 +404,7 @@ class _TotalPendingUsersState extends State<TotalPendingUsers> {
 class _UserEntry {
   final QueryDocumentSnapshot<Object?> user;
   final dynamic pendingAmount;
+  final String collectionName;
 
-  _UserEntry(this.user, {this.pendingAmount});
+  _UserEntry(this.user, {this.pendingAmount, required this.collectionName});
 }

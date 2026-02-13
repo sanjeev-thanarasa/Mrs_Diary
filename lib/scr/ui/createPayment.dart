@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:mrs_dth_diary_v1/scr/helpers/paymentService.dart';
+import 'package:mrs_dth_diary_v1/scr/widgets/datePicker.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/RoundedLoadingButton.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/SimpleCalc.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/subHelpers/styles.dart';
@@ -20,6 +21,7 @@ class CreatePayment extends StatefulWidget {
 class _CreatePaymentState extends State<CreatePayment> {
   final PaymentServices _paymentServices = PaymentServices();
   bool _showNotes = false;
+  bool _useCustomDate = false;
 
   @override
   void dispose() {
@@ -30,10 +32,15 @@ class _CreatePaymentState extends State<CreatePayment> {
 
   @override
   void initState() {
-    _paymentServices.createRecordDate.text =
-        DateFormat('MM/dd/yyyy hh:mm a').format(DateTime.now());
-    _paymentServices.createDate = DateTime.now();
+    _setDefaultCreateDate();
     super.initState();
+  }
+
+  void _setDefaultCreateDate() {
+    final now = DateTime.now();
+    _paymentServices.createDate = now;
+    _paymentServices.createRecordDate.text =
+        DateFormat('MM/dd/yyyy hh:mm a').format(now);
   }
 
   @override
@@ -89,6 +96,51 @@ class _CreatePaymentState extends State<CreatePayment> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        _sectionCard(
+          title: "Payment time",
+          child: Column(
+            children: [
+              Row(
+                children: [
+                  const Expanded(
+                    child: Text(
+                      "Custom date & time",
+                      style: TextStyle(
+                        fontFamily: 'TamilArima2',
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black54,
+                      ),
+                    ),
+                  ),
+                  Switch(
+                    value: _useCustomDate,
+                    activeThumbColor: kPrimaryColor,
+                    onChanged: (val) {
+                      setState(() {
+                        _useCustomDate = val;
+                        if (!val) {
+                          _setDefaultCreateDate();
+                        }
+                      });
+                    },
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              _inputField(
+                controller: _paymentServices.createRecordDate,
+                labelText: "Payment date & time",
+                hintText: "Select date & time",
+                icon: Icons.event,
+                keyboardType: TextInputType.text,
+                readOnly: true,
+                onTap: _useCustomDate ? _pickDateTime : null,
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
         _sectionCard(
           title: "Payment details",
           child: Column(
@@ -233,6 +285,23 @@ class _CreatePaymentState extends State<CreatePayment> {
     );
     if (picked == null) return;
     setState(() => onSelected(picked));
+  }
+
+  Future<void> _pickDateTime() async {
+    await showModalBottomSheet<void>(
+      context: context,
+      builder: (BuildContext context) {
+        return DatePicker(
+          onDateTimeChanged: (val) {
+            setState(() {
+              _paymentServices.createDate = val;
+              _paymentServices.createRecordDate.text =
+                  DateFormat('MM/dd/yyyy hh:mm a').format(val);
+            });
+          },
+        );
+      },
+    );
   }
 
   void _calculateBalance() {
@@ -456,6 +525,19 @@ class _CreatePaymentState extends State<CreatePayment> {
   }
 
   Future<void> _savePayment() async {
+    if (_useCustomDate) {
+      final latestDate =
+          await _paymentServices.getLatestCreateAt(userId: widget.userId);
+      final selectedDate = _paymentServices.createDate;
+      if (latestDate != null && selectedDate != null) {
+        if (!selectedDate.isAfter(latestDate)) {
+          if (!mounted) return;
+          await _showDateError(latestDate);
+          _paymentServices.btnController.reset();
+          return;
+        }
+      }
+    }
     final success = await _paymentServices.createPaymentRecord(
       userId: widget.userId,
     );
@@ -465,5 +547,26 @@ class _CreatePaymentState extends State<CreatePayment> {
     } else {
       _paymentServices.btnController.reset();
     }
+  }
+
+  Future<void> _showDateError(DateTime latestDate) async {
+    final latestText = DateFormat('MM/dd/yyyy hh:mm a').format(latestDate);
+    await showDialog<void>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text("Invalid date"),
+          content: Text(
+            "Custom date must be after the last payment record.\n\nLast record: $latestText",
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text("OK"),
+            ),
+          ],
+        );
+      },
+    );
   }
 }

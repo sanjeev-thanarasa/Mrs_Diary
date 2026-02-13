@@ -220,6 +220,7 @@ class _TotalOldCustomersState extends State<TotalOldCustomers> {
           mobileNo: data['mobileNo'],
           villageName: data['area'],
           userId: data['id'] ?? data.id,
+          collectionName: "OldUser",
           onTap: () {
             changeScreenAnimated(
                 context,

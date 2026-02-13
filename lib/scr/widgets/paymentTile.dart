@@ -485,7 +485,29 @@ class _PaymentContainerListTileState extends State<PaymentContainerListTile>
     );
 
     if (confirm == true) {
-      deleteProduct(id: widget.snapshot.id, collectionName: "PaymentRecords");
+      try {
+        await deleteProduct(
+            id: widget.snapshot.id, collectionName: "PaymentRecords");
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Payment record deleted successfully'),
+              backgroundColor: Colors.green,
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
+      } catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Failed to delete: $e'),
+              backgroundColor: Colors.red,
+              duration: const Duration(seconds: 3),
+            ),
+          );
+        }
+      }
     }
   }
 

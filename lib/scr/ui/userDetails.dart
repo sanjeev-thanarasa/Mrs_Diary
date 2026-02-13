@@ -172,7 +172,7 @@ class _UserDetailsState extends State<UserDetails> {
         .where('ownerId', isEqualTo: requireOwnerId())
         .where('USER_ID', isEqualTo: widget.userId)
         .orderBy('CREATE_AT', descending: true)
-        .snapshots();
+        .snapshots(includeMetadataChanges: false);
 
     yield* stream;
   }

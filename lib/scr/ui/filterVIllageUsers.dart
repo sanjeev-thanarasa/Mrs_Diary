@@ -123,63 +123,21 @@ class _FilterVillageUserState extends State<FilterVillageUser> {
                               itemBuilder: (_, index) {
                                 final data = showResults[index];
                                 final collectionName = data.reference.parent.id;
-                                return Slidable(
-                                  key: ValueKey(data.id),
-                                  endActionPane: ActionPane(
-                                    motion: const DrawerMotion(),
-                                    children: [
-                                      SlidableAction(
-                                        onPressed: (_) {
-                                          changeScreenAnimated(
-                                            context,
-                                            EditUserDetail(
-                                              userId: data.id,
-                                              data: [data],
-                                              index: 0,
-                                              collectionName: collectionName,
-                                            ),
-                                          );
-                                        },
-                                        borderRadius: BorderRadius.only(
-                                          topLeft: Radius.circular(14),
-                                          bottomLeft: Radius.circular(14),
-                                        ),
-                                        padding: const EdgeInsets.symmetric(
-                                            horizontal: 12, vertical: 8),
-                                        backgroundColor: kPrimaryColor,
-                                        foregroundColor: Colors.white,
-                                        icon: Icons.edit_rounded,
-                                        label: 'Edit',
-                                      ),
-                                      SlidableAction(
-                                        onPressed: (_) => _confirmDelete(
-                                          context,
-                                          userId: data.id,
+                                return UserDetailsTile(
+                                  name: data['name'] ?? '',
+                                  dishNumber: data['dishNumber'] ?? '',
+                                  mobileNo: data['mobileNo'] ?? '',
+                                  villageName: data['area'] ?? '',
+                                  userId: data['id'] ?? data.id,
+                                  collectionName: collectionName,
+                                  onTap: () {
+                                    changeScreenAnimated(
+                                        context,
+                                        UserDetails(
                                           collectionName: collectionName,
-                                          name: data['name'] ?? '',
-                                        ),
-                                        backgroundColor: Colors.redAccent,
-                                        foregroundColor: Colors.white,
-                                        icon: Icons.delete_rounded,
-                                        label: 'Delete',
-                                      ),
-                                    ],
-                                  ),
-                                  child: UserDetailsTile(
-                                    name: data['name'] ?? '',
-                                    dishNumber: data['dishNumber'] ?? '',
-                                    mobileNo: data['mobileNo'] ?? '',
-                                    villageName: data['area'] ?? '',
-                                    userId: data['id'] ?? data.id,
-                                    onTap: () {
-                                      changeScreenAnimated(
-                                          context,
-                                          UserDetails(
-                                            collectionName: collectionName,
-                                            userId: data.id,
-                                          ));
-                                    },
-                                  ),
+                                          userId: data.id,
+                                        ));
+                                  },
                                 );
                               })
                           : SearchNoData();
