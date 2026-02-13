@@ -3,6 +3,8 @@ import 'package:mrs_dth_diary_v1/scr/providers/village.dart';
 import 'package:mrs_dth_diary_v1/scr/helpers/fcm_service.dart';
 import 'package:mrs_dth_diary_v1/scr/ui/astrology_screen.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/homeCard.dart';
+import 'package:mrs_dth_diary_v1/scr/widgets/showRaviInfoDialog.dart'
+    show showRaviInfoDialog;
 import 'package:mrs_dth_diary_v1/scr/widgets/subHelpers/responsive.dart';
 import 'package:provider/provider.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
@@ -307,16 +309,27 @@ class _HomeState extends State<Home> {
               ),
               child: Row(
                 children: [
-                  Container(
-                    padding: EdgeInsets.all(rs.r(10)),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(rs.r(16)),
-                    ),
-                    child: Image.asset(
-                      'assets/images/diary.png',
-                      height: rs.r(64),
-                      width: rs.r(64),
+                  InkWell(
+                    borderRadius: BorderRadius.circular(rs.r(16)),
+                    onTap: () => showRaviInfoDialog(context),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(rs.r(16)),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.only(
+                          top: 4.0,
+                          left: 3.0,
+                          right: 3.0,
+                        ),
+                        child: Image.asset(
+                          'assets/images/ravi-diary.png',
+                          height: rs.r(80),
+                          width: rs.r(80),
+                          fit: BoxFit.contain,
+                        ),
+                      ),
                     ),
                   ),
                   SizedBox(width: rs.rw(16)),
