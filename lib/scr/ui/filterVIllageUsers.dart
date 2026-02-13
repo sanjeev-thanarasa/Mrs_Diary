@@ -55,7 +55,12 @@ class _FilterVillageUserState extends State<FilterVillageUser> {
         prefixIcon: Icons.arrow_back,
         iconOnTap: () => Navigator.pop(context),
         onChanged: (text) => _onSearchChanged(text),
-        logoOnTap: () => setState(() => searchVisible = !searchVisible),
+        logoOnTap: () => setState(() {
+          searchVisible = !searchVisible;
+          if (!searchVisible) {
+            _radioValue = 0;
+          }
+        }),
       ),
       body: SingleChildScrollView(
         child: Column(
@@ -241,9 +246,10 @@ class _FilterVillageUserState extends State<FilterVillageUser> {
     counter = snapshots.length.toString();
     var showResults = [];
     if (searchText != "") {
+      final effectiveRadioValue = searchVisible ? _radioValue : 0;
       for (var snapshot in snapshots) {
         var title;
-        switch (_radioValue) {
+        switch (effectiveRadioValue) {
           case 0:
             {
               title = FilterUser.fromSnapshot(snapshot).name.toLowerCase();

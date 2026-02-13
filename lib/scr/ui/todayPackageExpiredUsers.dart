@@ -39,6 +39,7 @@ class _TodayPackageExpiredUsersState extends State<TodayPackageExpiredUsers> {
   final Set<String> _seenUserIds = {};
   QueryDocumentSnapshot<Object?>? _lastPaymentDoc;
   bool _isLoading = true;
+  bool _isSearchLoading = false;
   bool _isLoadingMore = false;
   bool _hasMore = true;
   final int _pageSize = 50;
@@ -69,6 +70,7 @@ class _TodayPackageExpiredUsersState extends State<TodayPackageExpiredUsers> {
   }
 
   void _onScroll() {
+    if (searchText.trim().isNotEmpty) return;
     if (_controller.position.pixels >=
             _controller.position.maxScrollExtent - 200 &&
         !_isLoadingMore &&
@@ -135,6 +137,35 @@ class _TodayPackageExpiredUsersState extends State<TodayPackageExpiredUsers> {
     });
   }
 
+  Future<void> _fetchAllForSearch() async {
+    if (_isSearchLoading || !_hasMore) return;
+    if (_ownerId == null) return;
+
+    setState(() {
+      _isSearchLoading = true;
+      _entries.clear();
+      _seenUserIds.clear();
+      _lastPaymentDoc = null;
+    });
+
+    final query = paymentRecords
+        .where('ownerId', isEqualTo: _ownerId)
+        .where("EXPIRED_AT", isGreaterThanOrEqualTo: _dateTodayStart)
+        .where("EXPIRED_AT", isLessThanOrEqualTo: _dateTodayEnd)
+        .orderBy("EXPIRED_AT");
+
+    final snapshot = await query.get();
+    if (!mounted) return;
+
+    await _appendEntries(snapshot.docs);
+    _lastPaymentDoc = snapshot.docs.isNotEmpty ? snapshot.docs.last : null;
+    _hasMore = false;
+
+    setState(() {
+      _isSearchLoading = false;
+    });
+  }
+
   Future<void> _appendEntries(
       List<QueryDocumentSnapshot<Object?>> paymentDocs) async {
     if (paymentDocs.isEmpty) return;
@@ -195,7 +226,12 @@ class _TodayPackageExpiredUsersState extends State<TodayPackageExpiredUsers> {
         trailing: Container(),
         iconOnTap: () => Navigator.pop(context),
         onChanged: (text) => _onSearchChanged(text),
-        logoOnTap: () => setState(() => searchVisible = !searchVisible),
+        logoOnTap: () => setState(() {
+          searchVisible = !searchVisible;
+          if (!searchVisible) {
+            _radioValue = 0;
+          }
+        }),
       ),
       body: Column(
         children: [
@@ -230,7 +266,9 @@ class _TodayPackageExpiredUsersState extends State<TodayPackageExpiredUsers> {
             ),
           ),
           Expanded(
-            child: _isLoading ? const LoadingShimmerList() : _buildList(),
+            child: _isLoading || _isSearchLoading
+                ? const LoadingShimmerList()
+                : _buildList(),
           ),
         ],
       ),
@@ -300,11 +338,20 @@ class _TodayPackageExpiredUsersState extends State<TodayPackageExpiredUsers> {
   }
 
   _onSearchChanged(String text) {
+    final trimmed = text.trim();
     setState(() {
-      searchText = text;
+      searchText = trimmed;
       print(searchText);
     });
-    // searchResultsList();
+
+    if (trimmed.isEmpty) {
+      if (!_hasMore || _entries.length > _pageSize) {
+        _fetchInitial();
+      }
+      return;
+    }
+
+    _fetchAllForSearch();
     print(searchText);
   }
 
@@ -312,10 +359,11 @@ class _TodayPackageExpiredUsersState extends State<TodayPackageExpiredUsers> {
     var showResults = [];
 
     if (searchText != "") {
+      final effectiveRadioValue = searchVisible ? _radioValue : 0;
       for (var entry in entries) {
         final snapshot = entry.user;
         var title;
-        switch (_radioValue) {
+        switch (effectiveRadioValue) {
           case 0:
             {
               title = TotalCustomersFilterize.fromSnapshot(snapshot)

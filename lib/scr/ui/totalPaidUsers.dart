@@ -30,6 +30,7 @@ class _TotalPaidUsersState extends State<TotalPaidUsers> {
   final Set<String> _seenUserIds = {};
   QueryDocumentSnapshot<Object?>? _lastPaymentDoc;
   bool _isLoading = true;
+  bool _isSearchLoading = false;
   bool _isLoadingMore = false;
   bool _hasMore = true;
   final int _pageSize = 50;
@@ -50,6 +51,7 @@ class _TotalPaidUsersState extends State<TotalPaidUsers> {
   }
 
   void _onScroll() {
+    if (searchText.trim().isNotEmpty) return;
     if (_controller.position.pixels >=
             _controller.position.maxScrollExtent - 200 &&
         !_isLoadingMore &&
@@ -114,6 +116,34 @@ class _TotalPaidUsersState extends State<TotalPaidUsers> {
     });
   }
 
+  Future<void> _fetchAllForSearch() async {
+    if (_isSearchLoading || !_hasMore) return;
+
+    setState(() {
+      _isSearchLoading = true;
+      _entries.clear();
+      _seenUserIds.clear();
+      _lastPaymentDoc = null;
+    });
+
+    final ownerId = requireOwnerId();
+    final query = paymentRecords
+        .where('ownerId', isEqualTo: ownerId)
+        .where("PAID_AMOUNT", isNotEqualTo: "")
+        .orderBy("PAID_AMOUNT");
+
+    final snapshot = await query.get();
+    if (!mounted) return;
+
+    await _appendEntries(snapshot.docs);
+    _lastPaymentDoc = snapshot.docs.isNotEmpty ? snapshot.docs.last : null;
+    _hasMore = false;
+
+    setState(() {
+      _isSearchLoading = false;
+    });
+  }
+
   Future<void> _appendEntries(
       List<QueryDocumentSnapshot<Object?>> paymentDocs) async {
     if (paymentDocs.isEmpty) return;
@@ -172,7 +202,12 @@ class _TotalPaidUsersState extends State<TotalPaidUsers> {
         prefixIcon: Icons.arrow_back,
         iconOnTap: () => Navigator.pop(context),
         onChanged: (text) => _onSearchChanged(text),
-        logoOnTap: () => setState(() => searchVisible = !searchVisible),
+        logoOnTap: () => setState(() {
+          searchVisible = !searchVisible;
+          if (!searchVisible) {
+            _radioValue = 0;
+          }
+        }),
       ),
       body: Column(
         children: [
@@ -207,7 +242,9 @@ class _TotalPaidUsersState extends State<TotalPaidUsers> {
             ),
           ),
           Expanded(
-            child: _isLoading ? const LoadingShimmerList() : _buildList(),
+            child: _isLoading || _isSearchLoading
+                ? const LoadingShimmerList()
+                : _buildList(),
           ),
         ],
       ),
@@ -276,10 +313,20 @@ class _TotalPaidUsersState extends State<TotalPaidUsers> {
   }
 
   _onSearchChanged(String text) {
+    final trimmed = text.trim();
     setState(() {
-      searchText = text;
+      searchText = trimmed;
       print(searchText);
     });
+
+    if (trimmed.isEmpty) {
+      if (!_hasMore || _entries.length > _pageSize) {
+        _fetchInitial();
+      }
+      return;
+    }
+
+    _fetchAllForSearch();
     print(searchText);
   }
 
@@ -287,10 +334,11 @@ class _TotalPaidUsersState extends State<TotalPaidUsers> {
     var showResults = [];
 
     if (searchText != "") {
+      final effectiveRadioValue = searchVisible ? _radioValue : 0;
       for (var entry in entries) {
         final snapshot = entry.user;
         var title;
-        switch (_radioValue) {
+        switch (effectiveRadioValue) {
           case 0:
             {
               title = TotalCustomersFilterize.fromSnapshot(snapshot)

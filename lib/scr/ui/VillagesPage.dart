@@ -239,7 +239,7 @@ class _VillagesListState extends State<VillagesList> {
           ),
         ),
         iconOnTap: () => Navigator.pop(context),
-        onChanged: (text) => setState(() => searchText = text),
+        onChanged: (text) => setState(() => searchText = text.trim()),
         hintText: "கிராமங்கள்",
       ),
       body: SingleChildScrollView(
@@ -249,51 +249,52 @@ class _VillagesListState extends State<VillagesList> {
               height: 15.0,
             ),
             CustomStreamBuilder(
-                context: context,
-                stream: searchText.isEmpty
-                    ? collectionReference
-                            .where('ownerId', isEqualTo: requireOwnerId())
-                            .snapshots()
-                        as Stream<QuerySnapshot<Map<String, dynamic>>>
-                    : collectionReference
-                            .where('ownerId', isEqualTo: requireOwnerId())
-                            .orderBy("name")
-                            .startAt([searchText]).endAt(
-                                [searchText + '\uf8ff']).snapshots()
-                        as Stream<QuerySnapshot<Map<String, dynamic>>>,
-                body: (snap) {
-                  final docs = snap.data?.docs ?? [];
-                  return docs.isNotEmpty
-                      ? ListView.separated(
-                          scrollDirection: Axis.vertical,
-                          controller: _controller,
-                          shrinkWrap: true,
-                          itemCount: docs.length,
-                          separatorBuilder: (_, __) =>
-                              const SizedBox(height: 8),
-                          itemBuilder: (_, index) {
-                            final data = docs[index];
-                            final villageName = data["name"] ?? "";
-                            final villageId = data.id;
-                            return _VillageTile(
+              context: context,
+              stream: collectionReference
+                  .where('ownerId', isEqualTo: requireOwnerId())
+                  .snapshots() as Stream<QuerySnapshot<Map<String, dynamic>>>,
+              body: (snap) {
+                final docs = snap.data?.docs ?? [];
+                final query = searchText.trim().toLowerCase();
+                final filtered = query.isEmpty
+                    ? docs
+                    : docs.where((doc) {
+                        final name =
+                            (doc.data()["name"] ?? "").toString().toLowerCase();
+                        return name.contains(query);
+                      }).toList();
+
+                return filtered.isNotEmpty
+                    ? ListView.separated(
+                        scrollDirection: Axis.vertical,
+                        controller: _controller,
+                        shrinkWrap: true,
+                        itemCount: filtered.length,
+                        separatorBuilder: (_, __) => const SizedBox(height: 8),
+                        itemBuilder: (_, index) {
+                          final data = filtered[index];
+                          final villageName = data["name"] ?? "";
+                          final villageId = data.id;
+                          return _VillageTile(
+                            villageId: villageId,
+                            villageName: villageName,
+                            createdAt: data["createAt"],
+                            onTap: () => changeScreenAnimated(
+                              context,
+                              FilterVillageUser(villageName: villageName),
+                            ),
+                            onEdit: () => _showEditDialog(
                               villageId: villageId,
-                              villageName: villageName,
-                              createdAt: data["createAt"],
-                              onTap: () => changeScreenAnimated(
-                                context,
-                                FilterVillageUser(villageName: villageName),
-                              ),
-                              onEdit: () => _showEditDialog(
-                                villageId: villageId,
-                                currentName: villageName,
-                              ),
-                              onDelete: () => _confirmDelete(villageId),
-                              countFuture: _loadVillageUserCount(villageName),
-                            );
-                          },
-                        )
-                      : SearchNoData();
-                })
+                              currentName: villageName,
+                            ),
+                            onDelete: () => _confirmDelete(villageId),
+                            countFuture: _loadVillageUserCount(villageName),
+                          );
+                        },
+                      )
+                    : SearchNoData();
+              },
+            )
           ],
         ),
       ),

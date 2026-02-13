@@ -26,6 +26,7 @@ class _TotalNewCustomersState extends State<TotalNewCustomers> {
   final List<QueryDocumentSnapshot<Map<String, dynamic>>> _docs = [];
   DocumentSnapshot<Map<String, dynamic>>? _lastDoc;
   bool _isLoading = true;
+  bool _isSearchLoading = false;
   bool _isLoadingMore = false;
   bool _hasMore = true;
   final int _pageSize = 50;
@@ -44,6 +45,7 @@ class _TotalNewCustomersState extends State<TotalNewCustomers> {
   }
 
   void _onScroll() {
+    if (searchText.trim().isNotEmpty) return;
     if (_controller.position.pixels >=
             _controller.position.maxScrollExtent - 200 &&
         !_isLoadingMore &&
@@ -108,6 +110,33 @@ class _TotalNewCustomersState extends State<TotalNewCustomers> {
     });
   }
 
+  Future<void> _fetchAllForSearch() async {
+    if (_isSearchLoading || !_hasMore) return;
+
+    setState(() {
+      _isSearchLoading = true;
+    });
+
+    final ownerId = requireOwnerId();
+    final query = FirebaseFirestore.instance
+        .collection("NewUser")
+        .where('ownerId', isEqualTo: ownerId)
+        .orderBy('name');
+
+    final snapshot = await query.get();
+    if (!mounted) return;
+
+    _docs
+      ..clear()
+      ..addAll(snapshot.docs);
+    _lastDoc = snapshot.docs.isNotEmpty ? snapshot.docs.last : null;
+    _hasMore = false;
+
+    setState(() {
+      _isSearchLoading = false;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -117,7 +146,12 @@ class _TotalNewCustomersState extends State<TotalNewCustomers> {
         prefixIcon: Icons.arrow_back,
         iconOnTap: () => Navigator.pop(context),
         onChanged: (text) => _onSearchChanged(text),
-        logoOnTap: () => setState(() => searchVisible = !searchVisible),
+        logoOnTap: () => setState(() {
+          searchVisible = !searchVisible;
+          if (!searchVisible) {
+            _radioValue = 0;
+          }
+        }),
       ),
       body: Column(
         children: [
@@ -152,7 +186,9 @@ class _TotalNewCustomersState extends State<TotalNewCustomers> {
             ),
           ),
           Expanded(
-            child: _isLoading ? const LoadingShimmerList() : _buildList(),
+            child: _isLoading || _isSearchLoading
+                ? const LoadingShimmerList()
+                : _buildList(),
           ),
         ],
       ),
@@ -223,11 +259,20 @@ class _TotalNewCustomersState extends State<TotalNewCustomers> {
   }
 
   _onSearchChanged(String text) {
+    final trimmed = text.trim();
     setState(() {
-      searchText = text;
+      searchText = trimmed;
       print(searchText);
     });
-    // searchResultsList();
+
+    if (trimmed.isEmpty) {
+      if (!_hasMore || _docs.length > _pageSize) {
+        _fetchInitial();
+      }
+      return;
+    }
+
+    _fetchAllForSearch();
     print(searchText);
   }
 
@@ -236,9 +281,10 @@ class _TotalNewCustomersState extends State<TotalNewCustomers> {
     var showResults = [];
 
     if (searchText != "") {
+      final effectiveRadioValue = searchVisible ? _radioValue : 0;
       for (var snapshot in snapshots) {
         var title;
-        switch (_radioValue) {
+        switch (effectiveRadioValue) {
           case 0:
             {
               title = TotalCustomersFilterize.fromSnapshot(snapshot)
