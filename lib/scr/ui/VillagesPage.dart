@@ -25,7 +25,7 @@ class _VillagesListState extends State<VillagesList> {
   late final CollectionReference collectionReference;
   String searchText = '';
   final Map<String, Future<int>> _countFutureCache = {};
-  final Map<String, Future<double>> _pendingFutureCache = {};
+  final Map<String, Future<_VillageAmountSummary>> _amountFutureCache = {};
 
   @override
   void dispose() {
@@ -49,14 +49,14 @@ class _VillagesListState extends State<VillagesList> {
     return future;
   }
 
-  Future<double> _loadVillagePendingTotal(String villageName) {
+  Future<_VillageAmountSummary> _loadVillageAmountSummary(String villageName) {
     final key = villageName.trim().toLowerCase();
-    if (_pendingFutureCache.containsKey(key)) {
-      return _pendingFutureCache[key]!;
+    if (_amountFutureCache.containsKey(key)) {
+      return _amountFutureCache[key]!;
     }
 
-    final future = _fetchVillagePendingTotal(villageName);
-    _pendingFutureCache[key] = future;
+    final future = _fetchVillageAmountSummary(villageName);
+    _amountFutureCache[key] = future;
     return future;
   }
 
@@ -79,7 +79,8 @@ class _VillagesListState extends State<VillagesList> {
     return (oldUserCount.count ?? 0) + (newUserCount.count ?? 0);
   }
 
-  Future<double> _fetchVillagePendingTotal(String villageName) async {
+  Future<_VillageAmountSummary> _fetchVillageAmountSummary(
+      String villageName) async {
     final firestore = FirebaseFirestore.instance;
     final ownerId = requireOwnerId();
     final normalized = villageName.trim();
@@ -112,10 +113,11 @@ class _VillagesListState extends State<VillagesList> {
     }
 
     if (userIds.isEmpty) {
-      return 0;
+      return const _VillageAmountSummary.zero();
     }
 
     double totalPending = 0;
+    double totalBalance = 0;
     const chunkSize = 10;
     final ids = userIds.toList();
     for (var i = 0; i < ids.length; i += chunkSize) {
@@ -132,10 +134,14 @@ class _VillagesListState extends State<VillagesList> {
       for (final doc in paymentSnapshot.docs) {
         final data = doc.data();
         totalPending += _parseAmount(data['PENDING_AMOUNT']);
+        totalBalance += _parseAmount(data['BALANCE_AMOUNT']);
       }
     }
 
-    return totalPending;
+    return _VillageAmountSummary(
+      pending: totalPending,
+      balance: totalBalance,
+    );
   }
 
   double _parseAmount(dynamic value) {
@@ -341,8 +347,8 @@ class _VillagesListState extends State<VillagesList> {
 
                 _countFutureCache.remove(currentName.trim().toLowerCase());
                 _countFutureCache.remove(name.trim().toLowerCase());
-                _pendingFutureCache.remove(currentName.trim().toLowerCase());
-                _pendingFutureCache.remove(name.trim().toLowerCase());
+                _amountFutureCache.remove(currentName.trim().toLowerCase());
+                _amountFutureCache.remove(name.trim().toLowerCase());
               }
               if (mounted) {
                 Navigator.pop(context);
@@ -488,8 +494,8 @@ class _VillagesListState extends State<VillagesList> {
                               onDelete: () =>
                                   _confirmDelete(villageId, villageName),
                               countFuture: _loadVillageUserCount(villageName),
-                              pendingFuture:
-                                  _loadVillagePendingTotal(villageName),
+                              amountFuture:
+                                  _loadVillageAmountSummary(villageName),
                             );
                           },
                         )
@@ -582,7 +588,7 @@ class _VillagesListState extends State<VillagesList> {
 
   Future<void> _onPullRefresh() async {
     _countFutureCache.clear();
-    _pendingFutureCache.clear();
+    _amountFutureCache.clear();
     if (!mounted) return;
     setState(() {});
   }
@@ -595,7 +601,7 @@ class _VillageTile extends StatelessWidget {
   final VoidCallback onEdit;
   final VoidCallback onDelete;
   final Future<int> countFuture;
-  final Future<double> pendingFuture;
+  final Future<_VillageAmountSummary> amountFuture;
 
   const _VillageTile({
     required this.villageId,
@@ -604,7 +610,7 @@ class _VillageTile extends StatelessWidget {
     required this.onEdit,
     required this.onDelete,
     required this.countFuture,
-    required this.pendingFuture,
+    required this.amountFuture,
   });
 
   String _formatAmountText(double value) {
@@ -618,104 +624,132 @@ class _VillageTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final rs = context.rs;
+    return FutureBuilder<_VillageAmountSummary>(
+      future: amountFuture,
+      builder: (context, snapshot) {
+        final summary = snapshot.data ?? const _VillageAmountSummary.zero();
 
-    return Slidable(
-      endActionPane: ActionPane(
-        extentRatio: 0.44,
-        motion: const DrawerMotion(),
-        children: [
-          SlidableAction(
-            onPressed: (_) => onEdit(),
-            backgroundColor: Colors.blue.shade600,
-            foregroundColor: Colors.white,
-            icon: Icons.edit_rounded,
-            label: 'Edit',
-            borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(rs.r(14)),
-              bottomLeft: Radius.circular(rs.r(14)),
-            ),
-            padding:
-                EdgeInsets.symmetric(horizontal: rs.rw(12), vertical: rs.rh(8)),
+        return Slidable(
+          endActionPane: ActionPane(
+            extentRatio: 0.44,
+            motion: const DrawerMotion(),
+            children: [
+              SlidableAction(
+                onPressed: (_) => onEdit(),
+                backgroundColor: Colors.blue.shade600,
+                foregroundColor: Colors.white,
+                icon: Icons.edit_rounded,
+                label: 'Edit',
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(rs.r(14)),
+                  bottomLeft: Radius.circular(rs.r(14)),
+                ),
+                padding: EdgeInsets.symmetric(
+                    horizontal: rs.rw(12), vertical: rs.rh(8)),
+              ),
+              SlidableAction(
+                onPressed: (_) => onDelete(),
+                backgroundColor: Colors.red.shade600,
+                foregroundColor: Colors.white,
+                icon: Icons.delete_rounded,
+                label: 'Delete',
+                padding: EdgeInsets.symmetric(
+                    horizontal: rs.rw(12), vertical: rs.rh(8)),
+              ),
+            ],
           ),
-          SlidableAction(
-            onPressed: (_) => onDelete(),
-            backgroundColor: Colors.red.shade600,
-            foregroundColor: Colors.white,
-            icon: Icons.delete_rounded,
-            label: 'Delete',
-            padding:
-                EdgeInsets.symmetric(horizontal: rs.rw(12), vertical: rs.rh(8)),
-          ),
-        ],
-      ),
-      child: Card(
-        elevation: 2,
-        margin: EdgeInsets.symmetric(horizontal: rs.rw(16)),
-        shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(rs.r(16))),
-        child: ListTile(
-          onTap: onTap,
-          title: Text(
-            villageName,
-            style: TextStyle(
-              fontSize: rs.sp(16),
-              color: colorScheme.onSurface,
-              fontFamily: "TamilArima",
-            ),
-          ),
-          subtitle: FutureBuilder<double>(
-            future: pendingFuture,
-            builder: (context, pendingSnapshot) {
-              final pending = pendingSnapshot.data ?? 0;
-              if (pending <= 0) {
-                return const SizedBox.shrink();
-              }
-              final pendingText = _formatAmountText(pending);
-              return Container(
+          child: Card(
+            elevation: 2,
+            margin: EdgeInsets.symmetric(horizontal: rs.rw(16)),
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(rs.r(16))),
+            child: ListTile(
+              onTap: onTap,
+              title: Text(
+                villageName,
+                style: TextStyle(
+                  fontSize: rs.sp(16),
+                  color: colorScheme.onSurface,
+                  fontFamily: "TamilArima",
+                ),
+              ),
+              subtitle: Container(
                 margin: EdgeInsets.only(top: rs.rh(6)),
                 padding: EdgeInsets.symmetric(
                     horizontal: rs.rw(10), vertical: rs.rh(4)),
                 decoration: BoxDecoration(
-                  color: colorScheme.secondary.withValues(alpha: 0.12),
+                  color: summary.value > 0
+                      ? Colors.blue.shade50
+                      : Colors.green.shade100,
+                  border: Border.all(
+                    color: summary.value > 0
+                        ? Colors.blue.shade50
+                        : Colors.green.shade50,
+                  ),
                   borderRadius: BorderRadius.circular(rs.r(16)),
                 ),
                 child: Text(
-                  'மொத்த நிலுவை: Rs.$pendingText',
+                  '${summary.labelText}: Rs.${_formatAmountText(summary.value)}',
                   style: TextStyle(
-                    color: colorScheme.secondary,
+                    color: colorScheme.onSurfaceVariant,
                     fontWeight: FontWeight.w700,
                     fontSize: rs.sp(11),
                     fontFamily: 'TamilArima2',
                   ),
                 ),
-              );
-            },
+              ),
+              trailing: FutureBuilder<int>(
+                future: countFuture,
+                builder: (context, snapshot) {
+                  final count = snapshot.data ?? 0;
+                  return Container(
+                    padding: EdgeInsets.symmetric(
+                        horizontal: rs.rw(12), vertical: rs.rh(6)),
+                    decoration: BoxDecoration(
+                      color: colorScheme.primary.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(rs.r(20)),
+                    ),
+                    child: Text(
+                      count.toString(),
+                      style: TextStyle(
+                        color: colorScheme.primary,
+                        fontWeight: FontWeight.bold,
+                        fontSize: rs.sp(12),
+                        fontFamily: "Lobster",
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
           ),
-          trailing: FutureBuilder<int>(
-            future: countFuture,
-            builder: (context, snapshot) {
-              final count = snapshot.data ?? 0;
-              return Container(
-                padding: EdgeInsets.symmetric(
-                    horizontal: rs.rw(12), vertical: rs.rh(6)),
-                decoration: BoxDecoration(
-                  color: colorScheme.primary.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(rs.r(20)),
-                ),
-                child: Text(
-                  count.toString(),
-                  style: TextStyle(
-                    color: colorScheme.primary,
-                    fontWeight: FontWeight.bold,
-                    fontSize: rs.sp(12),
-                    fontFamily: "Lobster",
-                  ),
-                ),
-              );
-            },
-          ),
-        ),
-      ),
+        );
+      },
     );
+  }
+}
+
+class _VillageAmountSummary {
+  final double pending;
+  final double balance;
+
+  const _VillageAmountSummary({required this.pending, required this.balance});
+  const _VillageAmountSummary.zero()
+      : pending = 0,
+        balance = 0;
+
+  bool get hasPending => pending > 0;
+  bool get hasBalance => balance > 0;
+
+  double get value {
+    if (hasPending) return pending;
+    if (hasBalance) return balance;
+    return 0;
+  }
+
+  String get labelText {
+    if (hasPending) return 'மொத்த நிலுவை';
+    if (hasBalance) return 'மொத்த கொடுமதி';
+    return 'மொத்த நிலுவை';
   }
 }

@@ -29,7 +29,7 @@ class _FilterVillageUserState extends State<FilterVillageUser> {
   bool searchVisible = false;
   ScrollController _controller = ScrollController();
   String counter = "0";
-  Future<double>? _pendingTotalFuture;
+  Future<_VillageAmountSummary>? _amountSummaryFuture;
   Widget pushMe = Image.asset(
     "assets/images/push.png",
     height: 50,
@@ -44,7 +44,7 @@ class _FilterVillageUserState extends State<FilterVillageUser> {
 
   @override
   void initState() {
-    _pendingTotalFuture = _fetchVillagePendingTotal();
+    _amountSummaryFuture = _fetchVillageAmountSummary();
     super.initState();
   }
 
@@ -269,17 +269,12 @@ class _FilterVillageUserState extends State<FilterVillageUser> {
   }
 
   Widget _buildVillagePendingCard() {
-    return FutureBuilder<double>(
-      future: _pendingTotalFuture,
+    return FutureBuilder<_VillageAmountSummary>(
+      future: _amountSummaryFuture,
       builder: (context, snapshot) {
-        if (!snapshot.hasData) {
-          return const SizedBox.shrink();
-        }
-        final totalPending = snapshot.data ?? 0;
-        if (totalPending <= 0) {
-          return const SizedBox.shrink();
-        }
-        final amountText = _formatAmountText(totalPending);
+        final summary = snapshot.data ?? const _VillageAmountSummary.zero();
+        final amountText = _formatAmountText(summary.value);
+        final colorScheme = Theme.of(context).colorScheme;
         return Card(
           elevation: 1.5,
           shape: RoundedRectangleBorder(
@@ -289,8 +284,8 @@ class _FilterVillageUserState extends State<FilterVillageUser> {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             child: Row(
               children: [
-                const Icon(Icons.account_balance_wallet_rounded,
-                    color: kPrimaryColor),
+                Icon(Icons.account_balance_wallet_rounded,
+                    color: colorScheme.onSurface),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Column(
@@ -305,9 +300,9 @@ class _FilterVillageUserState extends State<FilterVillageUser> {
                         ),
                       ),
                       const SizedBox(height: 2),
-                      const Text(
-                        'மொத்த நிலுவை',
-                        style: TextStyle(
+                      Text(
+                        summary.labelText,
+                        style: const TextStyle(
                           fontFamily: 'TamilArima2',
                           color: kIndigoDark,
                         ),
@@ -317,10 +312,10 @@ class _FilterVillageUserState extends State<FilterVillageUser> {
                 ),
                 Text(
                   'Rs.$amountText',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontFamily: 'TamilArima2',
                     fontWeight: FontWeight.w700,
-                    color: kPrimaryColor,
+                    color: colorScheme.onSurface,
                     fontSize: 16,
                   ),
                 ),
@@ -332,7 +327,7 @@ class _FilterVillageUserState extends State<FilterVillageUser> {
     );
   }
 
-  Future<double> _fetchVillagePendingTotal() async {
+  Future<_VillageAmountSummary> _fetchVillageAmountSummary() async {
     final firestore = FirebaseFirestore.instance;
     final ownerId = requireOwnerId();
     final normalized = widget.villageName.trim();
@@ -365,10 +360,11 @@ class _FilterVillageUserState extends State<FilterVillageUser> {
     }
 
     if (userIds.isEmpty) {
-      return 0;
+      return const _VillageAmountSummary.zero();
     }
 
     double totalPending = 0;
+    double totalBalance = 0;
     const chunkSize = 10;
     final ids = userIds.toList();
     for (var i = 0; i < ids.length; i += chunkSize) {
@@ -385,10 +381,14 @@ class _FilterVillageUserState extends State<FilterVillageUser> {
       for (final doc in paymentSnapshot.docs) {
         final data = doc.data();
         totalPending += _parseAmount(data['PENDING_AMOUNT']);
+        totalBalance += _parseAmount(data['BALANCE_AMOUNT']);
       }
     }
 
-    return totalPending;
+    return _VillageAmountSummary(
+      pending: totalPending,
+      balance: totalBalance,
+    );
   }
 
   double _parseAmount(dynamic value) {
@@ -448,5 +448,30 @@ class _FilterVillageUserState extends State<FilterVillageUser> {
         .collection(collectionName)
         .doc(userId)
         .delete();
+  }
+}
+
+class _VillageAmountSummary {
+  final double pending;
+  final double balance;
+
+  const _VillageAmountSummary({required this.pending, required this.balance});
+  const _VillageAmountSummary.zero()
+      : pending = 0,
+        balance = 0;
+
+  bool get hasPending => pending > 0;
+  bool get hasBalance => balance > 0;
+
+  double get value {
+    if (hasPending) return pending;
+    if (hasBalance) return balance;
+    return 0;
+  }
+
+  String get labelText {
+    if (hasPending) return 'மொத்த நிலுவை';
+    if (hasBalance) return 'மொத்த கொடுமதி';
+    return 'மொத்த நிலுவை';
   }
 }
