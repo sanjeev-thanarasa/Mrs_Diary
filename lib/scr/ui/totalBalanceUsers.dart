@@ -148,26 +148,140 @@ class _TotalBalanceUsersState extends State<TotalBalanceUsers> {
       List<QueryDocumentSnapshot<Object?>> paymentDocs) async {
     if (paymentDocs.isEmpty) return;
 
-    final ids = paymentDocs
-        .map((doc) => (doc.data() as Map<String, dynamic>)["USER_ID"])
-        .whereType<String>()
-        .toSet()
-        .toList();
-
-    final userMap = await _fetchUsersByIds(ids);
+    final List<String> orderedUserIds = [];
 
     for (final payment in paymentDocs) {
       final paymentData = payment.data() as Map<String, dynamic>;
       final userId = paymentData["USER_ID"];
-      if (userId is! String || _seenUserIds.contains(userId)) {
+      if (userId is! String) {
+        continue;
+      }
+      if (!orderedUserIds.contains(userId)) {
+        orderedUserIds.add(userId);
+      }
+    }
+
+    final userMap = await _fetchUsersByIds(orderedUserIds);
+    final balanceTotals = await _fetchBalanceTotalsByUserIds(orderedUserIds);
+
+    for (final userId in orderedUserIds) {
+      if (_seenUserIds.contains(userId)) {
         continue;
       }
       final userDoc = userMap[userId];
       if (userDoc != null) {
         _seenUserIds.add(userId);
-        _entries.add(_UserEntry(userDoc, "OldUser"));
+        _entries.add(_UserEntry(
+          userDoc,
+          balanceAmount: balanceTotals[userId] ?? 0,
+          collectionName: "OldUser",
+        ));
       }
     }
+  }
+
+  double _parseAmount(dynamic value) {
+    if (value == null) return 0;
+    if (value is num) return value.toDouble();
+    final text = value
+        .toString()
+        .replaceAll('Rs.', '')
+        .replaceAll('Rs', '')
+        .replaceAll(',', '')
+        .trim();
+    return double.tryParse(text) ?? 0;
+  }
+
+  String _formatAmountText(double value) {
+    if (value == value.roundToDouble()) {
+      return value.toInt().toString();
+    }
+    return value.toString();
+  }
+
+  Widget _buildBalanceTotalCard() {
+    return StreamBuilder<QuerySnapshot<Object?>>(
+      stream: paymentRecords
+          .where('ownerId', isEqualTo: requireOwnerId())
+          .where('BALANCE_AMOUNT', isNotEqualTo: '')
+          .orderBy('BALANCE_AMOUNT')
+          .snapshots(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return const SizedBox.shrink();
+        }
+
+        double totalBalance = 0;
+        for (final doc in snapshot.data!.docs) {
+          final data = doc.data() as Map<String, dynamic>;
+          totalBalance += _parseAmount(data['BALANCE_AMOUNT']);
+        }
+
+        final amountText = _formatAmountText(totalBalance);
+        return Card(
+          elevation: 1.5,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Row(
+              children: [
+                const Icon(Icons.account_balance_wallet_rounded,
+                    color: kPrimaryColor),
+                const SizedBox(width: 10),
+                const Expanded(
+                  child: Text(
+                    'மொத்த கொடுமதி',
+                    style: TextStyle(
+                      fontFamily: 'TamilArima',
+                      fontWeight: FontWeight.w700,
+                      color: kIndigoDark,
+                    ),
+                  ),
+                ),
+                Text(
+                  'Rs.$amountText',
+                  style: const TextStyle(
+                    fontFamily: 'TamilArima2',
+                    fontWeight: FontWeight.w700,
+                    color: kPrimaryColor,
+                    fontSize: 16,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<Map<String, double>> _fetchBalanceTotalsByUserIds(
+      List<String> ids) async {
+    final Map<String, double> totals = {};
+    if (ids.isEmpty) return totals;
+    final ownerId = requireOwnerId();
+    const chunkSize = 10;
+    for (var i = 0; i < ids.length; i += chunkSize) {
+      final chunk = ids.sublist(
+          i, i + chunkSize > ids.length ? ids.length : i + chunkSize);
+      final snapshot = await paymentRecords
+          .where('ownerId', isEqualTo: ownerId)
+          .where('USER_ID', whereIn: chunk)
+          .get();
+
+      for (final doc in snapshot.docs) {
+        final data = doc.data() as Map<String, dynamic>;
+        final userId = data['USER_ID'];
+        if (userId is! String) {
+          continue;
+        }
+        totals[userId] =
+            (totals[userId] ?? 0) + _parseAmount(data['BALANCE_AMOUNT']);
+      }
+    }
+    return totals;
   }
 
   Future<Map<String, QueryDocumentSnapshot<Object?>>> _fetchUsersByIds(
@@ -241,10 +355,20 @@ class _TotalBalanceUsersState extends State<TotalBalanceUsers> {
               ),
             ),
           ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+            child: _buildBalanceTotalCard(),
+          ),
           Expanded(
-            child: _isLoading || _isSearchLoading
-                ? const LoadingShimmerList()
-                : _buildList(),
+            child: RefreshIndicator(
+              onRefresh: _onPullRefresh,
+              child: _isLoading || _isSearchLoading
+                  ? ListView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      children: const [LoadingShimmerList()],
+                    )
+                  : _buildList(),
+            ),
           ),
         ],
       ),
@@ -259,6 +383,7 @@ class _TotalBalanceUsersState extends State<TotalBalanceUsers> {
 
     return ListView.builder(
       controller: _controller,
+      physics: const AlwaysScrollableScrollPhysics(),
       itemCount: showResults.length + (_isLoadingMore ? 1 : 0),
       itemBuilder: (_, index) {
         if (index >= showResults.length) {
@@ -267,7 +392,8 @@ class _TotalBalanceUsersState extends State<TotalBalanceUsers> {
             child: LoadingCircle(),
           );
         }
-        final data = showResults[index].user;
+        final entry = showResults[index];
+        final data = entry.user;
         return UserDetailsTile(
           name: data['name'],
           dishNumber: data['dishNumber'],
@@ -275,6 +401,8 @@ class _TotalBalanceUsersState extends State<TotalBalanceUsers> {
           villageName: data['area'],
           userId: data['id'] ?? data.id,
           collectionName: showResults[index].collectionName,
+          amountLabel: 'கொடுமதி',
+          amountValue: showResults[index].balanceAmount,
           onTap: () {
             changeScreenAnimated(
                 context,
@@ -304,6 +432,10 @@ class _TotalBalanceUsersState extends State<TotalBalanceUsers> {
         ),
       ],
     );
+  }
+
+  Future<void> _onPullRefresh() async {
+    await _fetchInitial();
   }
 
   void _handleRadioValueChange(int? value) {
@@ -395,7 +527,8 @@ class _TotalBalanceUsersState extends State<TotalBalanceUsers> {
 
 class _UserEntry {
   final QueryDocumentSnapshot<Object?> user;
+  final dynamic balanceAmount;
   final String collectionName;
 
-  _UserEntry(this.user, this.collectionName);
+  _UserEntry(this.user, {this.balanceAmount, required this.collectionName});
 }

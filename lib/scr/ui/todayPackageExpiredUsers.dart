@@ -266,9 +266,15 @@ class _TodayPackageExpiredUsersState extends State<TodayPackageExpiredUsers> {
             ),
           ),
           Expanded(
-            child: _isLoading || _isSearchLoading
-                ? const LoadingShimmerList()
-                : _buildList(),
+            child: RefreshIndicator(
+              onRefresh: _onPullRefresh,
+              child: _isLoading || _isSearchLoading
+                  ? ListView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      children: const [LoadingShimmerList()],
+                    )
+                  : _buildList(),
+            ),
           ),
         ],
       ),
@@ -283,6 +289,7 @@ class _TodayPackageExpiredUsersState extends State<TodayPackageExpiredUsers> {
 
     return ListView.builder(
       controller: _controller,
+      physics: const AlwaysScrollableScrollPhysics(),
       itemCount: showResults.length + (_isLoadingMore ? 1 : 0),
       itemBuilder: (_, index) {
         if (index >= showResults.length) {
@@ -329,6 +336,10 @@ class _TodayPackageExpiredUsersState extends State<TodayPackageExpiredUsers> {
         ),
       ],
     );
+  }
+
+  Future<void> _onPullRefresh() async {
+    await _fetchInitial();
   }
 
   void _handleRadioValueChange(int? value) {

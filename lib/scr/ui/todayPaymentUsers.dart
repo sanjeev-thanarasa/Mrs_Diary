@@ -260,10 +260,20 @@ class _TodayPaymentUsersState extends State<TodayPaymentUsers> {
               ),
             ),
           ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+            child: _buildTodayPendingTotalCard(),
+          ),
           Expanded(
-            child: _isLoading || _isSearchLoading
-                ? const LoadingShimmerList()
-                : _buildList(),
+            child: RefreshIndicator(
+              onRefresh: _onPullRefresh,
+              child: _isLoading || _isSearchLoading
+                  ? ListView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      children: const [LoadingShimmerList()],
+                    )
+                  : _buildList(),
+            ),
           ),
         ],
       ),
@@ -278,6 +288,7 @@ class _TodayPaymentUsersState extends State<TodayPaymentUsers> {
 
     return ListView.builder(
       controller: _controller,
+      physics: const AlwaysScrollableScrollPhysics(),
       itemCount: showResults.length + (_isLoadingMore ? 1 : 0),
       itemBuilder: (_, index) {
         if (index >= showResults.length) {
@@ -311,6 +322,84 @@ class _TodayPaymentUsersState extends State<TodayPaymentUsers> {
     );
   }
 
+  double _parseAmount(dynamic value) {
+    if (value == null) return 0;
+    if (value is num) return value.toDouble();
+    final text = value
+        .toString()
+        .replaceAll('Rs.', '')
+        .replaceAll('Rs', '')
+        .replaceAll(',', '')
+        .trim();
+    return double.tryParse(text) ?? 0;
+  }
+
+  String _formatAmountText(double value) {
+    if (value == value.roundToDouble()) {
+      return value.toInt().toString();
+    }
+    return value.toString();
+  }
+
+  Widget _buildTodayPendingTotalCard() {
+    return StreamBuilder<QuerySnapshot<Object?>>(
+      stream: paymentRecords
+          .where('ownerId', isEqualTo: requireOwnerId())
+          .where('PENDING_DATE', isGreaterThanOrEqualTo: _dateTodayStart)
+          .where('PENDING_DATE', isLessThanOrEqualTo: _dateTodayEnd)
+          .orderBy('PENDING_DATE')
+          .snapshots(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return const SizedBox.shrink();
+        }
+
+        double totalPending = 0;
+        for (final doc in snapshot.data!.docs) {
+          final data = doc.data() as Map<String, dynamic>;
+          totalPending += _parseAmount(data['PENDING_AMOUNT']);
+        }
+
+        final amountText = _formatAmountText(totalPending);
+        return Card(
+          elevation: 1.5,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Row(
+              children: [
+                const Icon(Icons.account_balance_wallet_rounded,
+                    color: kPrimaryColor),
+                const SizedBox(width: 10),
+                const Expanded(
+                  child: Text(
+                    'இன்று பெற வேண்டிய தொகை',
+                    style: TextStyle(
+                      fontFamily: 'TamilArima',
+                      fontWeight: FontWeight.w700,
+                      color: kIndigoDark,
+                    ),
+                  ),
+                ),
+                Text(
+                  'Rs.$amountText',
+                  style: const TextStyle(
+                    fontFamily: 'TamilArima2',
+                    fontWeight: FontWeight.w700,
+                    color: kPrimaryColor,
+                    fontSize: 16,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   Widget _buildRadio({required int value, required String name}) {
     return Row(
       children: [
@@ -327,6 +416,10 @@ class _TodayPaymentUsersState extends State<TodayPaymentUsers> {
         ),
       ],
     );
+  }
+
+  Future<void> _onPullRefresh() async {
+    await _fetchInitial();
   }
 
   void _handleRadioValueChange(int? value) {

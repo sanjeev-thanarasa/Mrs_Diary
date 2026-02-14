@@ -148,18 +148,24 @@ class _TotalPendingUsersState extends State<TotalPendingUsers> {
       List<QueryDocumentSnapshot<Object?>> paymentDocs) async {
     if (paymentDocs.isEmpty) return;
 
-    final ids = paymentDocs
-        .map((doc) => (doc.data() as Map<String, dynamic>)["USER_ID"])
-        .whereType<String>()
-        .toSet()
-        .toList();
-
-    final userMap = await _fetchUsersByIds(ids);
+    final List<String> orderedUserIds = [];
 
     for (final payment in paymentDocs) {
       final paymentData = payment.data() as Map<String, dynamic>;
       final userId = paymentData["USER_ID"];
-      if (userId is! String || _seenUserIds.contains(userId)) {
+      if (userId is! String) {
+        continue;
+      }
+      if (!orderedUserIds.contains(userId)) {
+        orderedUserIds.add(userId);
+      }
+    }
+
+    final userMap = await _fetchUsersByIds(orderedUserIds);
+    final pendingTotals = await _fetchPendingTotalsByUserIds(orderedUserIds);
+
+    for (final userId in orderedUserIds) {
+      if (_seenUserIds.contains(userId)) {
         continue;
       }
       final userDoc = userMap[userId];
@@ -167,11 +173,115 @@ class _TotalPendingUsersState extends State<TotalPendingUsers> {
         _seenUserIds.add(userId);
         _entries.add(_UserEntry(
           userDoc,
-          pendingAmount: paymentData["PENDING_AMOUNT"],
+          pendingAmount: pendingTotals[userId] ?? 0,
           collectionName: "OldUser",
         ));
       }
     }
+  }
+
+  double _parseAmount(dynamic value) {
+    if (value == null) return 0;
+    if (value is num) return value.toDouble();
+    final text = value
+        .toString()
+        .replaceAll('Rs.', '')
+        .replaceAll('Rs', '')
+        .replaceAll(',', '')
+        .trim();
+    return double.tryParse(text) ?? 0;
+  }
+
+  String _formatAmountText(double value) {
+    if (value == value.roundToDouble()) {
+      return value.toInt().toString();
+    }
+    return value.toString();
+  }
+
+  Widget _buildPendingTotalCard() {
+    return StreamBuilder<QuerySnapshot<Object?>>(
+      stream: paymentRecords
+          .where('ownerId', isEqualTo: requireOwnerId())
+          .where('PENDING_AMOUNT', isNotEqualTo: '')
+          .orderBy('PENDING_AMOUNT')
+          .snapshots(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return const SizedBox.shrink();
+        }
+
+        double totalPending = 0;
+        for (final doc in snapshot.data!.docs) {
+          final data = doc.data() as Map<String, dynamic>;
+          totalPending += _parseAmount(data['PENDING_AMOUNT']);
+        }
+
+        final amountText = _formatAmountText(totalPending);
+        return Card(
+          elevation: 1.5,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Row(
+              children: [
+                const Icon(Icons.account_balance_wallet_rounded,
+                    color: kPrimaryColor),
+                const SizedBox(width: 10),
+                const Expanded(
+                  child: Text(
+                    'மொத்த நிலுவை',
+                    style: TextStyle(
+                      fontFamily: 'TamilArima',
+                      fontWeight: FontWeight.w700,
+                      color: kIndigoDark,
+                    ),
+                  ),
+                ),
+                Text(
+                  'Rs.$amountText',
+                  style: const TextStyle(
+                    fontFamily: 'TamilArima2',
+                    fontWeight: FontWeight.w700,
+                    color: kPrimaryColor,
+                    fontSize: 16,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<Map<String, double>> _fetchPendingTotalsByUserIds(
+      List<String> ids) async {
+    final Map<String, double> totals = {};
+    if (ids.isEmpty) return totals;
+    final ownerId = requireOwnerId();
+    const chunkSize = 10;
+    for (var i = 0; i < ids.length; i += chunkSize) {
+      final chunk = ids.sublist(
+          i, i + chunkSize > ids.length ? ids.length : i + chunkSize);
+      final snapshot = await paymentRecords
+          .where('ownerId', isEqualTo: ownerId)
+          .where('USER_ID', whereIn: chunk)
+          .get();
+
+      for (final doc in snapshot.docs) {
+        final data = doc.data() as Map<String, dynamic>;
+        final userId = data['USER_ID'];
+        if (userId is! String) {
+          continue;
+        }
+        totals[userId] =
+            (totals[userId] ?? 0) + _parseAmount(data['PENDING_AMOUNT']);
+      }
+    }
+    return totals;
   }
 
   Future<Map<String, QueryDocumentSnapshot<Object?>>> _fetchUsersByIds(
@@ -245,10 +355,20 @@ class _TotalPendingUsersState extends State<TotalPendingUsers> {
               ),
             ),
           ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+            child: _buildPendingTotalCard(),
+          ),
           Expanded(
-            child: _isLoading || _isSearchLoading
-                ? const LoadingShimmerList()
-                : _buildList(),
+            child: RefreshIndicator(
+              onRefresh: _onPullRefresh,
+              child: _isLoading || _isSearchLoading
+                  ? ListView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      children: const [LoadingShimmerList()],
+                    )
+                  : _buildList(),
+            ),
           ),
         ],
       ),
@@ -263,6 +383,7 @@ class _TotalPendingUsersState extends State<TotalPendingUsers> {
 
     return ListView.builder(
       controller: _controller,
+      physics: const AlwaysScrollableScrollPhysics(),
       itemCount: showResults.length + (_isLoadingMore ? 1 : 0),
       itemBuilder: (_, index) {
         if (index >= showResults.length) {
@@ -312,6 +433,10 @@ class _TotalPendingUsersState extends State<TotalPendingUsers> {
         ),
       ],
     );
+  }
+
+  Future<void> _onPullRefresh() async {
+    await _fetchInitial();
   }
 
   void _handleRadioValueChange(int? value) {

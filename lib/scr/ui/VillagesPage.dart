@@ -1,7 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
-import 'package:intl/intl.dart';
 import 'package:mrs_dth_diary_v1/scr/helpers/owner_service.dart';
 import 'package:mrs_dth_diary_v1/scr/helpers/operations.dart';
 import 'package:mrs_dth_diary_v1/scr/providers/village.dart';
@@ -10,6 +9,7 @@ import 'package:mrs_dth_diary_v1/scr/widgets/CAppBar.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/CustomStreamBuilder.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/ShowPopUpAlertBox.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/noResultFound.dart';
+import 'package:mrs_dth_diary_v1/scr/widgets/subHelpers/responsive.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/subHelpers/screen_navigation.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/subHelpers/styles.dart';
 import 'package:provider/provider.dart';
@@ -25,6 +25,7 @@ class _VillagesListState extends State<VillagesList> {
   late final CollectionReference collectionReference;
   String searchText = '';
   final Map<String, Future<int>> _countFutureCache = {};
+  final Map<String, Future<double>> _pendingFutureCache = {};
 
   @override
   void dispose() {
@@ -48,6 +49,17 @@ class _VillagesListState extends State<VillagesList> {
     return future;
   }
 
+  Future<double> _loadVillagePendingTotal(String villageName) {
+    final key = villageName.trim().toLowerCase();
+    if (_pendingFutureCache.containsKey(key)) {
+      return _pendingFutureCache[key]!;
+    }
+
+    final future = _fetchVillagePendingTotal(villageName);
+    _pendingFutureCache[key] = future;
+    return future;
+  }
+
   Future<int> _fetchVillageUserCount(String villageName) async {
     final firestore = FirebaseFirestore.instance;
     final ownerId = requireOwnerId();
@@ -65,6 +77,77 @@ class _VillagesListState extends State<VillagesList> {
         .get();
 
     return (oldUserCount.count ?? 0) + (newUserCount.count ?? 0);
+  }
+
+  Future<double> _fetchVillagePendingTotal(String villageName) async {
+    final firestore = FirebaseFirestore.instance;
+    final ownerId = requireOwnerId();
+    final normalized = villageName.trim();
+
+    final oldSnapshot = await firestore
+        .collection('OldUser')
+        .where('ownerId', isEqualTo: ownerId)
+        .where('area', isEqualTo: normalized)
+        .get();
+    final newSnapshot = await firestore
+        .collection('NewUser')
+        .where('ownerId', isEqualTo: ownerId)
+        .where('area', isEqualTo: normalized)
+        .get();
+
+    final userIds = <String>{};
+    for (final doc in oldSnapshot.docs) {
+      final data = doc.data();
+      final id = data['id'] ?? doc.id;
+      if (id is String && id.trim().isNotEmpty) {
+        userIds.add(id);
+      }
+    }
+    for (final doc in newSnapshot.docs) {
+      final data = doc.data();
+      final id = data['id'] ?? doc.id;
+      if (id is String && id.trim().isNotEmpty) {
+        userIds.add(id);
+      }
+    }
+
+    if (userIds.isEmpty) {
+      return 0;
+    }
+
+    double totalPending = 0;
+    const chunkSize = 10;
+    final ids = userIds.toList();
+    for (var i = 0; i < ids.length; i += chunkSize) {
+      final chunk = ids.sublist(
+        i,
+        i + chunkSize > ids.length ? ids.length : i + chunkSize,
+      );
+      final paymentSnapshot = await firestore
+          .collection('PaymentRecords')
+          .where('ownerId', isEqualTo: ownerId)
+          .where('USER_ID', whereIn: chunk)
+          .get();
+
+      for (final doc in paymentSnapshot.docs) {
+        final data = doc.data();
+        totalPending += _parseAmount(data['PENDING_AMOUNT']);
+      }
+    }
+
+    return totalPending;
+  }
+
+  double _parseAmount(dynamic value) {
+    if (value == null) return 0;
+    if (value is num) return value.toDouble();
+    final text = value
+        .toString()
+        .replaceAll('Rs.', '')
+        .replaceAll('Rs', '')
+        .replaceAll(',', '')
+        .trim();
+    return double.tryParse(text) ?? 0;
   }
 
   Future<void> _confirmDelete(String villageId, String villageName) async {
@@ -258,6 +341,8 @@ class _VillagesListState extends State<VillagesList> {
 
                 _countFutureCache.remove(currentName.trim().toLowerCase());
                 _countFutureCache.remove(name.trim().toLowerCase());
+                _pendingFutureCache.remove(currentName.trim().toLowerCase());
+                _pendingFutureCache.remove(name.trim().toLowerCase());
               }
               if (mounted) {
                 Navigator.pop(context);
@@ -323,6 +408,7 @@ class _VillagesListState extends State<VillagesList> {
   @override
   Widget build(BuildContext context) {
     final villageProvider = Provider.of<VillageProvider>(context);
+    final rs = context.rs;
     return Scaffold(
       backgroundColor: Colors.white.withValues(alpha: .9),
       appBar: CustomAppBar(
@@ -330,11 +416,11 @@ class _VillagesListState extends State<VillagesList> {
         trailing: InkWell(
           onTap: () => _showCreateVillageDialog(villageProvider),
           child: Container(
-            height: 36,
-            width: 36,
+            height: rs.r(36),
+            width: rs.r(36),
             decoration: BoxDecoration(
               color: kPrimaryColor,
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(rs.r(10)),
             ),
             child: const Center(
               child: Icon(
@@ -349,61 +435,69 @@ class _VillagesListState extends State<VillagesList> {
         onChanged: (text) => setState(() => searchText = text.trim()),
         hintText: "கிராமங்கள்",
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            SizedBox(
-              height: 15.0,
-            ),
-            CustomStreamBuilder(
-              context: context,
-              stream: collectionReference
-                  .where('ownerId', isEqualTo: requireOwnerId())
-                  .snapshots() as Stream<QuerySnapshot<Map<String, dynamic>>>,
-              body: (snap) {
-                final docs = snap.data?.docs ?? [];
-                final query = searchText.trim().toLowerCase();
-                final filtered = query.isEmpty
-                    ? docs
-                    : docs.where((doc) {
-                        final name =
-                            (doc.data()["name"] ?? "").toString().toLowerCase();
-                        return name.contains(query);
-                      }).toList();
+      body: RefreshIndicator(
+        onRefresh: _onPullRefresh,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: Column(
+            children: [
+              SizedBox(
+                height: rs.rh(15),
+              ),
+              CustomStreamBuilder(
+                context: context,
+                stream: collectionReference
+                    .where('ownerId', isEqualTo: requireOwnerId())
+                    .snapshots() as Stream<QuerySnapshot<Map<String, dynamic>>>,
+                body: (snap) {
+                  final docs = snap.data?.docs ?? [];
+                  final query = searchText.trim().toLowerCase();
+                  final filtered = query.isEmpty
+                      ? docs
+                      : docs.where((doc) {
+                          final name = (doc.data()["name"] ?? "")
+                              .toString()
+                              .toLowerCase();
+                          return name.contains(query);
+                        }).toList();
 
-                return filtered.isNotEmpty
-                    ? ListView.separated(
-                        scrollDirection: Axis.vertical,
-                        controller: _controller,
-                        shrinkWrap: true,
-                        itemCount: filtered.length,
-                        separatorBuilder: (_, __) => const SizedBox(height: 8),
-                        itemBuilder: (_, index) {
-                          final data = filtered[index];
-                          final villageName = data["name"] ?? "";
-                          final villageId = data.id;
-                          return _VillageTile(
-                            villageId: villageId,
-                            villageName: villageName,
-                            createdAt: data["createAt"],
-                            onTap: () => changeScreenAnimated(
-                              context,
-                              FilterVillageUser(villageName: villageName),
-                            ),
-                            onEdit: () => _showEditDialog(
+                  return filtered.isNotEmpty
+                      ? ListView.separated(
+                          scrollDirection: Axis.vertical,
+                          controller: _controller,
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: filtered.length,
+                          separatorBuilder: (_, __) =>
+                              SizedBox(height: rs.rh(8)),
+                          itemBuilder: (_, index) {
+                            final data = filtered[index];
+                            final villageName = data["name"] ?? "";
+                            final villageId = data.id;
+                            return _VillageTile(
                               villageId: villageId,
-                              currentName: villageName,
-                            ),
-                            onDelete: () =>
-                                _confirmDelete(villageId, villageName),
-                            countFuture: _loadVillageUserCount(villageName),
-                          );
-                        },
-                      )
-                    : SearchNoData();
-              },
-            )
-          ],
+                              villageName: villageName,
+                              onTap: () => changeScreenAnimated(
+                                context,
+                                FilterVillageUser(villageName: villageName),
+                              ),
+                              onEdit: () => _showEditDialog(
+                                villageId: villageId,
+                                currentName: villageName,
+                              ),
+                              onDelete: () =>
+                                  _confirmDelete(villageId, villageName),
+                              countFuture: _loadVillageUserCount(villageName),
+                              pendingFuture:
+                                  _loadVillagePendingTotal(villageName),
+                            );
+                          },
+                        )
+                      : SearchNoData();
+                },
+              )
+            ],
+          ),
         ),
       ),
       floatingActionButton: null,
@@ -485,33 +579,45 @@ class _VillagesListState extends State<VillagesList> {
       SnackBar(content: Text(message), behavior: SnackBarBehavior.floating),
     );
   }
+
+  Future<void> _onPullRefresh() async {
+    _countFutureCache.clear();
+    _pendingFutureCache.clear();
+    if (!mounted) return;
+    setState(() {});
+  }
 }
 
 class _VillageTile extends StatelessWidget {
   final String villageId;
   final String villageName;
-  final dynamic createdAt;
   final VoidCallback onTap;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
   final Future<int> countFuture;
+  final Future<double> pendingFuture;
 
   const _VillageTile({
     required this.villageId,
     required this.villageName,
-    required this.createdAt,
     required this.onTap,
     required this.onEdit,
     required this.onDelete,
     required this.countFuture,
+    required this.pendingFuture,
   });
+
+  String _formatAmountText(double value) {
+    if (value == value.roundToDouble()) {
+      return value.toInt().toString();
+    }
+    return value.toString();
+  }
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final createdText = createdAt != null
-        ? DateFormat.yMMMd().add_jm().format(createdAt.toDate()).toString()
-        : '';
+    final rs = context.rs;
 
     return Slidable(
       endActionPane: ActionPane(
@@ -525,10 +631,11 @@ class _VillageTile extends StatelessWidget {
             icon: Icons.edit_rounded,
             label: 'Edit',
             borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(14),
-              bottomLeft: Radius.circular(14),
+              topLeft: Radius.circular(rs.r(14)),
+              bottomLeft: Radius.circular(rs.r(14)),
             ),
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            padding:
+                EdgeInsets.symmetric(horizontal: rs.rw(12), vertical: rs.rh(8)),
           ),
           SlidableAction(
             onPressed: (_) => onDelete(),
@@ -536,51 +643,71 @@ class _VillageTile extends StatelessWidget {
             foregroundColor: Colors.white,
             icon: Icons.delete_rounded,
             label: 'Delete',
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            padding:
+                EdgeInsets.symmetric(horizontal: rs.rw(12), vertical: rs.rh(8)),
           ),
         ],
       ),
       child: Card(
         elevation: 2,
-        margin: const EdgeInsets.symmetric(horizontal: 16),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        margin: EdgeInsets.symmetric(horizontal: rs.rw(16)),
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(rs.r(16))),
         child: ListTile(
           onTap: onTap,
           title: Text(
             villageName,
             style: TextStyle(
-              fontSize: 16,
+              fontSize: rs.sp(16),
               color: colorScheme.onSurface,
               fontFamily: "TamilArima",
             ),
           ),
-          subtitle: createdText.isNotEmpty
-              ? Text(
-                  createdText,
+          subtitle: FutureBuilder<double>(
+            future: pendingFuture,
+            builder: (context, pendingSnapshot) {
+              final pending = pendingSnapshot.data ?? 0;
+              if (pending <= 0) {
+                return const SizedBox.shrink();
+              }
+              final pendingText = _formatAmountText(pending);
+              return Container(
+                margin: EdgeInsets.only(top: rs.rh(6)),
+                padding: EdgeInsets.symmetric(
+                    horizontal: rs.rw(10), vertical: rs.rh(4)),
+                decoration: BoxDecoration(
+                  color: colorScheme.secondary.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(rs.r(16)),
+                ),
+                child: Text(
+                  'மொத்த நிலுவை: Rs.$pendingText',
                   style: TextStyle(
-                    fontSize: 12,
-                    color: colorScheme.onSurfaceVariant,
-                    fontFamily: "TamilArima2",
+                    color: colorScheme.secondary,
+                    fontWeight: FontWeight.w700,
+                    fontSize: rs.sp(11),
+                    fontFamily: 'TamilArima2',
                   ),
-                )
-              : null,
+                ),
+              );
+            },
+          ),
           trailing: FutureBuilder<int>(
             future: countFuture,
             builder: (context, snapshot) {
               final count = snapshot.data ?? 0;
               return Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: EdgeInsets.symmetric(
+                    horizontal: rs.rw(12), vertical: rs.rh(6)),
                 decoration: BoxDecoration(
                   color: colorScheme.primary.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(rs.r(20)),
                 ),
                 child: Text(
                   count.toString(),
                   style: TextStyle(
                     color: colorScheme.primary,
                     fontWeight: FontWeight.bold,
-                    fontSize: 12,
+                    fontSize: rs.sp(12),
                     fontFamily: "Lobster",
                   ),
                 ),

@@ -29,6 +29,7 @@ class _FilterVillageUserState extends State<FilterVillageUser> {
   bool searchVisible = false;
   ScrollController _controller = ScrollController();
   String counter = "0";
+  Future<double>? _pendingTotalFuture;
   Widget pushMe = Image.asset(
     "assets/images/push.png",
     height: 50,
@@ -43,6 +44,7 @@ class _FilterVillageUserState extends State<FilterVillageUser> {
 
   @override
   void initState() {
+    _pendingTotalFuture = _fetchVillagePendingTotal();
     super.initState();
   }
 
@@ -65,6 +67,10 @@ class _FilterVillageUserState extends State<FilterVillageUser> {
       body: SingleChildScrollView(
         child: Column(
           children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+              child: _buildVillagePendingCard(),
+            ),
             Visibility(
               visible: searchVisible,
               child: Expanded(
@@ -260,6 +266,148 @@ class _FilterVillageUserState extends State<FilterVillageUser> {
         .where('ownerId', isEqualTo: requireOwnerId())
         .where('area', isEqualTo: widget.villageName.trim())
         .snapshots();
+  }
+
+  Widget _buildVillagePendingCard() {
+    return FutureBuilder<double>(
+      future: _pendingTotalFuture,
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return const SizedBox.shrink();
+        }
+        final totalPending = snapshot.data ?? 0;
+        if (totalPending <= 0) {
+          return const SizedBox.shrink();
+        }
+        final amountText = _formatAmountText(totalPending);
+        return Card(
+          elevation: 1.5,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Row(
+              children: [
+                const Icon(Icons.account_balance_wallet_rounded,
+                    color: kPrimaryColor),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        widget.villageName,
+                        style: const TextStyle(
+                          fontFamily: 'TamilArima',
+                          fontWeight: FontWeight.w700,
+                          color: kIndigoDark,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      const Text(
+                        'மொத்த நிலுவை',
+                        style: TextStyle(
+                          fontFamily: 'TamilArima2',
+                          color: kIndigoDark,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Text(
+                  'Rs.$amountText',
+                  style: const TextStyle(
+                    fontFamily: 'TamilArima2',
+                    fontWeight: FontWeight.w700,
+                    color: kPrimaryColor,
+                    fontSize: 16,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<double> _fetchVillagePendingTotal() async {
+    final firestore = FirebaseFirestore.instance;
+    final ownerId = requireOwnerId();
+    final normalized = widget.villageName.trim();
+
+    final oldSnapshot = await firestore
+        .collection('OldUser')
+        .where('ownerId', isEqualTo: ownerId)
+        .where('area', isEqualTo: normalized)
+        .get();
+    final newSnapshot = await firestore
+        .collection('NewUser')
+        .where('ownerId', isEqualTo: ownerId)
+        .where('area', isEqualTo: normalized)
+        .get();
+
+    final userIds = <String>{};
+    for (final doc in oldSnapshot.docs) {
+      final data = doc.data();
+      final id = data['id'] ?? doc.id;
+      if (id is String && id.trim().isNotEmpty) {
+        userIds.add(id);
+      }
+    }
+    for (final doc in newSnapshot.docs) {
+      final data = doc.data();
+      final id = data['id'] ?? doc.id;
+      if (id is String && id.trim().isNotEmpty) {
+        userIds.add(id);
+      }
+    }
+
+    if (userIds.isEmpty) {
+      return 0;
+    }
+
+    double totalPending = 0;
+    const chunkSize = 10;
+    final ids = userIds.toList();
+    for (var i = 0; i < ids.length; i += chunkSize) {
+      final chunk = ids.sublist(
+        i,
+        i + chunkSize > ids.length ? ids.length : i + chunkSize,
+      );
+      final paymentSnapshot = await firestore
+          .collection('PaymentRecords')
+          .where('ownerId', isEqualTo: ownerId)
+          .where('USER_ID', whereIn: chunk)
+          .get();
+
+      for (final doc in paymentSnapshot.docs) {
+        final data = doc.data();
+        totalPending += _parseAmount(data['PENDING_AMOUNT']);
+      }
+    }
+
+    return totalPending;
+  }
+
+  double _parseAmount(dynamic value) {
+    if (value == null) return 0;
+    if (value is num) return value.toDouble();
+    final text = value
+        .toString()
+        .replaceAll('Rs.', '')
+        .replaceAll('Rs', '')
+        .replaceAll(',', '')
+        .trim();
+    return double.tryParse(text) ?? 0;
+  }
+
+  String _formatAmountText(double value) {
+    if (value == value.roundToDouble()) {
+      return value.toInt().toString();
+    }
+    return value.toString();
   }
 
   Future<void> _confirmDelete(
