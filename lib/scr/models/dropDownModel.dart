@@ -1,4 +1,3 @@
-
 class DropListModel {
   DropListModel(this.listOptionItems);
 
@@ -12,12 +11,7 @@ class OptionItem {
 }
 
 DropListModel dishDropListModel = DropListModel([
-  OptionItem(name: 'sun'),
-  OptionItem(name: 'dish tv'),
-  OptionItem(name: 'videocon'),
-  OptionItem(name: 'airtel'),
-  OptionItem(name: 'dialog'),
-  OptionItem(name: 'tata sky')
+  // Dish types are loaded from Firestore.
 ]);
 
 OptionItem optionDishSelected = OptionItem(name: "Select Dish Type");

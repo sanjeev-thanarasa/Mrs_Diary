@@ -88,6 +88,7 @@ class _EditUserDetailState extends State<EditUserDetail> {
   @override
   void initState() {
     _uSerServices.getVillageName();
+    _uSerServices.getDishTypes();
     if (widget.data != null && widget.index != null) {
       editInitialize();
     } else {

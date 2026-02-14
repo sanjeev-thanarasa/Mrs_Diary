@@ -16,6 +16,7 @@ class CustomTextField extends StatefulWidget {
   final TextStyle? textStyle;
   final Color? leadingIconColor;
   final Color? hintTextColor;
+  final bool showLeadingIcon;
 
   const CustomTextField({
     super.key,
@@ -32,6 +33,7 @@ class CustomTextField extends StatefulWidget {
     this.textStyle,
     this.leadingIconColor,
     this.hintTextColor,
+    this.showLeadingIcon = true,
   });
 
   @override
@@ -46,47 +48,49 @@ class _CustomTextFieldState extends State<CustomTextField> {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(rs.r(12.0)),
-        border: Border.all(color: accent.withValues(alpha: 0.35), width: 1.0),
+        borderRadius: BorderRadius.circular(rs.r(14.0)),
+        border: Border.all(color: accent.withValues(alpha: 0.22), width: 1.0),
         boxShadow: [
           BoxShadow(
-            blurRadius: rs.r(10),
-            color: Colors.black.withValues(alpha: 0.04),
-            offset: Offset(0, rs.rh(6)),
+            blurRadius: rs.r(12),
+            color: Colors.black.withValues(alpha: 0.05),
+            offset: Offset(0, rs.rh(8)),
           )
         ],
       ),
       margin: EdgeInsets.symmetric(vertical: rs.rh(6.0)),
       padding: EdgeInsets.symmetric(
         horizontal: rs.rw(12.0),
-        vertical: rs.rh(2.0),
+        vertical: rs.rh(4.0),
       ),
       child: Row(
         children: <Widget>[
-          Container(
-            width: rs.r(36),
-            height: rs.r(36),
-            decoration: BoxDecoration(
-              color: accent.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(rs.r(10)),
+          if (widget.showLeadingIcon) ...[
+            Container(
+              width: rs.r(34),
+              height: rs.r(34),
+              decoration: BoxDecoration(
+                color: accent.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(rs.r(10)),
+              ),
+              child: Center(
+                child: widget.image != null
+                    ? Image(
+                        image: AssetImage(widget.image!),
+                        fit: BoxFit.cover,
+                        height: rs.r(18),
+                        width: rs.r(18),
+                        color: accent,
+                      )
+                    : Icon(
+                        widget.icon ?? Icons.text_fields,
+                        color: accent,
+                        size: rs.r(18),
+                      ),
+              ),
             ),
-            child: Center(
-              child: widget.image != null
-                  ? Image(
-                      image: AssetImage(widget.image!),
-                      fit: BoxFit.cover,
-                      height: rs.r(20),
-                      width: rs.r(20),
-                      color: accent,
-                    )
-                  : Icon(
-                      widget.icon ?? Icons.text_fields,
-                      color: accent,
-                      size: rs.r(20),
-                    ),
-            ),
-          ),
-          SizedBox(width: rs.rw(10)),
+            SizedBox(width: rs.rw(10)),
+          ],
           Expanded(
             child: TextField(
               keyboardType: widget.keyboardType,
@@ -103,6 +107,7 @@ class _CustomTextFieldState extends State<CustomTextField> {
                 border: InputBorder.none,
                 hintText: widget.hintText,
                 alignLabelWithHint: true,
+                isDense: true,
                 hintStyle: widget.textStyle ??
                     TextStyle(
                       color: widget.hintTextColor ?? Colors.black45,

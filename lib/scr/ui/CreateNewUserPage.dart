@@ -42,6 +42,7 @@ class _CreateNewUserState extends State<CreateNewUser> {
   void initState() {
     super.initState();
     _uSerServices.getVillageName();
+    _uSerServices.getDishTypes();
   }
 
   @override
@@ -65,32 +66,225 @@ class _CreateNewUserState extends State<CreateNewUser> {
         iconTheme: const IconThemeData(color: Colors.black),
       ),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: EdgeInsets.only(bottom: rs.rh(16)),
-          child: Column(
-            children: [
+        child: ListView(
+          padding: EdgeInsets.only(
+            left: rs.rw(16),
+            right: rs.rw(16),
+            top: rs.rh(12),
+            bottom: rs.rh(24),
+          ),
+          children: [
+            _buildHeaderCard(),
+            SizedBox(height: rs.rh(12)),
+            _buildUserTypeToggle(),
+            SizedBox(height: rs.rh(12)),
+            _buildSectionCard(
+              title: 'Basic details',
+              icon: Icons.badge_outlined,
+              child: Column(
+                children: [
+                  CustomTextField(
+                    controller: _uSerServices.nameController,
+                    hintText: "பெயர்",
+                    leadingIconColor: kBlueColor,
+                    hintTextColor: const Color(0xFF4A6572),
+                    icon: Icons.person,
+                    showLeadingIcon: false,
+                    keyboardType: TextInputType.text,
+                  ),
+                  CustomTextField(
+                    controller: _uSerServices.addressController,
+                    hintText: "விலாசம்",
+                    leadingIconColor: kBlueColor,
+                    hintTextColor: const Color(0xFF4A6572),
+                    icon: Icons.home,
+                    showLeadingIcon: false,
+                    keyboardType: TextInputType.text,
+                  ),
+                  SelectDropList(
+                    itemSelected: _uSerServices.selectedArea,
+                    dropListModel: villageDropListModel,
+                    onOptionSelected: (optionItem) {
+                      setState(() => _uSerServices.selectedArea = optionItem);
+                    },
+                    image: 'assets/images/dish.png',
+                    iconColor: kBlueColor,
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(height: rs.rh(12)),
+            _buildSectionCard(
+              title: 'Contact',
+              icon: Icons.call_rounded,
+              child: Column(
+                children: [
+                  CustomTextField(
+                    controller: _uSerServices.mobileController,
+                    hintText: "தொலைபேசி இலக்கம்",
+                    leadingIconColor: kBlueColor,
+                    hintTextColor: const Color(0xFF4A6572),
+                    icon: Icons.phone,
+                    showLeadingIcon: false,
+                    keyboardType: TextInputType.number,
+                  ),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: TextButton.icon(
+                      onPressed: () => setState(() => mNoVisible = !mNoVisible),
+                      icon: Icon(
+                        mNoVisible
+                            ? Icons.remove_circle_outline_rounded
+                            : Icons.add_circle_outline_rounded,
+                        size: rs.r(18),
+                        color: kPrimaryColor,
+                      ),
+                      label: Text(
+                        mNoVisible
+                            ? 'Remove alternate number'
+                            : 'Add alternate number',
+                        style: TextStyle(
+                          fontFamily: 'TamilArima2',
+                          fontSize: rs.sp(12.5),
+                          fontWeight: FontWeight.w600,
+                          color: kPrimaryColor,
+                        ),
+                      ),
+                      style: TextButton.styleFrom(
+                        padding: EdgeInsets.zero,
+                        visualDensity: VisualDensity.compact,
+                      ),
+                    ),
+                  ),
+                  AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 220),
+                    child: mNoVisible
+                        ? CustomTextField(
+                            key: const ValueKey('alt-mobile'),
+                            leadingIconColor: kBlueColor,
+                            hintTextColor: const Color(0xFF4A6572),
+                            controller: _uSerServices.mobileController1,
+                            hintText: "தொலைபேசி இலக்கம்",
+                            icon: Icons.phone,
+                            showLeadingIcon: false,
+                            keyboardType: TextInputType.number,
+                          )
+                        : const SizedBox.shrink(),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(height: rs.rh(12)),
+            _buildSectionCard(
+              title: 'Dish info',
+              icon: Icons.tv_rounded,
+              child: Column(
+                children: [
+                  CustomTextField(
+                    leadingIconColor: kBlueColor,
+                    hintTextColor: const Color(0xFF4A6572),
+                    controller: _uSerServices.dishNumberController,
+                    hintText: "Dish இலக்கம்",
+                    image: 'assets/images/dish.png',
+                    showLeadingIcon: false,
+                    keyboardType: TextInputType.number,
+                  ),
+                  SelectDropList(
+                    itemSelected: _uSerServices.selectedDishType,
+                    dropListModel: dishDropListModel,
+                    onOptionSelected: (name) {
+                      setState(() => _uSerServices.selectedDishType = name);
+                    },
+                    image: 'assets/images/dish.png',
+                    iconColor: kBlueColor,
+                  ),
+                ],
+              ),
+            ),
+            if (_index == 1) ...[
               SizedBox(height: rs.rh(12)),
-              _buildUserTypeToggle(),
-              Container(
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(rs.r(16)),
-                  boxShadow: [
-                    BoxShadow(
-                      offset: const Offset(0, 8),
-                      blurRadius: rs.r(24),
-                      color: Colors.black.withValues(alpha: 0.06),
+              _buildSectionCard(
+                title: 'New user details',
+                icon: Icons.event_available_rounded,
+                child: Column(
+                  children: [
+                    CustomTextField(
+                      leadingIconColor: kBlueColor,
+                      hintTextColor: const Color(0xFF4A6572),
+                      controller: _uSerServices.registerDateController,
+                      hintText: "பதிந்த திகதி",
+                      icon: Icons.date_range_rounded,
+                      showLeadingIcon: false,
+                      keyboardType: TextInputType.text,
+                      iconButton: true,
+                      readOnly: true,
+                      animatedIconButtonStratIcon: Icons.date_range,
+                      animatedIconButtonEndIcon: Icons.date_range_outlined,
+                      animatedIconButtonOnTap: () {
+                        _pickDate(
+                          initial: _uSerServices.registerDate,
+                          controller: _uSerServices.registerDateController,
+                          onSelected: (val) => _uSerServices.registerDate = val,
+                        );
+                      },
+                    ),
+                    CustomTextField(
+                      leadingIconColor: kBlueColor,
+                      hintTextColor: const Color(0xFF4A6572),
+                      controller: _uSerServices.expiredDateController,
+                      hintText: "முடியும் திகதி",
+                      readOnly: true,
+                      icon: Icons.event_busy_rounded,
+                      showLeadingIcon: false,
+                      keyboardType: TextInputType.text,
+                      iconButton: true,
+                      animatedIconButtonStratIcon: Icons.date_range,
+                      animatedIconButtonEndIcon: Icons.date_range_outlined,
+                      animatedIconButtonOnTap: () {
+                        _pickDate(
+                          initial: _uSerServices.expiredDate,
+                          controller: _uSerServices.expiredDateController,
+                          onSelected: (val) => _uSerServices.expiredDate = val,
+                        );
+                      },
+                    ),
+                    CustomTextField(
+                      leadingIconColor: kBlueColor,
+                      hintTextColor: const Color(0xFF4A6572),
+                      controller: _uSerServices.shopController,
+                      hintText: "கடையின் பெயர்",
+                      icon: Icons.store_rounded,
+                      showLeadingIcon: false,
+                      keyboardType: TextInputType.text,
                     ),
                   ],
                 ),
-                margin: EdgeInsets.symmetric(
-                  horizontal: rs.rw(12),
-                  vertical: rs.rh(8),
-                ),
-                child: _index == 0 ? buildColumn(false) : buildColumn(true),
               ),
             ],
-          ),
+            SizedBox(height: rs.rh(16)),
+            RoundedLoading(
+              btnController: _uSerServices.btnController,
+              paddingTop: 6.0,
+              buttonHeight: 46.0,
+              btnColor: kBlueColor,
+              elevation: 2.0,
+              label: 'Save User',
+              textStyle: TextStyle(
+                fontSize: rs.sp(16),
+                fontWeight: FontWeight.w700,
+                fontFamily: 'TamilArima',
+                color: Colors.white,
+              ),
+              buttonPressed: () {
+                final isNewUser = _index == 1;
+                if (!_validateRequiredFields(isNewUser: isNewUser)) {
+                  _uSerServices.btnController.reset();
+                  return;
+                }
+                _uSerServices.createRecord(index: _index, context: context);
+              },
+            ),
+          ],
         ),
       ),
     );
@@ -151,168 +345,126 @@ class _CreateNewUserState extends State<CreateNewUser> {
     );
   }
 
-  Column buildColumn(bool visible) {
+  Widget _buildHeaderCard() {
     final rs = context.rs;
-    const hintColor = Color(0xFF4A6572);
-    final accentColor = kBlueColor;
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-      children: [
-        SizedBox(height: rs.rh(14)),
-        _sectionLabel('Basic details'),
-        SizedBox(height: rs.rh(6)),
-        CustomTextField(
-          controller: _uSerServices.nameController,
-          hintText: "பெயர்",
-          leadingIconColor: accentColor,
-          hintTextColor: hintColor,
-          icon: Icons.person,
-          keyboardType: TextInputType.text,
-        ), //பெயர்
-        CustomTextField(
-          controller: _uSerServices.addressController,
-          hintText: "விலாசம்",
-          leadingIconColor: accentColor,
-          hintTextColor: hintColor,
-          icon: Icons.home,
-          keyboardType: TextInputType.text,
-        ), //விலாசம்
-        SelectDropList(
-            itemSelected: _uSerServices.selectedArea,
-            dropListModel: villageDropListModel,
-            onOptionSelected: (optionItem) {
-              setState(() => _uSerServices.selectedArea = optionItem);
-            },
-            image: 'assets/images/dish.png',
-            iconColor: accentColor), //எந்த ஊர்
-        SizedBox(height: rs.rh(6)),
-        _sectionLabel('Contact'),
-        SizedBox(height: rs.rh(6)),
-        CustomTextField(
-            controller: _uSerServices.mobileController,
-            hintText: "தொலைபேசி இலக்கம்",
-            leadingIconColor: accentColor,
-            hintTextColor: hintColor,
-            icon: Icons.phone,
-            keyboardType: TextInputType.number,
-            iconButton: true,
-            animatedIconButtonStratIcon: Icons.add_circle_outline_rounded,
-            animatedIconButtonEndIcon: Icons.indeterminate_check_box_outlined,
-            animatedIconButtonOnTap: () =>
-                setState(() => mNoVisible = !mNoVisible)), //தொலைபேசி இலக்கம்
-        Visibility(
-          visible: mNoVisible,
-          child: CustomTextField(
-            leadingIconColor: accentColor,
-            hintTextColor: hintColor,
-            controller: _uSerServices.mobileController1,
-            hintText: "தொலைபேசி இலக்கம்",
-            icon: Icons.phone,
-            keyboardType: TextInputType.number,
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: rs.rw(16),
+        vertical: rs.rh(16),
+      ),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [kPrimaryColor, kPrimaryLightColor],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(rs.r(18)),
+        boxShadow: [
+          BoxShadow(
+            offset: const Offset(0, 10),
+            blurRadius: rs.r(24),
+            color: kPrimaryColor.withValues(alpha: 0.25),
           ),
-        ), //தொலைபேசி இலக்கம்2
-        SizedBox(height: rs.rh(6)),
-        _sectionLabel('Dish info'),
-        SizedBox(height: rs.rh(6)),
-        CustomTextField(
-          leadingIconColor: accentColor,
-          hintTextColor: hintColor,
-          controller: _uSerServices.dishNumberController,
-          hintText: "Dish இலக்கம்",
-          image: 'assets/images/dish.png',
-          keyboardType: TextInputType.number,
-        ), //Dish இலக்கம்
-        SelectDropList(
-            itemSelected: _uSerServices.selectedDishType,
-            dropListModel: dishDropListModel,
-            onOptionSelected: (name) {
-              setState(() => _uSerServices.selectedDishType = name);
-            },
-            image: 'assets/images/dish.png',
-            iconColor: accentColor), //Dish ன் வகை
+        ],
+      ),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: rs.r(24),
+            backgroundColor: Colors.white.withValues(alpha: 0.2),
+            child: Icon(
+              Icons.person_add_alt_1_rounded,
+              color: Colors.white,
+              size: rs.r(22),
+            ),
+          ),
+          SizedBox(width: rs.rw(12)),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Create new user',
+                  style: TextStyle(
+                    fontFamily: 'TamilArima',
+                    fontWeight: FontWeight.w700,
+                    fontSize: rs.sp(16),
+                    color: Colors.white,
+                  ),
+                ),
+                SizedBox(height: rs.rh(4)),
+                Text(
+                  'Fill the form below to save user details.',
+                  style: TextStyle(
+                    fontFamily: 'TamilArima2',
+                    fontWeight: FontWeight.w600,
+                    fontSize: rs.sp(12.5),
+                    color: Colors.white.withValues(alpha: 0.9),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
-        Visibility(
-          visible: visible,
-          child: CustomTextField(
-            leadingIconColor: accentColor,
-            hintTextColor: hintColor,
-            controller: _uSerServices.registerDateController,
-            hintText: "பதிந்த திகதி",
-            icon: Icons.phone,
-            keyboardType: TextInputType.text,
-            iconButton: true,
-            readOnly: true,
-            animatedIconButtonStratIcon: Icons.date_range,
-            animatedIconButtonEndIcon: Icons.date_range_outlined,
-            animatedIconButtonOnTap: () {
-              _pickDate(
-                initial: _uSerServices.registerDate,
-                controller: _uSerServices.registerDateController,
-                onSelected: (val) => _uSerServices.registerDate = val,
-              );
-            },
+  Widget _buildSectionCard({
+    required String title,
+    required Widget child,
+    IconData? icon,
+  }) {
+    final rs = context.rs;
+    return Container(
+      padding: EdgeInsets.fromLTRB(
+        rs.rw(14),
+        rs.rh(14),
+        rs.rw(14),
+        rs.rh(10),
+      ),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(rs.r(16)),
+        border: Border.all(color: Colors.black.withValues(alpha: 0.06)),
+        boxShadow: [
+          BoxShadow(
+            offset: const Offset(0, 8),
+            blurRadius: rs.r(22),
+            color: Colors.black.withValues(alpha: 0.05),
           ),
-        ),
-        Visibility(
-          visible: visible,
-          child: CustomTextField(
-            leadingIconColor: accentColor,
-            hintTextColor: hintColor,
-            controller: _uSerServices.expiredDateController,
-            hintText: "முடியும் திகதி",
-            readOnly: true,
-            icon: Icons.phone,
-            keyboardType: TextInputType.text,
-            iconButton: true,
-            animatedIconButtonStratIcon: Icons.date_range,
-            animatedIconButtonEndIcon: Icons.date_range_outlined,
-            animatedIconButtonOnTap: () {
-              _pickDate(
-                initial: _uSerServices.expiredDate,
-                controller: _uSerServices.expiredDateController,
-                onSelected: (val) => _uSerServices.expiredDate = val,
-              );
-            },
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              if (icon != null)
+                Container(
+                  padding: EdgeInsets.all(rs.r(6)),
+                  decoration: BoxDecoration(
+                    color: kPrimaryColor.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(rs.r(10)),
+                  ),
+                  child: Icon(icon, size: rs.r(16), color: kPrimaryColor),
+                ),
+              if (icon != null) SizedBox(width: rs.rw(8)),
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: rs.sp(13.5),
+                  fontWeight: FontWeight.w700,
+                  fontFamily: 'TamilArima',
+                  color: Colors.black87,
+                ),
+              ),
+            ],
           ),
-        ),
-        Visibility(
-          visible: visible,
-          child: CustomTextField(
-            leadingIconColor: accentColor,
-            hintTextColor: hintColor,
-            controller: _uSerServices.shopController,
-            hintText: "கடையின் பெயர்",
-            icon: Icons.phone,
-            keyboardType: TextInputType.text,
-          ),
-        ),
-        SizedBox(height: rs.rh(16)),
-        RoundedLoading(
-          btnController: _uSerServices.btnController,
-          // paddingLeft: 10.0,
-          // paddingRight: 10.0,
-          paddingTop: 6.0,
-          buttonHeight: 40.0,
-          btnColor: kBlueColor,
-          elevation: 2.0,
-          label: 'Save User',
-          textStyle: TextStyle(
-            fontSize: rs.sp(16),
-            fontWeight: FontWeight.w700,
-            fontFamily: 'TamilArima',
-            color: Colors.white,
-          ),
-          buttonPressed: () {
-            final isNewUser = _index == 1;
-            if (!_validateRequiredFields(isNewUser: isNewUser)) {
-              _uSerServices.btnController.reset();
-              return;
-            }
-            _uSerServices.createRecord(index: _index, context: context);
-          },
-        ),
-        SizedBox(height: rs.rh(20))
-      ],
+          SizedBox(height: rs.rh(8)),
+          child,
+        ],
+      ),
     );
   }
 

@@ -52,6 +52,7 @@ class _SearchUsersScreenState extends State<SearchUsersScreen> {
   void initState() {
     super.initState();
     _userServices.getVillageName();
+    _userServices.getDishTypes();
   }
 
   @override

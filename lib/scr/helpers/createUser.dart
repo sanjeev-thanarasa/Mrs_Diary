@@ -50,6 +50,24 @@ class USerServices {
         return villageDropListModel;
       });
 
+  Future<DropListModel> getDishTypes() async => _firestore
+          .collection('DishTypes')
+          .where('ownerId', isEqualTo: requireOwnerId())
+          .get()
+          .then((result) {
+        dishDropListModel.listOptionItems.clear();
+        for (DocumentSnapshot data in result.docs) {
+          final name = data["name"]?.toString() ?? '';
+          if (name.trim().isNotEmpty) {
+            dishDropListModel.listOptionItems.add(OptionItem(name: name));
+          }
+        }
+        dishDropListModel.listOptionItems.sort(
+          (a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()),
+        );
+        return dishDropListModel;
+      });
+
   void createRecord({required int index, required BuildContext context}) async {
     String id = const Uuid().v1();
     final ownerId = requireOwnerId();

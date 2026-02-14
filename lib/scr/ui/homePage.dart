@@ -12,6 +12,7 @@ import 'package:uuid/uuid.dart';
 
 import '../widgets/ShowPopUpAlertBox.dart';
 import 'CreateNewUserPage.dart';
+import 'DishTypesPage.dart';
 import 'searchUsers.dart';
 import 'todayPaymentNotifications.dart';
 import 'settings.dart';
@@ -205,11 +206,37 @@ class _HomePageState extends State<HomePage> {
             mainAxisSize: MainAxisSize.min,
             children: [
               SizedBox(height: rs.rh(8)),
+              Container(
+                width: rs.r(42),
+                height: rs.r(4),
+                decoration: BoxDecoration(
+                  color: Colors.black12,
+                  borderRadius: BorderRadius.circular(rs.r(10)),
+                ),
+              ),
+              SizedBox(height: rs.rh(6)),
+              Text(
+                'Create',
+                style: TextStyle(
+                  fontSize: rs.sp(13.5),
+                  fontWeight: FontWeight.w700,
+                  fontFamily: 'TamilArima',
+                  color: Colors.black87,
+                ),
+              ),
               ListTile(
-                leading: Icon(Icons.location_city_rounded, size: rs.r(20)),
+                dense: true,
+                visualDensity: VisualDensity.compact,
+                contentPadding:
+                    EdgeInsets.symmetric(horizontal: rs.rw(16), vertical: 2),
+                leading: Icon(Icons.location_city_rounded, size: rs.r(18)),
                 title: Text(
                   'Create village',
-                  style: TextStyle(fontSize: rs.sp(14.5)),
+                  style: TextStyle(
+                    fontSize: rs.sp(13.5),
+                    fontFamily: 'TamilArima',
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
                 onTap: () {
                   Navigator.pop(context);
@@ -217,10 +244,40 @@ class _HomePageState extends State<HomePage> {
                 },
               ),
               ListTile(
-                leading: Icon(Icons.person_add_alt_1_rounded, size: rs.r(20)),
+                dense: true,
+                visualDensity: VisualDensity.compact,
+                contentPadding:
+                    EdgeInsets.symmetric(horizontal: rs.rw(16), vertical: 2),
+                leading: Icon(Icons.tv_rounded, size: rs.r(18)),
+                title: Text(
+                  'Create dish types',
+                  style: TextStyle(
+                    fontSize: rs.sp(13.5),
+                    fontFamily: 'TamilArima',
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => DishTypesPage()),
+                  );
+                },
+              ),
+              ListTile(
+                dense: true,
+                visualDensity: VisualDensity.compact,
+                contentPadding:
+                    EdgeInsets.symmetric(horizontal: rs.rw(16), vertical: 2),
+                leading: Icon(Icons.person_add_alt_1_rounded, size: rs.r(18)),
                 title: Text(
                   'Create user',
-                  style: TextStyle(fontSize: rs.sp(14.5)),
+                  style: TextStyle(
+                    fontSize: rs.sp(13.5),
+                    fontFamily: 'TamilArima',
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
                 onTap: () {
                   Navigator.pop(context);
