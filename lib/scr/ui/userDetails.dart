@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:mrs_dth_diary_v1/scr/helpers/owner_service.dart';
 import 'package:flutter_switch/flutter_switch.dart';
 import 'package:intl/intl.dart';
@@ -322,7 +323,7 @@ class _UserDetailsState extends State<UserDetails> {
             ),
             if (_safeField(map, 'mobileNo2').isNotEmpty)
               _buildInfoRow('Mobile 2', _safeField(map, 'mobileNo2')),
-            _buildInfoRow(
+            _buildInfoRowWithCopy(
               'Dish Number',
               _safeField(map, 'dishNumber'),
             ),
@@ -550,6 +551,64 @@ class _UserDetailsState extends State<UserDetails> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildInfoRowWithCopy(String label, String value) {
+    final normalized = value.trim();
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: kPrimaryColor.withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: Row(
+          children: [
+            Text(
+              '$label:',
+              style: const TextStyle(
+                fontFamily: 'TamilArima2',
+                fontWeight: FontWeight.w600,
+                color: Colors.black54,
+              ),
+            ),
+            const SizedBox(width: 6),
+            Expanded(
+              child: SelectableText(
+                value,
+                style: const TextStyle(
+                  fontFamily: 'TamilArima',
+                  fontWeight: FontWeight.w600,
+                  color: kIndigoDark,
+                ),
+              ),
+            ),
+            const SizedBox(width: 4),
+            IconButton(
+              tooltip: 'Copy dish number',
+              icon: const Icon(Icons.copy_rounded, size: 18),
+              visualDensity: VisualDensity.compact,
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
+              onPressed: normalized.isEmpty
+                  ? null
+                  : () async {
+                      await Clipboard.setData(
+                        ClipboardData(text: normalized),
+                      );
+                      Fluttertoast.showToast(
+                        msg: 'Dish number copied',
+                        gravity: ToastGravity.BOTTOM,
+                        toastLength: Toast.LENGTH_SHORT,
+                      );
+                    },
+            ),
+          ],
+        ),
       ),
     );
   }
