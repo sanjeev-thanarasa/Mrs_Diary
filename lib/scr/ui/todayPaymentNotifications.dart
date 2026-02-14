@@ -228,7 +228,7 @@ class _TodayPaymentNotificationsState extends State<TodayPaymentNotifications> {
         ],
       ),
       body: _isLoading
-          ? const LoadingShimmerList()
+          ? const Center(child: LoadingCircle())
           : _entries.isEmpty && _expiredEntries.isEmpty
               ? SearchNoData()
               : ListView(

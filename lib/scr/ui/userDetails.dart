@@ -124,7 +124,7 @@ class _UserDetailsState extends State<UserDetails> {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return SizedBox(
                 height: MediaQuery.of(context).size.height / 2 + 100,
-                child: const Center(child: LoadingShimmerList()),
+                child: const Center(child: LoadingCircle()),
               );
             }
 
@@ -296,7 +296,7 @@ class _UserDetailsState extends State<UserDetails> {
   Widget _buildUserInfoCard() {
     final data = _result.isNotEmpty ? _result[0] : null;
     if (data == null) {
-      return const Center(child: LoadingShimmerList());
+      return const Center(child: LoadingCircle());
     }
 
     final map = _docMap(data);

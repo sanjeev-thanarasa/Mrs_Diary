@@ -191,7 +191,10 @@ class _TotalNewCustomersState extends State<TotalNewCustomers> {
               child: _isLoading || _isSearchLoading
                   ? ListView(
                       physics: const AlwaysScrollableScrollPhysics(),
-                      children: const [LoadingShimmerList()],
+                      children: const [
+                        SizedBox(height: 180),
+                        Center(child: LoadingCircle()),
+                      ],
                     )
                   : _buildList(),
             ),

@@ -678,25 +678,41 @@ class _VillageTile extends StatelessWidget {
                 padding: EdgeInsets.symmetric(
                     horizontal: rs.rw(10), vertical: rs.rh(4)),
                 decoration: BoxDecoration(
-                  color: summary.value > 0
-                      ? Colors.blue.shade50
-                      : Colors.green.shade100,
-                  border: Border.all(
-                    color: summary.value > 0
-                        ? Colors.blue.shade50
-                        : Colors.green.shade50,
-                  ),
+                  color: colorScheme.primary.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(rs.r(16)),
                 ),
-                child: Text(
-                  '${summary.labelText}: Rs.${_formatAmountText(summary.value)}',
-                  style: TextStyle(
-                    color: colorScheme.onSurfaceVariant,
-                    fontWeight: FontWeight.w700,
-                    fontSize: rs.sp(11),
-                    fontFamily: 'TamilArima2',
-                  ),
-                ),
+                child: snapshot.connectionState == ConnectionState.waiting
+                    ? Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            '${summary.labelText}:',
+                            style: TextStyle(
+                              color: colorScheme.primary,
+                              fontWeight: FontWeight.w700,
+                              fontSize: rs.sp(11),
+                              fontFamily: 'TamilArima2',
+                            ),
+                          ),
+                          SizedBox(width: rs.rw(6)),
+                          SizedBox(
+                            height: rs.r(12),
+                            width: rs.r(12),
+                            child: const CircularProgressIndicator(
+                              strokeWidth: 2,
+                            ),
+                          ),
+                        ],
+                      )
+                    : Text(
+                        '${summary.labelText}: Rs.${_formatAmountText(summary.value)}',
+                        style: TextStyle(
+                          color: colorScheme.primary,
+                          fontWeight: FontWeight.w700,
+                          fontSize: rs.sp(11),
+                          fontFamily: 'TamilArima2',
+                        ),
+                      ),
               ),
               trailing: FutureBuilder<int>(
                 future: countFuture,

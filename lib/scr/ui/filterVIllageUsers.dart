@@ -103,7 +103,7 @@ class _FilterVillageUserState extends State<FilterVillageUser> {
                 stream: _oldUsersStream(),
                 builder: (context, oldSnapshot) {
                   if (oldSnapshot.connectionState == ConnectionState.waiting) {
-                    return const LoadingShimmerList();
+                    return const Center(child: LoadingCircle());
                   }
 
                   final oldDocs = oldSnapshot.data?.docs ?? [];
@@ -113,7 +113,7 @@ class _FilterVillageUserState extends State<FilterVillageUser> {
                     builder: (context, newSnapshot) {
                       if (newSnapshot.connectionState ==
                           ConnectionState.waiting) {
-                        return const LoadingShimmerList();
+                        return const Center(child: LoadingCircle());
                       }
 
                       final newDocs = newSnapshot.data?.docs ?? [];
@@ -272,9 +272,44 @@ class _FilterVillageUserState extends State<FilterVillageUser> {
     return FutureBuilder<_VillageAmountSummary>(
       future: _amountSummaryFuture,
       builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Card(
+            elevation: 1.5,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: Row(
+                children: const [
+                  Icon(Icons.account_balance_wallet_rounded,
+                      color: kPrimaryColor),
+                  SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      'மொத்த நிலுவை',
+                      style: TextStyle(
+                        fontFamily: 'TamilArima2',
+                        color: kIndigoDark,
+                      ),
+                    ),
+                  ),
+                  SizedBox(
+                    height: 16,
+                    width: 16,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation(kPrimaryColor),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+
         final summary = snapshot.data ?? const _VillageAmountSummary.zero();
         final amountText = _formatAmountText(summary.value);
-        final colorScheme = Theme.of(context).colorScheme;
         return Card(
           elevation: 1.5,
           shape: RoundedRectangleBorder(
@@ -284,8 +319,8 @@ class _FilterVillageUserState extends State<FilterVillageUser> {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             child: Row(
               children: [
-                Icon(Icons.account_balance_wallet_rounded,
-                    color: colorScheme.onSurface),
+                const Icon(Icons.account_balance_wallet_rounded,
+                    color: kPrimaryColor),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Column(
@@ -315,7 +350,7 @@ class _FilterVillageUserState extends State<FilterVillageUser> {
                   style: TextStyle(
                     fontFamily: 'TamilArima2',
                     fontWeight: FontWeight.w700,
-                    color: colorScheme.onSurface,
+                    color: kPrimaryColor,
                     fontSize: 16,
                   ),
                 ),

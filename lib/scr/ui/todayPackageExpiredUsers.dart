@@ -271,7 +271,10 @@ class _TodayPackageExpiredUsersState extends State<TodayPackageExpiredUsers> {
               child: _isLoading || _isSearchLoading
                   ? ListView(
                       physics: const AlwaysScrollableScrollPhysics(),
-                      children: const [LoadingShimmerList()],
+                      children: const [
+                        SizedBox(height: 180),
+                        Center(child: LoadingCircle()),
+                      ],
                     )
                   : _buildList(),
             ),

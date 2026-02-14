@@ -21,12 +21,18 @@ class LoadingCircle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-        color: Colors.transparent,
-        child: SpinKitCircle(
-          duration: const Duration(milliseconds: 1200),
-          color: color ?? Colors.black,
-          size: 30,
-        ));
+      color: Colors.transparent,
+      child: SizedBox(
+        height: 24,
+        width: 24,
+        child: CircularProgressIndicator(
+          strokeWidth: 2,
+          valueColor: AlwaysStoppedAnimation(
+            color ?? Theme.of(context).colorScheme.primary,
+          ),
+        ),
+      ),
+    );
   }
 }
 

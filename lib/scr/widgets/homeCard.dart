@@ -36,7 +36,7 @@ class _HomeCardState extends State<HomeCard> {
             : 2;
     final aspectRatio = isLandscape ? 1.3 : 1.05;
     if (villageProvider.isLoading) {
-      return const LoadingShimmerGrid();
+      return const Center(child: LoadingCircle());
     }
     return GridView.builder(
       controller: _scrollController,
