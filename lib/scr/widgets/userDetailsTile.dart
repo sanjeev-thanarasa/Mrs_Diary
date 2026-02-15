@@ -140,21 +140,38 @@ class _UserDetailsTileState extends State<UserDetailsTile> {
   Widget _buildAmountChip(BuildContext context, String label, String amount) {
     final rs = context.rs;
     final colorScheme = Theme.of(context).colorScheme;
+    final isPending = label.contains('நிலுவை');
+    final isBalance = label.contains('கொடுமதி');
+    final chipColor = isPending
+        ? Colors.red.shade50
+        : isBalance
+            ? Colors.orange.shade50
+            : colorScheme.primary.withValues(alpha: 0.12);
+    final textColor = isPending
+        ? Colors.red.shade700
+        : isBalance
+            ? Colors.orange.shade800
+            : colorScheme.primary;
     return Container(
       padding: EdgeInsets.symmetric(
         horizontal: rs.rw(8),
         vertical: rs.rh(4),
       ),
       decoration: BoxDecoration(
-        color: colorScheme.primary.withValues(alpha: 0.12),
+        color: chipColor,
         borderRadius: BorderRadius.circular(rs.r(10)),
+        border: isPending
+            ? Border.all(color: Colors.red.shade200)
+            : isBalance
+                ? Border.all(color: Colors.orange.shade200)
+                : null,
       ),
       child: Text(
         '$label: Rs.$amount',
         style: TextStyle(
           fontSize: rs.sp(11.5),
           fontWeight: FontWeight.w700,
-          color: colorScheme.primary,
+          color: textColor,
           fontFamily: 'TamilArima2',
         ),
       ),

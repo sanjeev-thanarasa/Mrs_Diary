@@ -22,6 +22,7 @@ class EditPayment extends StatefulWidget {
 
 class _EditPaymentState extends State<EditPayment> {
   final PaymentServices _paymentServices = PaymentServices();
+  DateTime? _initialPendingDate;
 
   @override
   void dispose() {
@@ -59,6 +60,11 @@ class _EditPaymentState extends State<EditPayment> {
     _paymentServices.pendingDate = widget.snapshot['PENDING_DATE'] != null
         ? widget.snapshot['PENDING_DATE'].toDate()
         : null;
+    _initialPendingDate = _paymentServices.pendingDate;
+    _paymentServices.pendingDateController.text =
+        _paymentServices.pendingDate != null
+            ? DateFormat('dd-MM-yyyy').format(_paymentServices.pendingDate!)
+            : '';
     _paymentServices.balanceAmount.text = widget.snapshot['BALANCE_AMOUNT'];
     _paymentServices.userNote.text = widget.snapshot['USER_NOTE'];
     _paymentServices.userNote2.text = widget.snapshot['USER_NOTE2'];
@@ -154,6 +160,28 @@ class _EditPaymentState extends State<EditPayment> {
                   keyboardType: TextInputType.number,
                   onChanged: (_) => _recalculateFromAdditional(),
                 ),
+              if (_paymentServices.pending &&
+                  _paymentServices.newGiveAmount.text.trim().isNotEmpty) ...[
+                const SizedBox(height: 10),
+                _inputField(
+                  readOnly: true,
+                  controller: _paymentServices.pendingDateController,
+                  labelText: "நிலுவை திகதி",
+                  hintText: "நிலுவை திகதி",
+                  icon: Icons.update,
+                  keyboardType: TextInputType.text,
+                  onTap: () {
+                    _pickDate(
+                      initialDate: _paymentServices.pendingDate,
+                      onSelected: (val) {
+                        _paymentServices.pendingDate = val;
+                        _paymentServices.pendingDateController.text =
+                            DateFormat('dd-MM-yyyy').format(val);
+                      },
+                    );
+                  },
+                ),
+              ],
               if (_paymentServices.pending) ...[
                 const SizedBox(height: 10),
                 _statusTile(
@@ -333,11 +361,13 @@ class _EditPaymentState extends State<EditPayment> {
     TextInputType keyboardType = TextInputType.text,
     bool readOnly = false,
     ValueChanged<String>? onChanged,
+    VoidCallback? onTap,
   }) {
     return TextField(
       controller: controller,
       readOnly: readOnly,
       onChanged: onChanged,
+      onTap: onTap,
       keyboardType: keyboardType,
       style: const TextStyle(
         fontFamily: 'TamilArima',
@@ -495,6 +525,21 @@ class _EditPaymentState extends State<EditPayment> {
     );
   }
 
+  Future<void> _pickDate({
+    required ValueChanged<DateTime> onSelected,
+    DateTime? initialDate,
+  }) async {
+    final now = DateTime.now();
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: initialDate ?? now,
+      firstDate: DateTime(now.year - 5),
+      lastDate: DateTime(now.year + 5),
+    );
+    if (picked == null) return;
+    setState(() => onSelected(picked));
+  }
+
   void _recalculateFromAdditional() {
     final additional = _paymentServices.newGiveAmount.text.trim().isNotEmpty
         ? int.tryParse(_paymentServices.newGiveAmount.text.trim()) ?? 0
@@ -507,6 +552,12 @@ class _EditPaymentState extends State<EditPayment> {
         _paymentServices.balance = false;
         _paymentServices.balanceAmount.clear();
         _paymentServices.pendingAmount.text = (recharge - totalPaid).toString();
+        if (_paymentServices.pendingDate == null &&
+            _initialPendingDate != null) {
+          _paymentServices.pendingDate = _initialPendingDate;
+          _paymentServices.pendingDateController.text =
+              DateFormat('dd-MM-yyyy').format(_initialPendingDate!);
+        }
       });
     } else if (recharge < totalPaid) {
       setState(() {
@@ -514,6 +565,7 @@ class _EditPaymentState extends State<EditPayment> {
         _paymentServices.balance = true;
         _paymentServices.pendingAmount.clear();
         _paymentServices.pendingDate = null;
+        _paymentServices.pendingDateController.clear();
         _paymentServices.balanceAmount.text = (totalPaid - recharge).toString();
       });
     } else {
@@ -523,6 +575,7 @@ class _EditPaymentState extends State<EditPayment> {
         _paymentServices.pendingAmount.clear();
         _paymentServices.balanceAmount.clear();
         _paymentServices.pendingDate = null;
+        _paymentServices.pendingDateController.clear();
       });
     }
   }

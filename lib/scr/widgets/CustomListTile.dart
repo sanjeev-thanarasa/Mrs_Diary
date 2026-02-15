@@ -229,15 +229,33 @@ class _CListTileState extends State<CListTile> {
   }
 
   Widget _buildAmountChip(String amount) {
+    final isPending = amount.contains('நிலுவை');
+    final isBalance = amount.contains('கொடுமதி');
+    final chipColor = isPending
+        ? Colors.red.shade50
+        : isBalance
+            ? Colors.orange.shade50
+            : kPrimaryLightColor;
+    final textColor = isPending
+        ? Colors.red.shade700
+        : isBalance
+            ? Colors.orange.shade800
+            : kIndigoDark;
+    final borderColor = isPending
+        ? Colors.red.shade200
+        : isBalance
+            ? Colors.orange.shade200
+            : Colors.transparent;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: kPrimaryLightColor,
+        color: chipColor,
         borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: borderColor),
       ),
       child: CText(
         msg: amount,
-        color: kIndigoDark,
+        color: textColor,
         size: 12,
         weight: FontWeight.w700,
       ),
