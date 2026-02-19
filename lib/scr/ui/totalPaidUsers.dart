@@ -6,10 +6,10 @@ import 'package:mrs_dth_diary_v1/scr/helpers/owner_service.dart';
 import 'package:mrs_dth_diary_v1/scr/models/totalCustomers.dart';
 import 'package:mrs_dth_diary_v1/scr/ui/userDetails.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/CAppBar.dart';
-import 'package:mrs_dth_diary_v1/scr/widgets/customText.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/loading.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/noResultFound.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/userDetailsTile.dart';
+import 'package:mrs_dth_diary_v1/scr/widgets/subHelpers/responsive.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/subHelpers/screen_navigation.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/subHelpers/styles.dart';
 
@@ -117,7 +117,7 @@ class _TotalPaidUsersState extends State<TotalPaidUsers> {
   }
 
   Future<void> _fetchAllForSearch() async {
-    if (_isSearchLoading || !_hasMore) return;
+    if (_isSearchLoading) return;
 
     setState(() {
       _isSearchLoading = true;
@@ -195,6 +195,7 @@ class _TotalPaidUsersState extends State<TotalPaidUsers> {
 
   @override
   Widget build(BuildContext context) {
+    final rs = context.rs;
     return Scaffold(
       backgroundColor: white.withValues(alpha: .9),
       appBar: CustomAppBar(
@@ -202,42 +203,52 @@ class _TotalPaidUsersState extends State<TotalPaidUsers> {
         prefixIcon: Icons.arrow_back,
         iconOnTap: () => Navigator.pop(context),
         onChanged: (text) => _onSearchChanged(text),
-        logoOnTap: () => setState(() {
-          searchVisible = !searchVisible;
-          if (!searchVisible) {
-            _radioValue = 0;
-          }
-        }),
+        trailing: InkWell(
+          onTap: () => setState(() {
+            searchVisible = !searchVisible;
+            if (!searchVisible) {
+              _radioValue = 0;
+            }
+          }),
+          child: Container(
+            height: rs.r(36),
+            width: rs.r(36),
+            decoration: BoxDecoration(
+              color: kPrimaryColor,
+              borderRadius: BorderRadius.circular(rs.r(10)),
+            ),
+            child: const Center(
+              child: Icon(
+                Icons.tune_rounded,
+                color: Colors.white,
+                size: 20,
+              ),
+            ),
+          ),
+        ),
       ),
       body: Column(
         children: [
           Visibility(
             visible: searchVisible,
-            child: Padding(
-              padding: const EdgeInsets.only(top: 15.0, bottom: 15.0),
-              child: Column(
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      _buildRadio(value: 0, name: "Name"),
-                      _buildRadio(value: 1, name: "DishNumber"),
-                    ],
-                  ),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      _buildRadio(value: 2, name: "Mobile No"),
-                      _buildRadio(value: 3, name: "Dish Type"),
-                    ],
-                  ),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      _buildRadio(value: 4, name: "Village"),
-                    ],
-                  ),
-                ],
+            child: SizedBox(
+              height: rs.rh(54),
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(16, 10, 16, 6),
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    _buildFilterChip(value: 0, label: "Name"),
+                    SizedBox(width: rs.rw(10)),
+                    _buildFilterChip(value: 1, label: "DishNumber"),
+                    SizedBox(width: rs.rw(10)),
+                    _buildFilterChip(value: 2, label: "Mobile No"),
+                    SizedBox(width: rs.rw(10)),
+                    _buildFilterChip(value: 3, label: "Dish Type"),
+                    SizedBox(width: rs.rw(10)),
+                    _buildFilterChip(value: 4, label: "Village"),
+                  ],
+                ),
               ),
             ),
           ),
@@ -379,25 +390,39 @@ class _TotalPaidUsersState extends State<TotalPaidUsers> {
     );
   }
 
-  Widget _buildRadio({required int value, required String name}) {
-    return Row(
-      children: [
-        Radio(
-          value: value,
-          activeColor: Colors.blue,
-          groupValue: _radioValue,
-          onChanged: _handleRadioValueChange,
+  Widget _buildFilterChip({required int value, required String label}) {
+    final rs = context.rs;
+    final bool selected = _radioValue == value;
+    return ChoiceChip(
+      label: Text(
+        label,
+        style: TextStyle(
+          fontFamily: selected ? 'TamilArima2' : 'TamilArima',
+          fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+          color: Colors.black87,
+          fontSize: rs.sp(13),
         ),
-        CText(
-          msg: name,
-          color: Colors.black,
-          size: 20.0,
-        ),
-      ],
+      ),
+      selected: selected,
+      selectedColor: kPrimaryColor.withValues(alpha: 0.18),
+      backgroundColor: Colors.white,
+      side: BorderSide(
+        color: selected ? kPrimaryColor.withValues(alpha: 0.5) : Colors.black12,
+        width: 1,
+      ),
+      onSelected: (_) => _handleRadioValueChange(value),
+      padding: EdgeInsets.symmetric(horizontal: rs.rw(14), vertical: rs.rh(8)),
+      labelPadding:
+          EdgeInsets.symmetric(horizontal: rs.rw(6), vertical: rs.rh(3)),
+      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
     );
   }
 
   Future<void> _onPullRefresh() async {
+    if (searchText.trim().isNotEmpty) {
+      await _fetchAllForSearch();
+      return;
+    }
     await _fetchInitial();
   }
 
