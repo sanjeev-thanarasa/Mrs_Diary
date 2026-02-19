@@ -310,7 +310,7 @@ class _TodayPaymentUsersState extends State<TodayPaymentUsers> {
           villageName: data['area'],
           userId: data['id'] ?? data.id,
           collectionName: showResults[index].collectionName,
-          amountLabel: 'நிலுவை',
+          amountLabel: 'தருமதி',
           amountValue: showResults[index].pendingAmount,
           onTap: () {
             changeScreenAnimated(

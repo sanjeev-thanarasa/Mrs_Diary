@@ -42,6 +42,16 @@ class _PaymentContainerListTileState extends State<PaymentContainerListTile>
     final expiredAt = data['EXPIRED_AT'];
     final userNote = _field(data['USER_NOTE']);
     final userNote2 = _field(data['USER_NOTE2']);
+    final packageDateText = _formatDate(createdAt);
+    final expiredDateText = expiredAt != null ? _formatDate(expiredAt) : '';
+    final amountDisplay = 'Rs.${amount.isEmpty ? "0" : amount}';
+    final paidDisplay = 'Rs.${paidAmount.isEmpty ? "0" : paidAmount}';
+    final pendingDisplay = pendingAmount.isNotEmpty ? 'Rs.$pendingAmount' : '';
+    final balanceDisplay = balanceAmount.isNotEmpty ? 'Rs.$balanceAmount' : '';
+    final dueLabel = pendingAmount.isNotEmpty
+        ? 'தருமதி'
+        : (balanceAmount.isNotEmpty ? 'தருமதி' : '');
+    final dueValue = pendingAmount.isNotEmpty ? pendingDisplay : balanceDisplay;
     final status = _resolveStatus(
       amount: amount,
       paidAmount: paidAmount,
@@ -106,8 +116,9 @@ class _PaymentContainerListTileState extends State<PaymentContainerListTile>
                         Row(
                           children: [
                             CText(
-                              msg:
-                                  packageName.isEmpty ? "No Name" : packageName,
+                              msg: packageName.isEmpty
+                                  ? "பெயர் இல்லை"
+                                  : packageName,
                               size: rs.sp(16),
                               color: kIndigoDark,
                               weight: FontWeight.w700,
@@ -208,7 +219,7 @@ class _PaymentContainerListTileState extends State<PaymentContainerListTile>
                                     MainAxisAlignment.spaceBetween,
                                 children: [
                                   CText(
-                                    msg: "Payment details",
+                                    msg: "பேக்கேஜ் விவரங்கள்",
                                     color: kIndigoLight,
                                     size: rs.sp(15),
                                     weight: FontWeight.w700,
@@ -228,7 +239,7 @@ class _PaymentContainerListTileState extends State<PaymentContainerListTile>
                                           );
                                           return;
                                         }
-                                        changeScreen(
+                                        changeScreenAnimated(
                                           context,
                                           EditPayment(
                                             snapshot: widget.snapshot,
@@ -243,7 +254,7 @@ class _PaymentContainerListTileState extends State<PaymentContainerListTile>
                                               color: kBlueColor),
                                           SizedBox(width: rs.rw(4)),
                                           CText(
-                                            msg: "Add Payment",
+                                            msg: "பணம் சேர்க்க",
                                             size: rs.sp(12),
                                             color: kBlueColor,
                                           ),
@@ -253,41 +264,70 @@ class _PaymentContainerListTileState extends State<PaymentContainerListTile>
                                 ],
                               ),
                               Divider(height: rs.rh(16)),
-                              _DetailRow(
-                                icon: Icons.payments_rounded,
-                                label: 'செலுத்திய தொகை',
-                                value:
-                                    'Rs.${paidAmount.isEmpty ? "0" : paidAmount}',
-                                color: const Color(0xff2E7D32),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  _buildInlineDetail(
+                                    context,
+                                    icon: Icons.inventory_2_rounded,
+                                    label: 'பேக்கேஜ் பெயர்',
+                                    value: packageName.isEmpty
+                                        ? 'பெயர் இல்லை'
+                                        : packageName,
+                                  ),
+                                  SizedBox(height: rs.rh(4)),
+                                  _buildInlineDetail(
+                                    context,
+                                    icon: Icons.payments_rounded,
+                                    label: 'பேக்கேஜ் தொகை',
+                                    value: amountDisplay,
+                                  ),
+                                  SizedBox(height: rs.rh(4)),
+                                  _buildInlineDetail(
+                                    context,
+                                    icon: Icons.event_rounded,
+                                    label: 'பேக்கேஜ் தேதி',
+                                    value: packageDateText,
+                                  ),
+                                  if (expiredAt != null) ...[
+                                    SizedBox(height: rs.rh(4)),
+                                    _buildInlineDetail(
+                                      context,
+                                      icon: Icons.event_busy_rounded,
+                                      label: 'முடியும் தேதி',
+                                      value: expiredDateText,
+                                    ),
+                                  ],
+                                  SizedBox(height: rs.rh(4)),
+                                  _buildInlineDetail(
+                                    context,
+                                    icon: Icons.account_balance_wallet_rounded,
+                                    label: 'கொடுத்த பணம்',
+                                    value: paidDisplay,
+                                  ),
+                                  if (dueLabel.isNotEmpty) ...[
+                                    SizedBox(height: rs.rh(4)),
+                                    _buildInlineDetail(
+                                      context,
+                                      icon: pendingAmount.isNotEmpty
+                                          ? Icons.schedule_rounded
+                                          : Icons.savings_rounded,
+                                      label: dueLabel,
+                                      value: dueValue,
+                                    ),
+                                  ],
+                                  if (pendingAmount.isNotEmpty &&
+                                      pendingDate != null) ...[
+                                    SizedBox(height: rs.rh(4)),
+                                    _buildInlineDetail(
+                                      context,
+                                      icon: Icons.event_note_rounded,
+                                      label: 'தருமதி தேதி',
+                                      value: _formatDate(pendingDate),
+                                    ),
+                                  ],
+                                ],
                               ),
-                              if (pendingAmount.isNotEmpty)
-                                _DetailRow(
-                                  icon: Icons.schedule_rounded,
-                                  label: 'நிலுவை தொகை',
-                                  value: 'Rs.$pendingAmount',
-                                  color: const Color(0xffAF0069),
-                                ),
-                              if (pendingDate != null)
-                                _DetailRow(
-                                  icon: Icons.event_rounded,
-                                  label: 'நிலுவை தேதி',
-                                  value: _formatDate(pendingDate),
-                                  color: const Color(0xff09015f),
-                                ),
-                              if (balanceAmount.isNotEmpty)
-                                _DetailRow(
-                                  icon: Icons.wallet_rounded,
-                                  label: 'Balance amount',
-                                  value: 'Rs.$balanceAmount',
-                                  color: const Color(0xffAF0069),
-                                ),
-                              if (expiredAt != null)
-                                _DetailRow(
-                                  icon: Icons.event_busy_rounded,
-                                  label: 'காலாவதி தேதி',
-                                  value: _formatDate(expiredAt),
-                                  color: const Color(0xff09015f),
-                                ),
                               if (userNote.isNotEmpty)
                                 _DetailRow(
                                   icon: Icons.notes_rounded,
@@ -313,10 +353,12 @@ class _PaymentContainerListTileState extends State<PaymentContainerListTile>
                                   ),
                                 ),
                                 SizedBox(height: rs.rh(8)),
-                                ...history.reversed.map((entry) {
-                                  final map = entry is Map<String, dynamic>
-                                      ? entry
-                                      : <String, dynamic>{};
+                                ...history.asMap().entries.map((entry) {
+                                  final index = entry.key;
+                                  final map =
+                                      entry.value is Map<String, dynamic>
+                                          ? entry.value as Map<String, dynamic>
+                                          : <String, dynamic>{};
                                   final paidAt = map['PAID_AT'];
                                   final paidValue =
                                       _field(map['AMOUNT']).isEmpty
@@ -324,30 +366,11 @@ class _PaymentContainerListTileState extends State<PaymentContainerListTile>
                                           : _field(map['AMOUNT']);
                                   return Padding(
                                     padding: EdgeInsets.only(bottom: rs.rh(6)),
-                                    child: Row(
-                                      children: [
-                                        Icon(Icons.payments_rounded,
-                                            size: rs.r(14), color: kBlueColor),
-                                        SizedBox(width: rs.rw(6)),
-                                        Expanded(
-                                          child: Text(
-                                            _formatDate(paidAt),
-                                            style: TextStyle(
-                                              fontSize: rs.sp(12),
-                                              color: Colors.black54,
-                                              fontWeight: FontWeight.w600,
-                                            ),
-                                          ),
-                                        ),
-                                        Text(
-                                          'Rs.$paidValue',
-                                          style: TextStyle(
-                                            fontSize: rs.sp(12),
-                                            fontWeight: FontWeight.w700,
-                                            color: kIndigoDark,
-                                          ),
-                                        ),
-                                      ],
+                                    child: _buildHistoryRow(
+                                      context,
+                                      index: index,
+                                      paidAt: paidAt,
+                                      paidValue: paidValue,
                                     ),
                                   );
                                 }).toList(),
@@ -387,6 +410,126 @@ class _PaymentContainerListTileState extends State<PaymentContainerListTile>
       return DateFormat('dd-MM-yyyy hh:mm a').format(value);
     }
     return value.toString();
+  }
+
+  Widget _buildHistoryRow(
+    BuildContext context, {
+    required int index,
+    required dynamic paidAt,
+    required String paidValue,
+  }) {
+    final rs = context.rs;
+    return Row(
+      children: [
+        Expanded(
+          flex: 1,
+          child: Text(
+            '${_ordinal(index + 1)} பணம்',
+            style: TextStyle(
+              fontSize: rs.sp(12),
+              color: Colors.black54,
+              fontWeight: FontWeight.w600,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+        Expanded(
+          flex: 2,
+          child: Text(
+            _formatDate(paidAt),
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: rs.sp(12),
+              color: Colors.black54,
+              fontWeight: FontWeight.w600,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+        Expanded(
+          flex: 1,
+          child: Text(
+            'Rs.$paidValue',
+            textAlign: TextAlign.right,
+            style: TextStyle(
+              fontSize: rs.sp(12),
+              color: kIndigoDark,
+              fontWeight: FontWeight.w800,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      ],
+    );
+  }
+
+  String _ordinal(int value) {
+    final mod100 = value % 100;
+    if (mod100 >= 11 && mod100 <= 13) {
+      return '${value}th';
+    }
+    switch (value % 10) {
+      case 1:
+        return '${value}st';
+      case 2:
+        return '${value}nd';
+      case 3:
+        return '${value}rd';
+      default:
+        return '${value}th';
+    }
+  }
+
+  Widget _buildInlineDetail(
+    BuildContext context, {
+    required IconData icon,
+    required String label,
+    required String value,
+  }) {
+    final rs = context.rs;
+    return Row(
+      children: [
+        Container(
+          height: rs.r(22),
+          width: rs.r(22),
+          decoration: BoxDecoration(
+            color: kPrimaryLightColor.withValues(alpha: 0.45),
+            borderRadius: BorderRadius.circular(rs.r(6)),
+          ),
+          child: Icon(icon, size: rs.r(14), color: kIndigoLight),
+        ),
+        SizedBox(width: rs.rw(8)),
+        Expanded(
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: rs.sp(12),
+              color: Colors.black54,
+              fontWeight: FontWeight.w600,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+        SizedBox(width: rs.rw(8)),
+        Flexible(
+          child: Text(
+            value,
+            textAlign: TextAlign.right,
+            style: TextStyle(
+              fontSize: rs.sp(12),
+              color: Colors.black87,
+              fontWeight: FontWeight.w700,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      ],
+    );
   }
 
   Future<void> _showDeleteDialog(BuildContext context) async {
@@ -531,7 +674,7 @@ class _PaymentContainerListTileState extends State<PaymentContainerListTile>
     }
     if (pendingValue > 0 || (amountValue > 0 && paidValue < amountValue)) {
       return _StatusInfo(
-        label: 'நிலுவை',
+        label: 'தருமதி',
         value: pendingValue > 0
             ? pendingValue
             : (amountValue - paidValue).clamp(0, double.infinity),

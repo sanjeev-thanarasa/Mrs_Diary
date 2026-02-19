@@ -336,7 +336,7 @@ class _MyAccountsUserDetailsState extends State<MyAccountsUserDetails> {
               width: itemWidth,
               child: _SummaryStatCard(
                 title: 'கொடுக்க வேண்டியது',
-                subtitle: 'கொடுமதி/நிலுவை',
+                subtitle: 'கொடுமதி/தருமதி',
                 amount: totals.pending,
                 icon: Icons.schedule_rounded,
                 accentColor: const Color(0xffAD1457),

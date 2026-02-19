@@ -289,7 +289,7 @@ class _MyAccountsScreenState extends State<MyAccountsScreen> {
             SizedBox(
               width: itemWidth,
               child: _HeaderStatChip(
-                label: "மீதமுள்ள நிலுவைத் தொகை",
+                label: "மீதமுள்ள தருமதி தொகை",
                 value: pending,
                 icon: Icons.schedule_rounded,
                 color: const Color(0xffAD1457),

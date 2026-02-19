@@ -84,14 +84,14 @@ class DashBoardService {
       history.add({
         "AMOUNT": _formatAmountForStorage(prevPending),
         "PAID_AT": Timestamp.fromDate(createAt ?? DateTime.now()),
-        "NOTE": "முந்தைய நிலுவை சேர்க்கப்பட்டது",
+        "NOTE": "முந்தைய தருமதி சேர்க்கப்பட்டது",
       });
     }
     if (appliedToPrevPending > 0) {
       history.add({
         "AMOUNT": _formatAmountForStorage(appliedToPrevPending),
         "PAID_AT": Timestamp.fromDate(createAt ?? DateTime.now()),
-        "NOTE": "முந்தைய நிலுவை கழிக்கப்பட்டது",
+        "NOTE": "முந்தைய தருமதி கழிக்கப்பட்டது",
       });
     }
     if (paidValue > 0) {

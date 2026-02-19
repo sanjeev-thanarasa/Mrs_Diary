@@ -286,7 +286,7 @@ class _EditMyAccountsPaymentState extends State<EditMyAccountsPayment> {
                 child: CRText(
                   color2: Colors.grey,
                   size1: 16.0,
-                  msg1: "நிலுவை (தருமதி) பணம் ",
+                  msg1: "தருமதி பணம் ",
                   msg2: ":  ${_dashBoardService.pendingAmount.text} ",
                   color1: Colors.grey,
                 ),

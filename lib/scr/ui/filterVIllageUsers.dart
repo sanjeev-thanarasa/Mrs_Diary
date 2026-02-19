@@ -287,7 +287,7 @@ class _FilterVillageUserState extends State<FilterVillageUser> {
                   SizedBox(width: 10),
                   Expanded(
                     child: Text(
-                      'மொத்த நிலுவை',
+                      'மொத்த தருமதி',
                       style: TextStyle(
                         fontFamily: 'TamilArima2',
                         color: kIndigoDark,
@@ -505,8 +505,8 @@ class _VillageAmountSummary {
   }
 
   String get labelText {
-    if (hasPending) return 'மொத்த நிலுவை';
+    if (hasPending) return 'மொத்த தருமதி';
     if (hasBalance) return 'மொத்த கொடுமதி';
-    return 'மொத்த நிலுவை';
+    return 'மொத்த தருமதி';
   }
 }

@@ -109,7 +109,7 @@ class _UserDetailsTileState extends State<UserDetailsTile> {
 
       if (pendingTotal > 0) {
         return {
-          'label': 'நிலுவை',
+          'label': 'தருமதி',
           'value': pendingTotal,
         };
       }
@@ -140,7 +140,7 @@ class _UserDetailsTileState extends State<UserDetailsTile> {
   Widget _buildAmountChip(BuildContext context, String label, String amount) {
     final rs = context.rs;
     final colorScheme = Theme.of(context).colorScheme;
-    final isPending = label.contains('நிலுவை');
+    final isPending = label.contains('தருமதி');
     final isBalance = label.contains('கொடுமதி');
     final chipColor = isPending
         ? Colors.red.shade50
@@ -179,7 +179,7 @@ class _UserDetailsTileState extends State<UserDetailsTile> {
   }
 
   Widget _buildAmountSection(BuildContext context) {
-    final label = widget.amountLabel ?? 'நிலுவை';
+    final label = widget.amountLabel ?? 'தருமதி';
     if (_hasAmountValue(widget.amountValue)) {
       final amountText = _formatAmountText(widget.amountValue);
       return _buildAmountChip(context, label, amountText);

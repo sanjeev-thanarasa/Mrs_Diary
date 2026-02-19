@@ -180,7 +180,7 @@ class _CreatePaymentState extends State<CreatePayment> {
             children: [
               if (_paymentServices.pending)
                 _statusTile(
-                  title: "நிலுவை தொகை",
+                  title: "தருமதி தொகை",
                   value: _paymentServices.pendingAmount.text,
                   color: Colors.orange.shade700,
                 ),
@@ -195,8 +195,8 @@ class _CreatePaymentState extends State<CreatePayment> {
                 _inputField(
                   readOnly: true,
                   controller: _paymentServices.pendingDateController,
-                  labelText: "நிலுவை திகதி",
-                  hintText: "நிலுவை திகதி",
+                  labelText: "தருமதி திகதி",
+                  hintText: "தருமதி திகதி",
                   icon: Icons.update,
                   keyboardType: TextInputType.text,
                   onTap: () {

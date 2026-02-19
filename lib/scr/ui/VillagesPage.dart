@@ -764,8 +764,8 @@ class _VillageAmountSummary {
   }
 
   String get labelText {
-    if (hasPending) return 'மொத்த நிலுவை';
+    if (hasPending) return 'மொத்த தருமதி';
     if (hasBalance) return 'மொத்த கொடுமதி';
-    return 'மொத்த நிலுவை';
+    return 'மொத்த தருமதி';
   }
 }

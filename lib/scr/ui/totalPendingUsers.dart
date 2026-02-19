@@ -232,7 +232,7 @@ class _TotalPendingUsersState extends State<TotalPendingUsers> {
                 const SizedBox(width: 10),
                 const Expanded(
                   child: Text(
-                    'மொத்த நிலுவை',
+                    'மொத்த தருமதி',
                     style: TextStyle(
                       fontFamily: 'TamilArima',
                       fontWeight: FontWeight.w700,
@@ -416,7 +416,7 @@ class _TotalPendingUsersState extends State<TotalPendingUsers> {
           villageName: data['area'],
           userId: data['id'] ?? data.id,
           collectionName: showResults[index].collectionName,
-          amountLabel: 'நிலுவை',
+          amountLabel: 'தருமதி',
           amountValue: showResults[index].pendingAmount,
           onTap: () {
             changeScreenAnimated(

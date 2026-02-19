@@ -166,8 +166,8 @@ class _EditPaymentState extends State<EditPayment> {
                 _inputField(
                   readOnly: true,
                   controller: _paymentServices.pendingDateController,
-                  labelText: "நிலுவை திகதி",
-                  hintText: "நிலுவை திகதி",
+                  labelText: "தருமதி திகதி",
+                  hintText: "தருமதி திகதி",
                   icon: Icons.update,
                   keyboardType: TextInputType.text,
                   onTap: () {
@@ -185,7 +185,7 @@ class _EditPaymentState extends State<EditPayment> {
               if (_paymentServices.pending) ...[
                 const SizedBox(height: 10),
                 _statusTile(
-                  title: "புதிய நிலுவை தொகை",
+                  title: "புதிய தருமதி தொகை",
                   value: _paymentServices.pendingAmount.text,
                   color: Colors.blueGrey,
                 ),
@@ -307,7 +307,7 @@ class _EditPaymentState extends State<EditPayment> {
                   _infoChip(
                     label: widget.snapshot['BALANCE_AMOUNT'] != ''
                         ? 'கொடுமதி'
-                        : 'நிலுவை',
+                        : 'தருமதி',
                     value: pendingOrBalance,
                     color: Colors.purple.shade700,
                   ),
@@ -513,7 +513,6 @@ class _EditPaymentState extends State<EditPayment> {
             if (_paymentServices.newGiveAmount.text.trim().isNotEmpty) {
               _recalculateFromAdditional();
             }
-            _paymentServices.createDate = DateTime.now();
             await _paymentServices.updatePaymentRecord(
               snapshot: widget.snapshot,
             );

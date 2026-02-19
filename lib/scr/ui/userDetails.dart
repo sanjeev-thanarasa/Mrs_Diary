@@ -433,9 +433,9 @@ class _UserDetailsState extends State<UserDetails> {
               children: [
                 _buildSummaryTile('செலுத்தியது', totalPaid, Colors.green),
                 const SizedBox(width: 8),
-                _buildSummaryTile('நிலுவை', totalPending, Colors.orange),
+                _buildSummaryTile('தருமதி', totalPending, Colors.redAccent),
                 const SizedBox(width: 8),
-                _buildSummaryTile('கொடுமதி', totalBalance, Colors.redAccent),
+                _buildSummaryTile('கொடுமதி', totalBalance, Colors.orange),
               ],
             ),
           ],

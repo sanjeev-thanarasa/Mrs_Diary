@@ -283,7 +283,7 @@ Future<void> showRaviInfoDialog(BuildContext context) {
                         bullet(
                           title: 'பரிவர்த்தனை & ரீசார்ஜ் விவரங்கள்',
                           desc:
-                              'ரீசார்ஜ் விபரம், நிலுவை, பெற்ற தொகை போன்ற தகவல்களை ஒழுங்காக பராமரிக்கலாம்.',
+                              'ரீசார்ஜ் விபரம், தருமதி, பெற்ற தொகை போன்ற தகவல்களை ஒழுங்காக பராமரிக்கலாம்.',
                           icon: Icons.receipt_long_rounded,
                         ),
                         bullet(

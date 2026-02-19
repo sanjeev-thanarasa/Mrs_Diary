@@ -229,7 +229,7 @@ class _CListTileState extends State<CListTile> {
   }
 
   Widget _buildAmountChip(String amount) {
-    final isPending = amount.contains('நிலுவை');
+    final isPending = amount.contains('தருமதி');
     final isBalance = amount.contains('கொடுமதி');
     final chipColor = isPending
         ? Colors.red.shade50
