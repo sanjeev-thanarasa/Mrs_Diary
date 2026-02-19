@@ -117,7 +117,7 @@ class _TotalPendingUsersState extends State<TotalPendingUsers> {
   }
 
   Future<void> _fetchAllForSearch() async {
-    if (_isSearchLoading || !_hasMore) return;
+    if (_isSearchLoading) return;
 
     setState(() {
       _isSearchLoading = true;
@@ -439,6 +439,10 @@ class _TotalPendingUsersState extends State<TotalPendingUsers> {
   }
 
   Future<void> _onPullRefresh() async {
+    if (searchText.trim().isNotEmpty) {
+      await _fetchAllForSearch();
+      return;
+    }
     await _fetchInitial();
   }
 

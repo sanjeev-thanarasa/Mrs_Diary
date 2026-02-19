@@ -111,7 +111,7 @@ class _TotalOldCustomersState extends State<TotalOldCustomers> {
   }
 
   Future<void> _fetchAllForSearch() async {
-    if (_isSearchLoading || !_hasMore) return;
+    if (_isSearchLoading) return;
 
     setState(() {
       _isSearchLoading = true;
@@ -263,6 +263,10 @@ class _TotalOldCustomersState extends State<TotalOldCustomers> {
   }
 
   Future<void> _onPullRefresh() async {
+    if (searchText.trim().isNotEmpty) {
+      await _fetchAllForSearch();
+      return;
+    }
     await _fetchInitial();
   }
 
