@@ -219,10 +219,14 @@ class _AstrologyChartScreenState extends State<AstrologyChartScreen> {
         children: [
           _buildHeaderRow('பெயர்', widget.profile.name),
           _buildHeaderRow('பிறந்த இடம்', widget.profile.address),
+          _buildHeaderRow('பாலினம்', widget.profile.gender),
           _buildHeaderRow('பிறந்த நாள்', widget.profile.birthDay),
           _buildHeaderRow('ராசி', widget.profile.rasi),
           _buildHeaderRow('நட்சத்திரம்', widget.profile.natchathiram),
           _buildHeaderRow('பாதம்', widget.profile.paatham),
+          _buildHeaderRow('திதி', widget.profile.thithi),
+          _buildHeaderRow('கரணம்', widget.profile.karanam),
+          _buildHeaderRow('யோகம்', widget.profile.yogam),
           _buildHeaderRow('பிறந்த திகதி', _formatDate(widget.profile.dob)),
           _buildHeaderRow(
             'பிறந்த நேரம்',

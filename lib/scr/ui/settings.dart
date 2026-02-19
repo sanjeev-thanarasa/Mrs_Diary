@@ -6,7 +6,6 @@ import 'package:mrs_dth_diary_v1/scr/helpers/app_settings.dart';
 import 'package:mrs_dth_diary_v1/scr/helpers/auth_service.dart';
 import 'package:mrs_dth_diary_v1/scr/helpers/passcode_storage.dart';
 import 'package:mrs_dth_diary_v1/scr/ui/DashBoard/MyAccountsScreen.dart';
-import 'package:mrs_dth_diary_v1/scr/ui/notes_screen.dart';
 import 'package:mrs_dth_diary_v1/scr/ui/records_screen.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/customText.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/subHelpers/responsive.dart';
@@ -401,24 +400,6 @@ class _SettingsScreenState extends State<SettingsScreen>
                 ),
               ),
             ],
-          ),
-        ),
-        SizedBox(height: rs.rh(1)),
-        Card(
-          child: ListTile(
-            leading: Icon(Icons.note_alt_outlined, size: rs.r(20)),
-            title: Text('Note App', style: TextStyle(fontSize: rs.sp(15.5))),
-            subtitle: Text(
-              'Open your notes',
-              style: TextStyle(fontSize: rs.sp(13)),
-            ),
-            onTap: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => const NotesScreen(),
-                ),
-              );
-            },
           ),
         ),
         SizedBox(height: rs.rh(1)),

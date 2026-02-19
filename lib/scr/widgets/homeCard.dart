@@ -62,7 +62,7 @@ class _HomeCardState extends State<HomeCard> {
     );
   }
 
-  lengthCounter(
+  int? lengthCounter(
     String title,
     VillageProvider villageProvider,
   ) {
@@ -82,8 +82,10 @@ class _HomeCardState extends State<HomeCard> {
       return villageProvider.totalPendingCount;
     } else if (title == "பணம் தந்தவர்கள்") {
       return villageProvider.totalPaidCount;
+    } else if (title == "குறிப்புகள்") {
+      return null;
     } else {
-      return 0;
+      return null;
     }
   }
 }
@@ -98,7 +100,7 @@ class _DashboardTile extends StatelessWidget {
 
   final String title;
   final String image;
-  final int count;
+  final int? count;
   final VoidCallback onTap;
 
   @override
@@ -147,7 +149,7 @@ class _DashboardTile extends StatelessWidget {
                         fit: BoxFit.cover,
                       ),
                     ),
-                    if (count >= 0)
+                    if (count != null)
                       Container(
                         padding: EdgeInsets.symmetric(
                           horizontal: rs.rw(10),
@@ -167,11 +169,7 @@ class _DashboardTile extends StatelessWidget {
                         ),
                       )
                     else
-                      Icon(
-                        Icons.error_outline_rounded,
-                        color: colorScheme.primary.withValues(alpha: 0.4),
-                        size: rs.r(22),
-                      ),
+                      const SizedBox.shrink(),
                   ],
                 ),
                 const Spacer(),

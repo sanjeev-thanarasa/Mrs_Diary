@@ -12,6 +12,10 @@ class AstrologyProfile {
   final String rasi;
   final String natchathiram;
   final String paatham;
+  final String thithi;
+  final String karanam;
+  final String yogam;
+  final String gender;
   final DateTime dob;
   final TimeOfDay birthTime;
   final String paathangal;
@@ -26,6 +30,10 @@ class AstrologyProfile {
     required this.rasi,
     required this.natchathiram,
     required this.paatham,
+    required this.thithi,
+    required this.karanam,
+    required this.yogam,
+    required this.gender,
     required this.dob,
     required this.birthTime,
     required this.paathangal,
@@ -71,6 +79,10 @@ class AstrologyProfile {
       rasi: (data['rasi'] ?? '').toString(),
       natchathiram: (data['natchathiram'] ?? '').toString(),
       paatham: (data['paatham'] ?? '').toString(),
+      thithi: (data['thithi'] ?? '').toString(),
+      karanam: (data['karanam'] ?? '').toString(),
+      yogam: (data['yogam'] ?? '').toString(),
+      gender: (data['gender'] ?? '').toString(),
       dob: dob,
       birthTime: birthTime,
       paathangal: (data['paathangal'] ?? '').toString(),
@@ -139,6 +151,10 @@ class _AstrologyFormScreenState extends State<AstrologyFormScreen> {
   String? _selectedRasi;
   String? _selectedNatchathiram;
   String? _selectedPaatham;
+  String? _selectedThithi;
+  String? _selectedKaranam;
+  String? _selectedYogam;
+  String? _selectedGender;
   DateTime? _dob;
   TimeOfDay? _birthTime;
 
@@ -189,6 +205,71 @@ class _AstrologyFormScreenState extends State<AstrologyFormScreen> {
     '4ம் பாதம்',
   ];
 
+  static const List<String> _thithiList = [
+    'பிரதமை',
+    'த்விதியை',
+    'திரிதியை',
+    'சதுர்த்தி',
+    'பஞ்சமி',
+    'சஷ்டி',
+    'சப்தமி',
+    'அஷ்டமி',
+    'நவமி',
+    'தசமி',
+    'ஏகாதசி',
+    'துவாதசி',
+    'திரயோதசி',
+    'சதுர்த்தசி',
+    'பௌர்ணமி',
+    'அமாவாசை',
+  ];
+
+  static const List<String> _karanamList = [
+    'பவம் (Bava)',
+    'பாலவம் (Balava)',
+    'கௌலவம் (Kaulava)',
+    'தைதுலம் (Taitila)',
+    'கரஜம் (Garaja)',
+    'வணிஜம் (Vanija)',
+    'விஷ்டி / பத்ரா (Vishti / Bhadra)',
+    'சகுனி (Shakuni)',
+    'சதுஷ்பாதம் (Chatushpada)',
+    'நாகவம் (Naga)',
+    'கிம்ஸ்துக்னம் (Kimstughna)',
+  ];
+
+  static const List<String> _yogamList = [
+    'விஷ்கம்பம்',
+    'ப்ரீதி',
+    'ஆயுஷ்மான்',
+    'சௌபாக்யம்',
+    'சோபனம்',
+    'அதிகண்டம்',
+    'சுகர்மா',
+    'திருதி',
+    'சூலம்',
+    'கண்டம்',
+    'விருத்தி',
+    'த்ருவம்',
+    'வ்யாகாதம்',
+    'ஹர்ஷணம்',
+    'வஜ்ரம்',
+    'சித்தி',
+    'வ்யதீபாதம்',
+    'வரியான்',
+    'பரிகம்',
+    'சிவம்',
+    'சித்தம்',
+    'சாத்யம்',
+    'சுபம்',
+    'சுக்லம்',
+    'ப்ரம்மம்',
+    'இந்திரம்',
+    'வைதிருதி',
+  ];
+
+  static const List<String> _genderList = ['ஆண்', 'பெண்'];
+
   bool get _isEditing => widget.profile != null;
 
   @override
@@ -203,6 +284,10 @@ class _AstrologyFormScreenState extends State<AstrologyFormScreen> {
       _selectedNatchathiram =
           profile.natchathiram.isEmpty ? null : profile.natchathiram;
       _selectedPaatham = profile.paatham.isEmpty ? null : profile.paatham;
+      _selectedThithi = profile.thithi.isEmpty ? null : profile.thithi;
+      _selectedKaranam = profile.karanam.isEmpty ? null : profile.karanam;
+      _selectedYogam = profile.yogam.isEmpty ? null : profile.yogam;
+      _selectedGender = profile.gender.isEmpty ? null : profile.gender;
       _dob = profile.dob;
       _birthTime = profile.birthTime;
     }
@@ -269,6 +354,15 @@ class _AstrologyFormScreenState extends State<AstrologyFormScreen> {
                               : null,
                     ),
                     SizedBox(height: rs.rh(10)),
+                    _buildChoiceChips(
+                      label: 'பாலினம்',
+                      options: _genderList,
+                      selectedValue: _selectedGender,
+                      onSelected: (value) {
+                        setState(() => _selectedGender = value);
+                      },
+                    ),
+                    SizedBox(height: rs.rh(10)),
                     _buildDropdownField(
                       label: 'பிறந்த நாள்',
                       hint: 'நாள் தேர்வு செய்யவும்',
@@ -322,6 +416,48 @@ class _AstrologyFormScreenState extends State<AstrologyFormScreen> {
                           setState(() => _selectedPaatham = value),
                       validator: (value) => value == null || value.isEmpty
                           ? 'Select a paatham'
+                          : null,
+                    ),
+                  ],
+                ),
+                SizedBox(height: rs.rh(12)),
+                _buildSectionCard(
+                  title: 'ஜோதிட விவரங்கள்',
+                  icon: Icons.auto_awesome_rounded,
+                  children: [
+                    _buildDropdownField(
+                      label: 'திதி',
+                      hint: 'திதி தேர்வு செய்யவும்',
+                      value: _selectedThithi,
+                      items: _thithiList,
+                      onChanged: (value) =>
+                          setState(() => _selectedThithi = value),
+                      validator: (value) => value == null || value.isEmpty
+                          ? 'Select a thithi'
+                          : null,
+                    ),
+                    SizedBox(height: rs.rh(10)),
+                    _buildDropdownField(
+                      label: 'கரணம்',
+                      hint: 'கரணம் தேர்வு செய்யவும்',
+                      value: _selectedKaranam,
+                      items: _karanamList,
+                      onChanged: (value) =>
+                          setState(() => _selectedKaranam = value),
+                      validator: (value) => value == null || value.isEmpty
+                          ? 'Select a karanam'
+                          : null,
+                    ),
+                    SizedBox(height: rs.rh(10)),
+                    _buildDropdownField(
+                      label: 'யோகம்',
+                      hint: 'யோகம் தேர்வு செய்யவும்',
+                      value: _selectedYogam,
+                      items: _yogamList,
+                      onChanged: (value) =>
+                          setState(() => _selectedYogam = value),
+                      validator: (value) => value == null || value.isEmpty
+                          ? 'Select a yogam'
                           : null,
                     ),
                   ],
@@ -598,6 +734,55 @@ class _AstrologyFormScreenState extends State<AstrologyFormScreen> {
     );
   }
 
+  Widget _buildChoiceChips({
+    required String label,
+    required List<String> options,
+    required String? selectedValue,
+    required ValueChanged<String?> onSelected,
+  }) {
+    final rs = context.rs;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            color: kIndigoDark,
+            fontSize: rs.sp(13.5),
+            fontFamily: "TamilArima",
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        SizedBox(height: rs.rh(8)),
+        Wrap(
+          spacing: rs.rw(8),
+          runSpacing: rs.rh(6),
+          children: options.map((option) {
+            final isSelected = selectedValue == option;
+            return ChoiceChip(
+              label: Text(
+                option,
+                style: TextStyle(
+                  fontFamily: "TamilArima",
+                  fontSize: rs.sp(13.5),
+                  fontWeight: FontWeight.w600,
+                  color: isSelected ? white : kIndigoDark,
+                ),
+              ),
+              selected: isSelected,
+              selectedColor: kPrimaryColor,
+              backgroundColor: kPrimaryLightColor.withValues(alpha: 0.25),
+              onSelected: (selected) {
+                if (!selected) return;
+                onSelected(option);
+              },
+            );
+          }).toList(),
+        ),
+      ],
+    );
+  }
+
   Future<void> _pickDate(ValueChanged<DateTime> onSelected) async {
     final now = DateTime.now();
     final picked = await showDatePicker(
@@ -649,6 +834,22 @@ class _AstrologyFormScreenState extends State<AstrologyFormScreen> {
       _showMessage('Select paatham.');
       return;
     }
+    if (_selectedGender == null || _selectedGender!.isEmpty) {
+      _showMessage('Select gender.');
+      return;
+    }
+    if (_selectedThithi == null || _selectedThithi!.isEmpty) {
+      _showMessage('Select thithi.');
+      return;
+    }
+    if (_selectedKaranam == null || _selectedKaranam!.isEmpty) {
+      _showMessage('Select karanam.');
+      return;
+    }
+    if (_selectedYogam == null || _selectedYogam!.isEmpty) {
+      _showMessage('Select yogam.');
+      return;
+    }
     if (_dob == null || _birthTime == null) {
       _showMessage('Select date of birth and birth time.');
       return;
@@ -662,6 +863,10 @@ class _AstrologyFormScreenState extends State<AstrologyFormScreen> {
         'rasi': _selectedRasi,
         'natchathiram': _selectedNatchathiram,
         'paatham': _selectedPaatham,
+        'thithi': _selectedThithi,
+        'karanam': _selectedKaranam,
+        'yogam': _selectedYogam,
+        'gender': _selectedGender,
         'dob': Timestamp.fromDate(_dob!),
         'birthTime': _formatTime24(_birthTime!),
         'updatedAt': FieldValue.serverTimestamp(),
@@ -675,6 +880,10 @@ class _AstrologyFormScreenState extends State<AstrologyFormScreen> {
         'rasi': _selectedRasi,
         'natchathiram': _selectedNatchathiram,
         'paatham': _selectedPaatham,
+        'thithi': _selectedThithi,
+        'karanam': _selectedKaranam,
+        'yogam': _selectedYogam,
+        'gender': _selectedGender,
         'paathangal': '',
         'dob': Timestamp.fromDate(_dob!),
         'birthTime': _formatTime24(_birthTime!),
