@@ -45,12 +45,13 @@ class _PaymentContainerListTileState extends State<PaymentContainerListTile>
     final packageDateText = _formatDate(createdAt);
     final expiredDateText = expiredAt != null ? _formatDate(expiredAt) : '';
     final amountDisplay = 'Rs.${amount.isEmpty ? "0" : amount}';
-    final paidDisplay = 'Rs.${paidAmount.isEmpty ? "0" : paidAmount}';
+    final initialPaid = _initialPaidFromHistory(history, paidAmount);
+    final paidDisplay = 'Rs.${initialPaid.isEmpty ? "0" : initialPaid}';
     final pendingDisplay = pendingAmount.isNotEmpty ? 'Rs.$pendingAmount' : '';
     final balanceDisplay = balanceAmount.isNotEmpty ? 'Rs.$balanceAmount' : '';
     final dueLabel = pendingAmount.isNotEmpty
         ? 'தருமதி'
-        : (balanceAmount.isNotEmpty ? 'தருமதி' : '');
+        : (balanceAmount.isNotEmpty ? 'கொடுமதி' : '');
     final dueValue = pendingAmount.isNotEmpty ? pendingDisplay : balanceDisplay;
     final status = _resolveStatus(
       amount: amount,
@@ -401,6 +402,19 @@ class _PaymentContainerListTileState extends State<PaymentContainerListTile>
     if (value == null) return '';
     if (value is String) return value.trim();
     return value.toString();
+  }
+
+  String _initialPaidFromHistory(List history, String fallback) {
+    if (history.isEmpty) return fallback;
+    for (final entry in history) {
+      if (entry is Map) {
+        final note = entry['NOTE']?.toString().trim() ?? '';
+        if (note == 'இந்த பதிவில் கொடுத்த பணம்') {
+          return _field(entry['AMOUNT']);
+        }
+      }
+    }
+    return '0';
   }
 
   String _formatDate(dynamic value) {

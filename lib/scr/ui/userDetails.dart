@@ -406,7 +406,7 @@ class _UserDetailsState extends State<UserDetails> {
 
     for (final doc in docs) {
       final data = doc.data();
-      totalPaid += _toDouble(data['PAID_AMOUNT']);
+      totalPaid += _paidFromHistory(data);
       totalPending += _toDouble(data['PENDING_AMOUNT']);
       totalBalance += _toDouble(data['BALANCE_AMOUNT']);
     }
@@ -630,6 +630,38 @@ class _UserDetailsState extends State<UserDetails> {
     if (value == null) return 0;
     if (value is num) return value.toDouble();
     return double.tryParse(value.toString()) ?? 0;
+  }
+
+  double _paidFromHistory(Map<String, dynamic> data) {
+    final history = data['PAYMENT_HISTORY'];
+    if (history is! List || history.isEmpty) {
+      return _toDouble(data['PAID_AMOUNT']);
+    }
+
+    double total = 0;
+    bool matched = false;
+    for (final entry in history) {
+      if (entry is Map) {
+        final note = entry['NOTE']?.toString().trim() ?? '';
+        if (_isDirectPaidNote(note)) {
+          total += _toDouble(entry['AMOUNT']);
+          matched = true;
+        }
+      }
+    }
+
+    return matched ? total : 0;
+  }
+
+  bool _isDirectPaidNote(String note) {
+    if (note.isEmpty) return false;
+    const directNotes = [
+      'இந்த பதிவில் கொடுத்த பணம்',
+      'புதிதாக சேர்த்த பணம்',
+      'இந்த பதிவில் கொடுத்தது',
+      'புதிதாக கொடுத்தது',
+    ];
+    return directNotes.contains(note);
   }
 
   Future<void> _openEditUser() async {
