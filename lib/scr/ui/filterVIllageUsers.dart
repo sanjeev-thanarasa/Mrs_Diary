@@ -13,6 +13,7 @@ import 'package:mrs_dth_diary_v1/scr/widgets/loading.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/noResultFound.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/userDetailsTile.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/subHelpers/screen_navigation.dart';
+import 'package:mrs_dth_diary_v1/scr/widgets/subHelpers/responsive.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/subHelpers/styles.dart';
 
 class FilterVillageUser extends StatefulWidget {
@@ -27,6 +28,9 @@ class _FilterVillageUserState extends State<FilterVillageUser> {
   String searchText = '';
   int _radioValue = 0;
   bool searchVisible = false;
+  int _paymentFilterValue = 0;
+  bool _isStatusLoading = false;
+  final Map<String, _UserPaymentStatus> _statusCache = {};
   ScrollController _controller = ScrollController();
   String counter = "0";
   Future<_VillageAmountSummary>? _amountSummaryFuture;
@@ -57,10 +61,21 @@ class _FilterVillageUserState extends State<FilterVillageUser> {
         prefixIcon: Icons.arrow_back,
         iconOnTap: () => Navigator.pop(context),
         onChanged: (text) => _onSearchChanged(text),
+        trailing: IconButton(
+          icon: const Icon(Icons.filter_list_rounded, color: kPrimaryColor),
+          onPressed: () => setState(() {
+            searchVisible = !searchVisible;
+            if (!searchVisible) {
+              _radioValue = 0;
+              _paymentFilterValue = 0;
+            }
+          }),
+        ),
         logoOnTap: () => setState(() {
           searchVisible = !searchVisible;
           if (!searchVisible) {
             _radioValue = 0;
+            _paymentFilterValue = 0;
           }
         }),
       ),
@@ -79,20 +94,18 @@ class _FilterVillageUserState extends State<FilterVillageUser> {
                     padding: const EdgeInsets.only(top: 15.0, bottom: 15.0),
                     child: Column(
                       children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                          children: [
-                            _buildRadio(value: 0, name: "Name"),
-                            _buildRadio(value: 1, name: "DishNumber"),
-                          ],
-                        ),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                          children: [
-                            _buildRadio(value: 2, name: "Mobile No"),
-                            _buildRadio(value: 3, name: "Dish Type"),
-                          ],
-                        ),
+                        _buildSearchFilterChips(),
+                        const SizedBox(height: 10),
+                        _buildPaymentFilterChips(),
+                        if (_isStatusLoading)
+                          const Padding(
+                            padding: EdgeInsets.only(top: 8),
+                            child: SizedBox(
+                              height: 16,
+                              width: 16,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            ),
+                          ),
                       ],
                     ),
                   )),
@@ -118,6 +131,9 @@ class _FilterVillageUserState extends State<FilterVillageUser> {
 
                       final newDocs = newSnapshot.data?.docs ?? [];
                       final allDocs = [...oldDocs, ...newDocs];
+                      if (_paymentFilterValue != 0) {
+                        _ensureStatusCache(allDocs);
+                      }
                       final showResults = _searchResultsList(allDocs);
 
                       return showResults.isNotEmpty
@@ -172,26 +188,100 @@ class _FilterVillageUserState extends State<FilterVillageUser> {
     );
   }
 
-  Widget _buildRadio({required int value, required String name}) {
-    return Row(
-      children: [
-        Radio(
-          value: value,
-          activeColor: Colors.blue,
-          groupValue: _radioValue,
-          onChanged: _handleRadioValueChange,
+  Widget _buildSearchFilterChips() {
+    final rs = context.rs;
+    return SizedBox(
+      height: rs.rh(54),
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(16, 6, 16, 6),
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: [
+            _buildSearchChip(value: 0, label: 'பெயர்'),
+            SizedBox(width: rs.rw(10)),
+            _buildSearchChip(value: 1, label: 'டிஷ் நம்பர்'),
+            SizedBox(width: rs.rw(10)),
+            _buildSearchChip(value: 2, label: 'மொபைல்'),
+            SizedBox(width: rs.rw(10)),
+            _buildSearchChip(value: 3, label: 'டிஷ் வகை'),
+          ],
         ),
-        CText(
-          msg: name,
-          color: Colors.black,
-          size: 20.0,
-        ),
-      ],
+      ),
     );
   }
 
-  void _handleRadioValueChange(int? value) {
-    if (value == null) return;
+  Widget _buildSearchChip({required int value, required String label}) {
+    return _buildFilterChip(
+      label: label,
+      selected: _radioValue == value,
+      onSelected: () => _handleRadioValueChange(value),
+    );
+  }
+
+  Widget _buildPaymentFilterChips() {
+    final rs = context.rs;
+    return SizedBox(
+      height: rs.rh(50),
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: [
+            _buildFilterChip(
+              label: 'தருமதி',
+              selected: _paymentFilterValue == 1,
+              onSelected: () => setState(() {
+                _paymentFilterValue = _paymentFilterValue == 1 ? 0 : 1;
+              }),
+            ),
+            SizedBox(width: rs.rw(10)),
+            _buildFilterChip(
+              label: 'கொடுமதி',
+              selected: _paymentFilterValue == 2,
+              onSelected: () => setState(() {
+                _paymentFilterValue = _paymentFilterValue == 2 ? 0 : 2;
+              }),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFilterChip({
+    required String label,
+    required bool selected,
+    required VoidCallback onSelected,
+  }) {
+    final rs = context.rs;
+    return ChoiceChip(
+      label: Text(
+        label,
+        style: TextStyle(
+          fontFamily: selected ? 'TamilArima2' : 'TamilArima',
+          fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+          color: Colors.black87,
+          fontSize: rs.sp(13),
+        ),
+      ),
+      selected: selected,
+      selectedColor: kPrimaryColor.withValues(alpha: 0.18),
+      backgroundColor: Colors.white,
+      side: BorderSide(
+        color: selected ? kPrimaryColor.withValues(alpha: 0.5) : Colors.black12,
+        width: 1,
+      ),
+      onSelected: (_) => onSelected(),
+      padding: EdgeInsets.symmetric(horizontal: rs.rw(14), vertical: rs.rh(8)),
+      labelPadding: EdgeInsets.symmetric(
+        horizontal: rs.rw(6),
+        vertical: rs.rh(3),
+      ),
+      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+    );
+  }
+
+  void _handleRadioValueChange(int value) {
     setState(() {
       _radioValue = value;
     });
@@ -249,7 +339,92 @@ class _FilterVillageUserState extends State<FilterVillageUser> {
     } else {
       showResults = List.from(snapshots);
     }
+
+    if (_paymentFilterValue != 0 &&
+        !(_isStatusLoading && _statusCache.isEmpty)) {
+      showResults = showResults.where((snapshot) {
+        final userId = _resolveUserId(snapshot);
+        final status = _statusCache[userId];
+        if (status == null) return false;
+        if (_paymentFilterValue == 1) return status.hasPending;
+        if (_paymentFilterValue == 2) return status.hasBalance;
+        return true;
+      }).toList();
+    }
     return showResults;
+  }
+
+  String _resolveUserId(QueryDocumentSnapshot<Map<String, dynamic>> snapshot) {
+    final data = snapshot.data();
+    final id = data['id'] ?? snapshot.id;
+    return id.toString();
+  }
+
+  Future<void> _ensureStatusCache(
+      List<QueryDocumentSnapshot<Map<String, dynamic>>> snapshots) async {
+    if (_isStatusLoading) return;
+    final missing = <String>{};
+    for (final doc in snapshots) {
+      final userId = _resolveUserId(doc);
+      if (!_statusCache.containsKey(userId)) {
+        missing.add(userId);
+      }
+    }
+    if (missing.isEmpty) return;
+
+    setState(() => _isStatusLoading = true);
+    try {
+      final result = await _fetchUserStatusMap(missing);
+      setState(() {
+        _statusCache.addAll(result);
+        _isStatusLoading = false;
+      });
+    } catch (_) {
+      setState(() => _isStatusLoading = false);
+    }
+  }
+
+  Future<Map<String, _UserPaymentStatus>> _fetchUserStatusMap(
+      Set<String> userIds) async {
+    final firestore = FirebaseFirestore.instance;
+    final ownerId = requireOwnerId();
+    final statusMap = <String, _UserPaymentStatus>{};
+    const chunkSize = 10;
+    final queryIds = <dynamic>[];
+    for (final id in userIds) {
+      queryIds.add(id);
+      final parsed = int.tryParse(id);
+      if (parsed != null) {
+        queryIds.add(parsed);
+      }
+    }
+
+    for (var i = 0; i < queryIds.length; i += chunkSize) {
+      final chunk = queryIds.sublist(
+        i,
+        i + chunkSize > queryIds.length ? queryIds.length : i + chunkSize,
+      );
+      final paymentSnapshot = await firestore
+          .collection('PaymentRecords')
+          .where('ownerId', isEqualTo: ownerId)
+          .where('USER_ID', whereIn: chunk)
+          .get();
+
+      for (final doc in paymentSnapshot.docs) {
+        final data = doc.data();
+        final userId = data['USER_ID']?.toString();
+        if (userId == null || userId.trim().isEmpty) continue;
+        final pending = _parseAmount(data['PENDING_AMOUNT']);
+        final balance = _parseAmount(data['BALANCE_AMOUNT']);
+        final current = statusMap[userId] ?? const _UserPaymentStatus.zero();
+        statusMap[userId] = _UserPaymentStatus(
+          pending: current.pending + pending,
+          balance: current.balance + balance,
+        );
+      }
+    }
+
+    return statusMap;
   }
 
   Stream<QuerySnapshot<Map<String, dynamic>>> _oldUsersStream() {
@@ -509,4 +684,17 @@ class _VillageAmountSummary {
     if (hasBalance) return 'மொத்த கொடுமதி';
     return 'மொத்த தருமதி';
   }
+}
+
+class _UserPaymentStatus {
+  final double pending;
+  final double balance;
+
+  const _UserPaymentStatus({required this.pending, required this.balance});
+  const _UserPaymentStatus.zero()
+      : pending = 0,
+        balance = 0;
+
+  bool get hasPending => pending > 0;
+  bool get hasBalance => balance > 0;
 }

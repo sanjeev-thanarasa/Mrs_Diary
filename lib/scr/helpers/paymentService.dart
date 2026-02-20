@@ -57,48 +57,20 @@ class PaymentServices {
     final paidValue = _parseAmount(giveAmount.text);
     final ownerId = requireOwnerId();
 
-    double prevBalance = 0;
-    DocumentReference<Map<String, dynamic>>? prevRef;
-
-    final latest = await databaseReference
-        .collection(collection)
-        .where('ownerId', isEqualTo: ownerId)
-        .where("USER_ID", isEqualTo: userId)
-        .orderBy("CREATE_AT", descending: true)
-        .limit(1)
-        .get();
-
-    if (latest.docs.isNotEmpty) {
-      final doc = latest.docs.first;
-      final data = doc.data();
-      prevRef = doc.reference;
-      prevBalance = _parseAmount(data["BALANCE_AMOUNT"]);
-    }
-
     final paidRemaining = paidValue;
+    final balanceResult = await _collectBalances(
+      ownerId: ownerId,
+      userId: userId,
+      paidAt: createDate ?? DateTime.now(),
+      targetLabel: packageName.text,
+    );
+    final totalBalance = balanceResult.total;
 
-    if (prevRef != null) {
-      final updates = <String, dynamic>{};
-      if (prevBalance > 0) {
-        updates["BALANCE_AMOUNT"] = '';
-        updates["PAYMENT_HISTORY"] = FieldValue.arrayUnion([
-          {
-            "AMOUNT": _formatAmountForStorage(prevBalance),
-            "PAID_AT": Timestamp.fromDate(createDate ?? DateTime.now()),
-            "NOTE": "Balance moved to next payment",
-          }
-        ]);
-      }
-      if (updates.isNotEmpty) {
-        await prevRef.update(updates);
-      }
-    }
-
-    final double appliedBalance = prevBalance > 0
-        ? (prevBalance >= rechargeValue ? rechargeValue : prevBalance)
+    final double appliedBalance = totalBalance > 0
+        ? (totalBalance >= rechargeValue ? rechargeValue : totalBalance)
         : 0.0;
     final remainingBalance =
-        prevBalance > appliedBalance ? (prevBalance - appliedBalance) : 0;
+        totalBalance > appliedBalance ? (totalBalance - appliedBalance) : 0;
 
     final effectivePaid = paidRemaining + appliedBalance;
 
@@ -121,6 +93,7 @@ class PaymentServices {
         userId: userId,
         availableBalance: newBalance,
         paidAt: createDate ?? DateTime.now(),
+        sourceLabel: packageName.text,
       );
       appliedToPreviousPending = result.applied;
       newBalance = result.remaining;
@@ -131,21 +104,26 @@ class PaymentServices {
       history.add({
         "AMOUNT": _formatAmountForStorage(paidRemaining),
         "PAID_AT": Timestamp.fromDate(createDate ?? DateTime.now()),
-        "NOTE": "Paid amount",
+        "NOTE": "இந்த பதிவில் கொடுத்த பணம்",
       });
     }
     if (appliedBalance > 0) {
+      final sourceNote = balanceResult.labels.isEmpty
+          ? "முந்தைய பதிவுகளின் கொடுமதி இங்கு சேர்க்கப்பட்டது"
+          : (balanceResult.labels.length == 1
+              ? "${balanceResult.labels.first} பதிவில் இருந்த கொடுமதி இங்கு சேர்க்கப்பட்டது"
+              : "பல பதிவுகளின் கொடுமதி இங்கு சேர்க்கப்பட்டது");
       history.add({
         "AMOUNT": _formatAmountForStorage(appliedBalance),
         "PAID_AT": Timestamp.fromDate(createDate ?? DateTime.now()),
-        "NOTE": "Balance from previous payment",
+        "NOTE": sourceNote,
       });
     }
     if (appliedToPreviousPending > 0) {
       history.add({
         "AMOUNT": _formatAmountForStorage(appliedToPreviousPending),
         "PAID_AT": Timestamp.fromDate(createDate ?? DateTime.now()),
-        "NOTE": "Applied to previous pending",
+        "NOTE": "முந்தைய தருமதிக்கு செலுத்தப்பட்டது",
       });
     }
 
@@ -176,6 +154,8 @@ class PaymentServices {
     required String userId,
     required double availableBalance,
     required DateTime paidAt,
+    String? sourceLabel,
+    String? excludeId,
   }) async {
     if (availableBalance <= 0) {
       return const _BalanceApplyResult(applied: 0, remaining: 0);
@@ -214,6 +194,9 @@ class PaymentServices {
 
     for (final doc in docs) {
       if (remaining <= 0) break;
+      if (excludeId != null && doc.id == excludeId) {
+        continue;
+      }
       final data = doc.data();
       final pendingValue = _parseAmount(data["PENDING_AMOUNT"]);
       if (pendingValue <= 0) continue;
@@ -231,7 +214,9 @@ class PaymentServices {
           {
             "AMOUNT": _formatAmountForStorage(applied),
             "PAID_AT": Timestamp.fromDate(paidAt),
-            "NOTE": "Pending cleared by newer payment",
+            "NOTE": sourceLabel == null || sourceLabel.trim().isEmpty
+                ? "மற்ற பதிவின் கொடுமதி மூலம் தருமதி கழிக்கப்பட்டது"
+                : "${sourceLabel.trim()} பதிவின் கொடுமதி மூலம் தருமதி கழிக்கப்பட்டது",
           }
         ]),
       });
@@ -241,6 +226,52 @@ class PaymentServices {
     }
 
     return _BalanceApplyResult(applied: appliedTotal, remaining: remaining);
+  }
+
+  Future<_BalanceCollectResult> _collectBalances({
+    required String ownerId,
+    required String userId,
+    required DateTime paidAt,
+    required String targetLabel,
+  }) async {
+    final snapshot = await databaseReference
+        .collection(collection)
+        .where('ownerId', isEqualTo: ownerId)
+        .where('USER_ID', isEqualTo: userId)
+        .get();
+
+    double totalBalance = 0;
+    final labels = <String>[];
+    for (final doc in snapshot.docs) {
+      final data = doc.data();
+      final balance = _parseAmount(data["BALANCE_AMOUNT"]);
+      if (balance <= 0) continue;
+      final label = _cleanLabel(data["PACKAGE_NAME"]);
+      if (label.isNotEmpty && !labels.contains(label)) {
+        labels.add(label);
+      }
+      totalBalance += balance;
+      await doc.reference.update({
+        "BALANCE_AMOUNT": '',
+        "PAYMENT_HISTORY": FieldValue.arrayUnion([
+          {
+            "AMOUNT": _formatAmountForStorage(balance),
+            "PAID_AT": Timestamp.fromDate(paidAt),
+            "NOTE": targetLabel.trim().isEmpty
+                ? "இந்த பதிவின் கொடுமதி புதிய பதிவுக்கு மாற்றப்பட்டது"
+                : "இந்த பதிவின் கொடுமதி ${targetLabel.trim()} பதிவுக்கு மாற்றப்பட்டது",
+          }
+        ]),
+      });
+    }
+
+    return _BalanceCollectResult(total: totalBalance, labels: labels);
+  }
+
+  String _cleanLabel(dynamic value) {
+    if (value == null) return '';
+    if (value is String) return value.trim();
+    return value.toString().trim();
   }
 
   Future<void> updatePaymentRecord(
@@ -257,6 +288,18 @@ class PaymentServices {
       pendingValue = rechargeValue - totalPaid;
     } else if (totalPaid > rechargeValue) {
       balanceValue = totalPaid - rechargeValue;
+    }
+
+    if (balanceValue > 0) {
+      final result = await _applyBalanceToPending(
+        ownerId: ownerId,
+        userId: snapshot["USER_ID"],
+        availableBalance: balanceValue,
+        paidAt: DateTime.now(),
+        sourceLabel: packageName.text,
+        excludeId: snapshot.id,
+      );
+      balanceValue = result.remaining;
     }
 
     updatePayment = {
@@ -279,6 +322,7 @@ class PaymentServices {
         {
           "AMOUNT": _formatAmountForStorage(additionalPaid),
           "PAID_AT": Timestamp.fromDate(DateTime.now()),
+          "NOTE": "புதிதாக சேர்த்த பணம்",
         }
       ]);
     }
@@ -332,4 +376,11 @@ class _BalanceApplyResult {
   final double remaining;
 
   const _BalanceApplyResult({required this.applied, required this.remaining});
+}
+
+class _BalanceCollectResult {
+  final double total;
+  final List<String> labels;
+
+  const _BalanceCollectResult({required this.total, required this.labels});
 }

@@ -364,6 +364,7 @@ class _PaymentContainerListTileState extends State<PaymentContainerListTile>
                                       _field(map['AMOUNT']).isEmpty
                                           ? '0'
                                           : _field(map['AMOUNT']);
+                                  final note = _field(map['NOTE']);
                                   return Padding(
                                     padding: EdgeInsets.only(bottom: rs.rh(6)),
                                     child: _buildHistoryRow(
@@ -371,6 +372,7 @@ class _PaymentContainerListTileState extends State<PaymentContainerListTile>
                                       index: index,
                                       paidAt: paidAt,
                                       paidValue: paidValue,
+                                      note: note,
                                     ),
                                   );
                                 }).toList(),
@@ -417,9 +419,10 @@ class _PaymentContainerListTileState extends State<PaymentContainerListTile>
     required int index,
     required dynamic paidAt,
     required String paidValue,
+    required String note,
   }) {
     final rs = context.rs;
-    return Row(
+    final row = Row(
       children: [
         Expanded(
           flex: 1,
@@ -463,6 +466,34 @@ class _PaymentContainerListTileState extends State<PaymentContainerListTile>
           ),
         ),
       ],
+    );
+
+    if (note.isEmpty) {
+      return row;
+    }
+
+    return Container(
+      padding: EdgeInsets.fromLTRB(rs.rw(8), rs.rh(8), rs.rw(8), rs.rh(8)),
+      decoration: BoxDecoration(
+        color: kPrimaryLightColor.withValues(alpha: 0.2),
+        borderRadius: BorderRadius.circular(rs.r(10)),
+        border: Border.all(color: kPrimaryLightColor.withValues(alpha: 0.8)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          row,
+          SizedBox(height: rs.rh(4)),
+          Text(
+            note,
+            style: TextStyle(
+              fontSize: rs.sp(11),
+              color: Colors.black45,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
