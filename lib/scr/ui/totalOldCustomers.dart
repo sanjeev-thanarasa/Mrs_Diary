@@ -22,7 +22,10 @@ class TotalOldCustomers extends StatefulWidget {
 class _TotalOldCustomersState extends State<TotalOldCustomers> {
   String searchText = '';
   int _radioValue = 0;
+  int _paymentFilterValue = 0;
   bool searchVisible = false;
+  bool _isStatusLoading = false;
+  final Map<String, _UserPaymentStatus> _statusCache = {};
   final ScrollController _controller = ScrollController();
   final List<QueryDocumentSnapshot<Map<String, dynamic>>> _docs = [];
   DocumentSnapshot<Map<String, dynamic>>? _lastDoc;
@@ -153,6 +156,7 @@ class _TotalOldCustomersState extends State<TotalOldCustomers> {
             searchVisible = !searchVisible;
             if (!searchVisible) {
               _radioValue = 0;
+              _paymentFilterValue = 0;
             }
           }),
           child: Container(
@@ -176,24 +180,21 @@ class _TotalOldCustomersState extends State<TotalOldCustomers> {
         children: [
           Visibility(
             visible: searchVisible,
-            child: SizedBox(
-              height: rs.rh(54),
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(16, 10, 16, 6),
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  children: [
-                    _buildFilterChip(value: 0, label: "Name"),
-                    SizedBox(width: rs.rw(10)),
-                    _buildFilterChip(value: 1, label: "DishNumber"),
-                    SizedBox(width: rs.rw(10)),
-                    _buildFilterChip(value: 2, label: "Mobile No"),
-                    SizedBox(width: rs.rw(10)),
-                    _buildFilterChip(value: 3, label: "Dish Type"),
-                    SizedBox(width: rs.rw(10)),
-                    _buildFilterChip(value: 4, label: "Village"),
-                  ],
-                ),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 10, 16, 6),
+              child: Column(
+                children: [
+                  _buildAllFilterChips(),
+                  if (_isStatusLoading)
+                    const Padding(
+                      padding: EdgeInsets.only(top: 8),
+                      child: SizedBox(
+                        height: 16,
+                        width: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                    ),
+                ],
               ),
             ),
           ),
@@ -217,6 +218,9 @@ class _TotalOldCustomersState extends State<TotalOldCustomers> {
   }
 
   Widget _buildList() {
+    if (_paymentFilterValue != 0) {
+      _ensureStatusCache(_docs);
+    }
     final showResults = _searchResultsList(_docs);
 
     if (showResults.isEmpty) {
@@ -299,6 +303,78 @@ class _TotalOldCustomersState extends State<TotalOldCustomers> {
     });
   }
 
+  Widget _buildAllFilterChips() {
+    final rs = context.rs;
+    return SizedBox(
+      height: rs.rh(54),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: [
+            _buildFilterChip(value: 0, label: "Name"),
+            SizedBox(width: rs.rw(10)),
+            _buildFilterChip(value: 1, label: "DishNumber"),
+            SizedBox(width: rs.rw(10)),
+            _buildFilterChip(value: 2, label: "Mobile No"),
+            SizedBox(width: rs.rw(10)),
+            _buildFilterChip(value: 3, label: "Dish Type"),
+            SizedBox(width: rs.rw(10)),
+            _buildFilterChip(value: 4, label: "Village"),
+            SizedBox(width: rs.rw(10)),
+            _buildPaymentChip(
+              label: 'தருமதி',
+              selected: _paymentFilterValue == 1,
+              onSelected: () => setState(() {
+                _paymentFilterValue = _paymentFilterValue == 1 ? 0 : 1;
+                _statusCache.clear();
+              }),
+            ),
+            SizedBox(width: rs.rw(10)),
+            _buildPaymentChip(
+              label: 'கொடுமதி',
+              selected: _paymentFilterValue == 2,
+              onSelected: () => setState(() {
+                _paymentFilterValue = _paymentFilterValue == 2 ? 0 : 2;
+                _statusCache.clear();
+              }),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPaymentChip({
+    required String label,
+    required bool selected,
+    required VoidCallback onSelected,
+  }) {
+    final rs = context.rs;
+    return ChoiceChip(
+      label: Text(
+        label,
+        style: TextStyle(
+          fontFamily: selected ? 'TamilArima2' : 'TamilArima',
+          fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+          color: Colors.black87,
+          fontSize: rs.sp(13),
+        ),
+      ),
+      selected: selected,
+      selectedColor: kPrimaryColor.withValues(alpha: 0.18),
+      backgroundColor: Colors.white,
+      side: BorderSide(
+        color: selected ? kPrimaryColor.withValues(alpha: 0.5) : Colors.black12,
+        width: 1,
+      ),
+      onSelected: (_) => onSelected(),
+      padding: EdgeInsets.symmetric(horizontal: rs.rw(14), vertical: rs.rh(8)),
+      labelPadding:
+          EdgeInsets.symmetric(horizontal: rs.rw(6), vertical: rs.rh(3)),
+      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+    );
+  }
+
   _onSearchChanged(String text) {
     final trimmed = text.trim();
     setState(() {
@@ -375,6 +451,116 @@ class _TotalOldCustomersState extends State<TotalOldCustomers> {
     } else {
       showResults = List.from(snapshots);
     }
+
+    if (_paymentFilterValue != 0 &&
+        !(_isStatusLoading && _statusCache.isEmpty)) {
+      showResults = showResults.where((snapshot) {
+        final userId = _resolveUserId(snapshot);
+        final status = _statusCache[userId];
+        if (status == null) return false;
+        if (_paymentFilterValue == 1) return status.hasPending;
+        if (_paymentFilterValue == 2) return status.hasBalance;
+        return true;
+      }).toList();
+    }
     return showResults;
   }
+
+  String _resolveUserId(QueryDocumentSnapshot<Map<String, dynamic>> snapshot) {
+    final data = snapshot.data();
+    final id = data['id'] ?? snapshot.id;
+    return id.toString();
+  }
+
+  Future<void> _ensureStatusCache(
+      List<QueryDocumentSnapshot<Map<String, dynamic>>> snapshots) async {
+    if (_isStatusLoading) return;
+    final missing = <String>{};
+    for (final doc in snapshots) {
+      final userId = _resolveUserId(doc);
+      if (!_statusCache.containsKey(userId)) {
+        missing.add(userId);
+      }
+    }
+    if (missing.isEmpty) return;
+
+    setState(() => _isStatusLoading = true);
+    try {
+      final result = await _fetchUserStatusMap(missing);
+      setState(() {
+        _statusCache.addAll(result);
+        _isStatusLoading = false;
+      });
+    } catch (_) {
+      setState(() => _isStatusLoading = false);
+    }
+  }
+
+  Future<Map<String, _UserPaymentStatus>> _fetchUserStatusMap(
+      Set<String> userIds) async {
+    final firestore = FirebaseFirestore.instance;
+    final ownerId = requireOwnerId();
+    final statusMap = <String, _UserPaymentStatus>{};
+    const chunkSize = 10;
+    final queryIds = <dynamic>[];
+    for (final id in userIds) {
+      queryIds.add(id);
+      final parsed = int.tryParse(id);
+      if (parsed != null) {
+        queryIds.add(parsed);
+      }
+    }
+
+    for (var i = 0; i < queryIds.length; i += chunkSize) {
+      final chunk = queryIds.sublist(
+        i,
+        i + chunkSize > queryIds.length ? queryIds.length : i + chunkSize,
+      );
+      final paymentSnapshot = await firestore
+          .collection('PaymentRecords')
+          .where('ownerId', isEqualTo: ownerId)
+          .where('USER_ID', whereIn: chunk)
+          .get();
+
+      for (final doc in paymentSnapshot.docs) {
+        final data = doc.data();
+        final userId = data['USER_ID']?.toString();
+        if (userId == null || userId.trim().isEmpty) continue;
+        final pending = _parseAmount(data['PENDING_AMOUNT']);
+        final balance = _parseAmount(data['BALANCE_AMOUNT']);
+        final current = statusMap[userId] ?? const _UserPaymentStatus.zero();
+        statusMap[userId] = _UserPaymentStatus(
+          pending: current.pending + pending,
+          balance: current.balance + balance,
+        );
+      }
+    }
+
+    return statusMap;
+  }
+
+  double _parseAmount(dynamic value) {
+    if (value == null) return 0;
+    if (value is num) return value.toDouble();
+    final text = value
+        .toString()
+        .replaceAll('Rs.', '')
+        .replaceAll('Rs', '')
+        .replaceAll(',', '')
+        .trim();
+    return double.tryParse(text) ?? 0;
+  }
+}
+
+class _UserPaymentStatus {
+  final double pending;
+  final double balance;
+
+  const _UserPaymentStatus({required this.pending, required this.balance});
+  const _UserPaymentStatus.zero()
+      : pending = 0,
+        balance = 0;
+
+  bool get hasPending => pending > 0;
+  bool get hasBalance => balance > 0;
 }

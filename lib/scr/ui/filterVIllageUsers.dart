@@ -34,6 +34,10 @@ class _FilterVillageUserState extends State<FilterVillageUser> {
   ScrollController _controller = ScrollController();
   String counter = "0";
   Future<_VillageAmountSummary>? _amountSummaryFuture;
+  List<QueryDocumentSnapshot<Map<String, dynamic>>> _cachedOldDocs = [];
+  List<QueryDocumentSnapshot<Map<String, dynamic>>> _cachedNewDocs = [];
+  late final Stream<QuerySnapshot<Map<String, dynamic>>> _oldUsersStreamRef;
+  late final Stream<QuerySnapshot<Map<String, dynamic>>> _newUsersStreamRef;
   Widget pushMe = Image.asset(
     "assets/images/push.png",
     height: 50,
@@ -49,6 +53,8 @@ class _FilterVillageUserState extends State<FilterVillageUser> {
   @override
   void initState() {
     _amountSummaryFuture = _fetchVillageAmountSummary();
+    _oldUsersStreamRef = _oldUsersStream();
+    _newUsersStreamRef = _newUsersStream();
     super.initState();
   }
 
@@ -62,12 +68,13 @@ class _FilterVillageUserState extends State<FilterVillageUser> {
         iconOnTap: () => Navigator.pop(context),
         onChanged: (text) => _onSearchChanged(text),
         trailing: IconButton(
-          icon: const Icon(Icons.filter_list_rounded, color: kPrimaryColor),
+          icon: const Icon(Icons.tune_rounded, color: kPrimaryColor),
           onPressed: () => setState(() {
             searchVisible = !searchVisible;
             if (!searchVisible) {
               _radioValue = 0;
               _paymentFilterValue = 0;
+              _statusCache.clear();
             }
           }),
         ),
@@ -76,65 +83,70 @@ class _FilterVillageUserState extends State<FilterVillageUser> {
           if (!searchVisible) {
             _radioValue = 0;
             _paymentFilterValue = 0;
+            _statusCache.clear();
           }
         }),
       ),
       body: SingleChildScrollView(
         child: Column(
           children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-              child: _buildVillagePendingCard(),
-            ),
             Visibility(
               visible: searchVisible,
-              child: Expanded(
-                  flex: 0,
-                  child: Padding(
-                    padding: const EdgeInsets.only(top: 15.0, bottom: 15.0),
-                    child: Column(
-                      children: [
-                        _buildSearchFilterChips(),
-                        const SizedBox(height: 10),
-                        _buildPaymentFilterChips(),
-                        if (_isStatusLoading)
-                          const Padding(
-                            padding: EdgeInsets.only(top: 8),
-                            child: SizedBox(
-                              height: 16,
-                              width: 16,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            ),
-                          ),
-                      ],
-                    ),
-                  )),
+              child: Padding(
+                padding: const EdgeInsets.only(top: 15.0, bottom: 15.0),
+                child: Column(
+                  children: [
+                    _buildAllFilterChips(),
+                    if (_isStatusLoading)
+                      const Padding(
+                        padding: EdgeInsets.only(top: 8),
+                        child: SizedBox(
+                          height: 16,
+                          width: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
             ),
+            if (!searchVisible)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+                child: _buildVillagePendingCard(),
+              ),
             Padding(
               padding: const EdgeInsets.only(top: 15.0),
               child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-                stream: _oldUsersStream(),
+                stream: _oldUsersStreamRef,
                 builder: (context, oldSnapshot) {
-                  if (oldSnapshot.connectionState == ConnectionState.waiting) {
+                  final oldDocs = oldSnapshot.data?.docs ?? _cachedOldDocs;
+                  if (oldSnapshot.hasData) {
+                    _cachedOldDocs = oldSnapshot.data?.docs ?? [];
+                  }
+
+                  if (oldSnapshot.connectionState == ConnectionState.waiting &&
+                      _cachedOldDocs.isEmpty) {
                     return const Center(child: LoadingCircle());
                   }
 
-                  final oldDocs = oldSnapshot.data?.docs ?? [];
-
                   return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-                    stream: _newUsersStream(),
+                    stream: _newUsersStreamRef,
                     builder: (context, newSnapshot) {
-                      if (newSnapshot.connectionState ==
-                          ConnectionState.waiting) {
+                      final newDocs = newSnapshot.data?.docs ?? _cachedNewDocs;
+                      if (newSnapshot.hasData) {
+                        _cachedNewDocs = newSnapshot.data?.docs ?? [];
+                      }
+
+                      final allDocs = [...oldDocs, ...newDocs];
+                      final showResults = _searchResultsList(allDocs);
+
+                      if (showResults.isEmpty &&
+                          _paymentFilterValue != 0 &&
+                          _isStatusLoading &&
+                          _statusCache.isEmpty) {
                         return const Center(child: LoadingCircle());
                       }
-
-                      final newDocs = newSnapshot.data?.docs ?? [];
-                      final allDocs = [...oldDocs, ...newDocs];
-                      if (_paymentFilterValue != 0) {
-                        _ensureStatusCache(allDocs);
-                      }
-                      final showResults = _searchResultsList(allDocs);
 
                       return showResults.isNotEmpty
                           ? ListView.builder(
@@ -188,7 +200,7 @@ class _FilterVillageUserState extends State<FilterVillageUser> {
     );
   }
 
-  Widget _buildSearchFilterChips() {
+  Widget _buildAllFilterChips() {
     final rs = context.rs;
     return SizedBox(
       height: rs.rh(54),
@@ -197,55 +209,58 @@ class _FilterVillageUserState extends State<FilterVillageUser> {
         scrollDirection: Axis.horizontal,
         child: Row(
           children: [
-            _buildSearchChip(value: 0, label: 'பெயர்'),
+            _buildFilterChip(
+              label: 'Name',
+              selected: _radioValue == 0,
+              onSelected: () => _handleRadioValueChange(0),
+            ),
             SizedBox(width: rs.rw(10)),
-            _buildSearchChip(value: 1, label: 'டிஷ் நம்பர்'),
+            _buildFilterChip(
+              label: 'Dish Number',
+              selected: _radioValue == 1,
+              onSelected: () => _handleRadioValueChange(1),
+            ),
             SizedBox(width: rs.rw(10)),
-            _buildSearchChip(value: 2, label: 'மொபைல்'),
+            _buildFilterChip(
+              label: 'Mobile',
+              selected: _radioValue == 2,
+              onSelected: () => _handleRadioValueChange(2),
+            ),
             SizedBox(width: rs.rw(10)),
-            _buildSearchChip(value: 3, label: 'டிஷ் வகை'),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSearchChip({required int value, required String label}) {
-    return _buildFilterChip(
-      label: label,
-      selected: _radioValue == value,
-      onSelected: () => _handleRadioValueChange(value),
-    );
-  }
-
-  Widget _buildPaymentFilterChips() {
-    final rs = context.rs;
-    return SizedBox(
-      height: rs.rh(50),
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
-        scrollDirection: Axis.horizontal,
-        child: Row(
-          children: [
+            _buildFilterChip(
+              label: 'Dish Type',
+              selected: _radioValue == 3,
+              onSelected: () => _handleRadioValueChange(3),
+            ),
+            SizedBox(width: rs.rw(10)),
             _buildFilterChip(
               label: 'தருமதி',
               selected: _paymentFilterValue == 1,
-              onSelected: () => setState(() {
-                _paymentFilterValue = _paymentFilterValue == 1 ? 0 : 1;
-              }),
+              onSelected: () => _handlePaymentFilterChange(1),
             ),
             SizedBox(width: rs.rw(10)),
             _buildFilterChip(
               label: 'கொடுமதி',
               selected: _paymentFilterValue == 2,
-              onSelected: () => setState(() {
-                _paymentFilterValue = _paymentFilterValue == 2 ? 0 : 2;
-              }),
+              onSelected: () => _handlePaymentFilterChange(2),
             ),
           ],
         ),
       ),
     );
+  }
+
+  void _handlePaymentFilterChange(int value) {
+    setState(() {
+      _paymentFilterValue = _paymentFilterValue == value ? 0 : value;
+      _statusCache.clear();
+    });
+
+    if (_paymentFilterValue == 0) return;
+    final allDocs = [..._cachedOldDocs, ..._cachedNewDocs];
+    if (allDocs.isNotEmpty) {
+      _ensureStatusCache(allDocs);
+    }
   }
 
   Widget _buildFilterChip({
@@ -323,6 +338,11 @@ class _FilterVillageUserState extends State<FilterVillageUser> {
           case 3:
             {
               title = FilterUser.fromSnapshot(snapshot).dishType.toLowerCase();
+            }
+            break;
+          case 4:
+            {
+              title = FilterUser.fromSnapshot(snapshot).area.toLowerCase();
             }
             break;
           default:
