@@ -22,7 +22,6 @@ void main() async {
   ]);
   await Firebase.initializeApp();
   FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
-  await FcmService.initialize();
   runApp(MultiProvider(providers: [
     ChangeNotifierProvider.value(value: VillageProvider.initialize()),
     ChangeNotifierProvider(create: (_) => AppSettings()..load()),
@@ -182,13 +181,16 @@ class _AppRootState extends State<AppRoot> with WidgetsBindingObserver {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) => _checkAndLock());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      FcmService.initialize();
+    });
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    _verificationNotifier.close();
     _lockVisibleNotifier.dispose();
+    // Don't close the stream - it may be reused when app returns from background
     super.dispose();
   }
 
@@ -227,7 +229,11 @@ class _AppRootState extends State<AppRoot> with WidgetsBindingObserver {
               final isValid = enteredPasscode == passcode;
               _verificationNotifier.add(isValid);
               if (isValid) {
-                Navigator.maybePop(context);
+                Future.delayed(const Duration(milliseconds: 150), () {
+                  if (Navigator.canPop(context)) {
+                    Navigator.pop(context);
+                  }
+                });
               }
             },
             cancelButton: const SizedBox.shrink(),

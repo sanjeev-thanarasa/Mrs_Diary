@@ -2,7 +2,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:mrs_dth_diary_v1/scr/helpers/owner_service.dart';
-import 'package:mrs_dth_diary_v1/scr/widgets/customText.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/subHelpers/styles.dart';
 
 class RecordsScreen extends StatefulWidget {
@@ -832,8 +831,6 @@ class _RecordsScreenState extends State<RecordsScreen>
   Widget _buildSummaryCards(List<QueryDocumentSnapshot> docs) {
     double totalAmount = 0;
     double totalPaid = 0;
-    int totalRecords = docs.length;
-
     for (var doc in docs) {
       final data = doc.data() as Map<String, dynamic>;
       totalAmount += _getTotalAmount(data);
@@ -1146,8 +1143,6 @@ class _RecordsScreenState extends State<RecordsScreen>
     final paidAmount = _getPaidAmount(data);
     final balance = amount - paidAmount;
     final date = _getRecordDate(data);
-    final status = data['status'] ?? '';
-
     final isPaid = balance == 0;
 
     return Container(

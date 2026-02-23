@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:mrs_dth_diary_v1/scr/helpers/owner_service.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/subHelpers/styles.dart';
+import 'package:mrs_dth_diary_v1/scr/widgets/procreate_drawing_pad.dart';
 
 class NotesScreen extends StatefulWidget {
   const NotesScreen({super.key});
@@ -14,11 +17,21 @@ class NotesScreen extends StatefulWidget {
 class _NotesScreenState extends State<NotesScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _query = '';
+  Timer? _searchDebounce;
 
   @override
   void dispose() {
+    _searchDebounce?.cancel();
     _searchController.dispose();
     super.dispose();
+  }
+
+  void _onSearchChanged(String value) {
+    _searchDebounce?.cancel();
+    _searchDebounce = Timer(const Duration(milliseconds: 250), () {
+      if (!mounted) return;
+      setState(() => _query = value.trim());
+    });
   }
 
   @override
@@ -93,7 +106,7 @@ class _NotesScreenState extends State<NotesScreen> {
             ),
             isDense: true,
           ),
-          onChanged: (value) => setState(() => _query = value.trim()),
+          onChanged: _onSearchChanged,
         ),
       ),
     );
@@ -149,6 +162,8 @@ class _NotesScreenState extends State<NotesScreen> {
     final title = (data['title'] ?? '').toString().trim();
     final content = (data['content'] ?? '').toString().trim();
     final updatedAt = _toDate(data['updatedAt']);
+    final hasDrawing = data['drawingData'] != null &&
+        (data['drawingData'] as String).isNotEmpty;
 
     return InkWell(
       onTap: () => _openEditor(context, doc: doc),
@@ -192,6 +207,30 @@ class _NotesScreenState extends State<NotesScreen> {
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
+                if (hasDrawing)
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: kPrimaryColor.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: const [
+                        Icon(Icons.draw, size: 14, color: kPrimaryColor),
+                        SizedBox(width: 4),
+                        Text(
+                          'Drawing',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                            color: kPrimaryColor,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 PopupMenuButton<String>(
                   icon: const Icon(Icons.more_horiz, color: kIndigoDark),
                   onSelected: (value) {
@@ -295,6 +334,8 @@ class _NotesScreenState extends State<NotesScreen> {
     final contentController =
         TextEditingController(text: (data?['content'] ?? '').toString());
 
+    String? drawingData = data?['drawingData'] as String?;
+
     await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
@@ -302,116 +343,161 @@ class _NotesScreenState extends State<NotesScreen> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      builder: (context) {
-        return Padding(
-          padding: EdgeInsets.only(
-            left: 16,
-            right: 16,
-            top: 12,
-            bottom: MediaQuery.of(context).viewInsets.bottom + 20,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      doc == null ? 'New Note' : 'Edit Note',
-                      style: const TextStyle(
-                        fontSize: 19,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: -0.2,
-                        color: kIndigoDark,
-                      ),
-                    ),
-                  ),
-                  if (doc != null)
-                    IconButton(
-                      tooltip: 'Delete',
-                      icon: const Icon(Icons.delete_outline, color: Colors.red),
-                      onPressed: () {
-                        Navigator.pop(context);
-                        _confirmDelete(context, doc);
-                      },
-                    ),
-                ],
-              ),
-              const SizedBox(height: 10),
-              _buildInputField(
-                controller: titleController,
-                hintText: 'Title',
-                maxLines: 1,
-              ),
-              const SizedBox(height: 10),
-              _buildInputField(
-                controller: contentController,
-                hintText: 'Start typing your note...',
-                maxLines: 6,
-              ),
-              const SizedBox(height: 14),
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () => Navigator.pop(context),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: kPrimaryColor,
-                        side: BorderSide(color: kPrimaryLightColor),
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+      builder: (builderContext) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return SingleChildScrollView(
+              physics: const ClampingScrollPhysics(),
+              child: Padding(
+                padding: EdgeInsets.only(
+                  left: 16,
+                  right: 16,
+                  top: 12,
+                  bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            doc == null ? 'New Note' : 'Edit Note',
+                            style: const TextStyle(
+                              fontSize: 19,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: -0.2,
+                              color: kIndigoDark,
+                            ),
+                          ),
                         ),
-                      ),
-                      child: const Text('Cancel'),
+                        if (doc != null)
+                          IconButton(
+                            tooltip: 'Delete',
+                            icon: const Icon(Icons.delete_outline,
+                                color: Colors.red),
+                            onPressed: () {
+                              Navigator.pop(context);
+                              _confirmDelete(context, doc);
+                            },
+                          ),
+                      ],
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: FilledButton(
-                      style: FilledButton.styleFrom(
-                        backgroundColor: kPrimaryColor,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                    const SizedBox(height: 10),
+                    _buildInputField(
+                      controller: titleController,
+                      hintText: 'Title',
+                      maxLines: 1,
+                    ),
+                    const SizedBox(height: 10),
+                    _buildInputField(
+                      controller: contentController,
+                      hintText: 'Start typing your note...',
+                      maxLines: 6,
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Drawing Pad Section
+                    Row(
+                      children: [
+                        const Icon(Icons.draw, size: 18, color: kIndigoDark),
+                        const SizedBox(width: 6),
+                        const Text(
+                          'Drawing',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                            color: kIndigoDark,
+                          ),
                         ),
-                      ),
-                      onPressed: () async {
-                        final title = titleController.text.trim();
-                        final content = contentController.text.trim();
-                        if (title.isEmpty && content.isEmpty) {
-                          _showMessage('Add a title or content.');
-                          return;
-                        }
-                        final notes =
-                            FirebaseFirestore.instance.collection('Notes');
-                        if (doc == null) {
-                          await notes.add({
-                            'ownerId': requireOwnerId(),
-                            'title': title,
-                            'content': content,
-                            'createdAt': FieldValue.serverTimestamp(),
-                            'updatedAt': FieldValue.serverTimestamp(),
-                          });
-                        } else {
-                          await notes.doc(doc.id).update({
-                            'ownerId': requireOwnerId(),
-                            'title': title,
-                            'content': content,
-                            'updatedAt': FieldValue.serverTimestamp(),
-                          });
-                        }
-                        if (!mounted) return;
-                        Navigator.pop(context);
-                      },
-                      child: const Text('Save'),
+                      ],
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 8),
+                    NotificationListener<ScrollNotification>(
+                      onNotification: (notification) {
+                        // Absorb scroll notifications from drawing pad area
+                        return true;
+                      },
+                      child: ProcreateDrawingPad(
+                        initialDrawingData: drawingData,
+                        onDrawingChanged: (newData) {
+                          drawingData = newData;
+                        },
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: () => Navigator.pop(context),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: kPrimaryColor,
+                              side: BorderSide(color: kPrimaryLightColor),
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            child: const Text('Cancel'),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: FilledButton(
+                            style: FilledButton.styleFrom(
+                              backgroundColor: kPrimaryColor,
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            onPressed: () async {
+                              final title = titleController.text.trim();
+                              final content = contentController.text.trim();
+                              if (title.isEmpty &&
+                                  content.isEmpty &&
+                                  (drawingData == null ||
+                                      drawingData!.isEmpty)) {
+                                _showMessage(
+                                    'Add a title, content, or drawing.');
+                                return;
+                              }
+                              final notes = FirebaseFirestore.instance
+                                  .collection('Notes');
+                              if (doc == null) {
+                                await notes.add({
+                                  'ownerId': requireOwnerId(),
+                                  'title': title,
+                                  'content': content,
+                                  'drawingData': drawingData,
+                                  'createdAt': FieldValue.serverTimestamp(),
+                                  'updatedAt': FieldValue.serverTimestamp(),
+                                });
+                              } else {
+                                await notes.doc(doc.id).update({
+                                  'ownerId': requireOwnerId(),
+                                  'title': title,
+                                  'content': content,
+                                  'drawingData': drawingData,
+                                  'updatedAt': FieldValue.serverTimestamp(),
+                                });
+                              }
+                              if (!mounted) return;
+                              Navigator.pop(context);
+                            },
+                            child: const Text('Save'),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
-            ],
-          ),
+            );
+          },
         );
       },
     );

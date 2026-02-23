@@ -42,6 +42,7 @@ class _PasscodeScreenState extends State<PasscodeScreen> {
   String _input = '';
   StreamSubscription<bool>? _verificationSub;
   String _errorText = '';
+  bool _canPop = false;
 
   @override
   void initState() {
@@ -51,10 +52,12 @@ class _PasscodeScreenState extends State<PasscodeScreen> {
         setState(() {
           _errorText = 'Incorrect passcode';
           _input = '';
+          _canPop = false;
         });
       } else {
         setState(() {
           _errorText = '';
+          _canPop = true;
         });
       }
     });
@@ -89,7 +92,6 @@ class _PasscodeScreenState extends State<PasscodeScreen> {
     final keyboardConfig = widget.keyboardUIConfig ?? const KeyboardUIConfig();
     final size = MediaQuery.sizeOf(context);
     final isCompact = size.height < 640;
-    final logoSize = isCompact ? 110.0 : 172.0;
     final keypadAspect = isCompact ? 1.35 : 1.1;
     final keypadSpacing = isCompact ? 8.0 : 12.0;
     final circleRadius = circleConfig.radius ?? 8.0;
@@ -101,102 +103,109 @@ class _PasscodeScreenState extends State<PasscodeScreen> {
     final digits =
         widget.digits ?? ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'];
 
-    final h = MediaQuery.sizeOf(context).height;
     final w = MediaQuery.sizeOf(context).width;
 
-    return Scaffold(
-      backgroundColor: widget.backgroundColor,
-      body: SafeArea(
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            return SingleChildScrollView(
-              child: ConstrainedBox(
-                constraints: BoxConstraints(minHeight: constraints.maxHeight),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
-                      child: Column(
-                        children: [
-                          Image.asset(
-                            'assets/images/MRS-LOGO.png',
-                            height: w * 0.4,
-                            width: w * 0.4,
-                          ),
-                          const SizedBox(height: 12),
-                          widget.title,
-                          const SizedBox(height: 24),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children:
-                                List.generate(widget.passwordDigits, (index) {
-                              final filled = index < _input.length;
-                              return Container(
-                                margin:
-                                    const EdgeInsets.symmetric(horizontal: 8),
-                                width: circleRadius * 1.5,
-                                height: circleRadius * 1.5,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color:
-                                      filled ? fillColor : Colors.transparent,
-                                  border: Border.all(
-                                      color: borderColor, width: 1.2),
-                                ),
-                              );
-                            }),
-                          ),
-                          if (_errorText.isNotEmpty) ...[
-                            const SizedBox(height: 8),
-                            Text(
-                              _errorText,
-                              style: const TextStyle(color: Colors.redAccent),
+    return PopScope(
+      canPop: _canPop,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        // Prevent back navigation - user must enter correct passcode
+      },
+      child: Scaffold(
+        backgroundColor: widget.backgroundColor,
+        body: SafeArea(
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              return SingleChildScrollView(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
+                        child: Column(
+                          children: [
+                            Image.asset(
+                              'assets/images/MRS-LOGO.png',
+                              height: w * 0.4,
+                              width: w * 0.4,
                             ),
-                          ],
-                        ],
-                      ),
-                    ),
-                    Column(
-                      children: [
-                        _buildKeypad(
-                          digits: digits,
-                          digitColor: digitColor,
-                          aspectRatio: keypadAspect,
-                          spacing: keypadSpacing,
-                        ),
-                        const SizedBox(height: 8),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              TextButton(
-                                onPressed: widget.cancelCallback,
-                                child: DefaultTextStyle.merge(
-                                  style: TextStyle(color: cancelColor),
-                                  child: widget.cancelButton,
-                                ),
-                              ),
-                              TextButton(
-                                onPressed: _handleDelete,
-                                child: DefaultTextStyle.merge(
-                                  style: TextStyle(color: deleteColor),
-                                  child: widget.deleteButton,
-                                ),
+                            const SizedBox(height: 12),
+                            widget.title,
+                            const SizedBox(height: 24),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children:
+                                  List.generate(widget.passwordDigits, (index) {
+                                final filled = index < _input.length;
+                                return Container(
+                                  margin:
+                                      const EdgeInsets.symmetric(horizontal: 8),
+                                  width: circleRadius * 1.5,
+                                  height: circleRadius * 1.5,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color:
+                                        filled ? fillColor : Colors.transparent,
+                                    border: Border.all(
+                                        color: borderColor, width: 1.2),
+                                  ),
+                                );
+                              }),
+                            ),
+                            if (_errorText.isNotEmpty) ...[
+                              const SizedBox(height: 8),
+                              Text(
+                                _errorText,
+                                style: const TextStyle(color: Colors.redAccent),
                               ),
                             ],
-                          ),
+                          ],
                         ),
-                        if (widget.bottomWidget != null) widget.bottomWidget!,
-                        const SizedBox(height: 12),
-                      ],
-                    ),
-                  ],
+                      ),
+                      Column(
+                        children: [
+                          _buildKeypad(
+                            digits: digits,
+                            digitColor: digitColor,
+                            aspectRatio: keypadAspect,
+                            spacing: keypadSpacing,
+                          ),
+                          const SizedBox(height: 8),
+                          Padding(
+                            padding:
+                                const EdgeInsets.symmetric(horizontal: 24.0),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                TextButton(
+                                  onPressed: widget.cancelCallback,
+                                  child: DefaultTextStyle.merge(
+                                    style: TextStyle(color: cancelColor),
+                                    child: widget.cancelButton,
+                                  ),
+                                ),
+                                TextButton(
+                                  onPressed: _handleDelete,
+                                  child: DefaultTextStyle.merge(
+                                    style: TextStyle(color: deleteColor),
+                                    child: widget.deleteButton,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          if (widget.bottomWidget != null) widget.bottomWidget!,
+                          const SizedBox(height: 12),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            );
-          },
+              );
+            },
+          ),
         ),
       ),
     );

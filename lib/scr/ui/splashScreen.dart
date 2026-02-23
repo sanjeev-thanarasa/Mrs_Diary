@@ -17,10 +17,12 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> {
+  bool _navigated = false;
+
   @override
   void initState() {
-    startTime();
     super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _routeIfReady());
   }
 
   @override
@@ -30,17 +32,14 @@ class _SplashScreenState extends State<SplashScreen> {
     );
   }
 
-  Timer startTime() {
-    const duration = Duration(seconds: 2);
-    return Timer(duration, route);
-  }
-
-  route() {
+  void _routeIfReady() {
+    if (_navigated || !mounted) return;
     final isLocked = widget.lockVisibleListenable?.value ?? false;
     if (isLocked) {
-      startTime();
+      Future.delayed(const Duration(milliseconds: 300), _routeIfReady);
       return;
     }
+    _navigated = true;
     changeScreenReplacement(context, widget.secondScreen);
   }
 

@@ -3,11 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:mrs_dth_diary_v1/scr/helpers/owner_service.dart';
 import 'package:mrs_dth_diary_v1/scr/helpers/operations.dart';
+import 'package:mrs_dth_diary_v1/scr/helpers/village_summary_service.dart';
 import 'package:mrs_dth_diary_v1/scr/providers/village.dart';
 import 'package:mrs_dth_diary_v1/scr/ui/filterVIllageUsers.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/CAppBar.dart';
-import 'package:mrs_dth_diary_v1/scr/widgets/CustomStreamBuilder.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/ShowPopUpAlertBox.dart';
+import 'package:mrs_dth_diary_v1/scr/widgets/loading.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/noResultFound.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/subHelpers/responsive.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/subHelpers/screen_navigation.dart';
@@ -26,9 +27,11 @@ class _VillagesListState extends State<VillagesList> {
   String searchText = '';
   final Map<String, Future<int>> _countFutureCache = {};
   final Map<String, Future<_VillageAmountSummary>> _amountFutureCache = {};
+  final VillageSummaryService _summaryService = VillageSummaryService();
 
   @override
   void dispose() {
+    _controller.dispose();
     super.dispose();
   }
 
@@ -44,7 +47,7 @@ class _VillagesListState extends State<VillagesList> {
       return _countFutureCache[key]!;
     }
 
-    final future = _fetchVillageUserCount(villageName);
+    final future = _fetchVillageUserCountCached(villageName);
     _countFutureCache[key] = future;
     return future;
   }
@@ -55,9 +58,33 @@ class _VillagesListState extends State<VillagesList> {
       return _amountFutureCache[key]!;
     }
 
-    final future = _fetchVillageAmountSummary(villageName);
+    final future = _fetchVillageAmountSummaryCached(villageName);
     _amountFutureCache[key] = future;
     return future;
+  }
+
+  Future<int> _fetchVillageUserCountCached(String villageName) async {
+    try {
+      final cached = await _summaryService.getSummary(villageName);
+      if (cached != null) {
+        return cached.userCount;
+      }
+    } catch (_) {}
+    return _fetchVillageUserCount(villageName);
+  }
+
+  Future<_VillageAmountSummary> _fetchVillageAmountSummaryCached(
+      String villageName) async {
+    try {
+      final cached = await _summaryService.getSummary(villageName);
+      if (cached != null) {
+        return _VillageAmountSummary(
+          pending: cached.pendingTotal,
+          balance: cached.balanceTotal,
+        );
+      }
+    } catch (_) {}
+    return _fetchVillageAmountSummary(villageName);
   }
 
   Future<int> _fetchVillageUserCount(String villageName) async {
@@ -211,6 +238,7 @@ class _VillagesListState extends State<VillagesList> {
                 id: villageId,
                 collectionName: 'Villages',
               );
+              await _summaryService.deleteSummary(villageName);
               if (mounted) {
                 Navigator.pop(context);
                 showSnackbar(
@@ -443,67 +471,94 @@ class _VillagesListState extends State<VillagesList> {
       ),
       body: RefreshIndicator(
         onRefresh: _onPullRefresh,
-        child: SingleChildScrollView(
+        child: CustomScrollView(
+          controller: _controller,
           physics: const AlwaysScrollableScrollPhysics(),
-          child: Column(
-            children: [
-              SizedBox(
-                height: rs.rh(15),
-              ),
-              CustomStreamBuilder(
-                context: context,
-                stream: collectionReference
-                    .where('ownerId', isEqualTo: requireOwnerId())
-                    .snapshots() as Stream<QuerySnapshot<Map<String, dynamic>>>,
-                body: (snap) {
-                  final docs = snap.data?.docs ?? [];
-                  final query = searchText.trim().toLowerCase();
-                  final filtered = query.isEmpty
-                      ? docs
-                      : docs.where((doc) {
-                          final name = (doc.data()["name"] ?? "")
-                              .toString()
-                              .toLowerCase();
-                          return name.contains(query);
-                        }).toList();
+          slivers: [
+            SliverToBoxAdapter(child: SizedBox(height: rs.rh(15))),
+            StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+              stream: collectionReference
+                  .where('ownerId', isEqualTo: requireOwnerId())
+                  .snapshots()
+                  .cast<QuerySnapshot<Map<String, dynamic>>>(),
+              builder: (context, snapshot) {
+                if (snapshot.hasError) {
+                  return SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.only(top: 16.0),
+                      child: Center(
+                        child: Text(
+                          'Something went wrong!!!',
+                          style: TextStyle(
+                            fontSize: rs.sp(16),
+                            fontWeight: FontWeight.w600,
+                            color:
+                                Theme.of(context).colorScheme.onSurfaceVariant,
+                            fontFamily: 'TamilArima2',
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ),
+                  );
+                }
 
-                  return filtered.isNotEmpty
-                      ? ListView.separated(
-                          scrollDirection: Axis.vertical,
-                          controller: _controller,
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          itemCount: filtered.length,
-                          separatorBuilder: (_, __) =>
-                              SizedBox(height: rs.rh(8)),
-                          itemBuilder: (_, index) {
-                            final data = filtered[index];
-                            final villageName = data["name"] ?? "";
-                            final villageId = data.id;
-                            return _VillageTile(
-                              villageId: villageId,
-                              villageName: villageName,
-                              onTap: () => changeScreenAnimated(
-                                context,
-                                FilterVillageUser(villageName: villageName),
-                              ),
-                              onEdit: () => _showEditDialog(
-                                villageId: villageId,
-                                currentName: villageName,
-                              ),
-                              onDelete: () =>
-                                  _confirmDelete(villageId, villageName),
-                              countFuture: _loadVillageUserCount(villageName),
-                              amountFuture:
-                                  _loadVillageAmountSummary(villageName),
-                            );
-                          },
-                        )
-                      : SearchNoData();
-                },
-              )
-            ],
-          ),
+                if (snapshot.connectionState == ConnectionState.waiting ||
+                    !snapshot.hasData) {
+                  return SliverToBoxAdapter(
+                    child: SizedBox(
+                      height: MediaQuery.of(context).size.height / 2 + 100,
+                      child: const Center(child: LoadingCircle()),
+                    ),
+                  );
+                }
+
+                final docs = snapshot.data?.docs ?? [];
+                final query = searchText.trim().toLowerCase();
+                final filtered = query.isEmpty
+                    ? docs
+                    : docs.where((doc) {
+                        final name =
+                            (doc.data()["name"] ?? "").toString().toLowerCase();
+                        return name.contains(query);
+                      }).toList();
+
+                if (filtered.isEmpty) {
+                  return const SliverToBoxAdapter(child: SearchNoData());
+                }
+
+                return SliverList(
+                  delegate: SliverChildBuilderDelegate(
+                    (context, index) {
+                      final data = filtered[index];
+                      final villageName = data["name"] ?? "";
+                      final villageId = data.id;
+                      return Padding(
+                        padding: EdgeInsets.only(bottom: rs.rh(8)),
+                        child: _VillageTile(
+                          villageId: villageId,
+                          villageName: villageName,
+                          onTap: () => changeScreenAnimated(
+                            context,
+                            FilterVillageUser(villageName: villageName),
+                          ),
+                          onEdit: () => _showEditDialog(
+                            villageId: villageId,
+                            currentName: villageName,
+                          ),
+                          onDelete: () =>
+                              _confirmDelete(villageId, villageName),
+                          countFuture: _loadVillageUserCount(villageName),
+                          amountFuture: _loadVillageAmountSummary(villageName),
+                        ),
+                      );
+                    },
+                    childCount: filtered.length,
+                  ),
+                );
+              },
+            ),
+          ],
         ),
       ),
       floatingActionButton: null,

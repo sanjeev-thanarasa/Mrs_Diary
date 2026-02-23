@@ -28,7 +28,6 @@ class EditUserDetail extends StatefulWidget {
 class _EditUserDetailState extends State<EditUserDetail> {
   USerServices _uSerServices = USerServices();
   Map<String, dynamic>? _userData;
-  bool _isLoadingData = false;
 
   String _formatDate(DateTime? value) {
     if (value == null) {
@@ -61,9 +60,6 @@ class _EditUserDetailState extends State<EditUserDetail> {
     if (widget.data != null && widget.index != null) {
       return; // Data already provided
     }
-    setState(() {
-      _isLoadingData = true;
-    });
     try {
       final doc = await FirebaseFirestore.instance
           .collection(widget.collectionName)
@@ -72,17 +68,10 @@ class _EditUserDetailState extends State<EditUserDetail> {
       if (doc.exists && mounted) {
         setState(() {
           _userData = doc.data();
-          _isLoadingData = false;
         });
         editInitialize();
       }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _isLoadingData = false;
-        });
-      }
-    }
+    } catch (e) {}
   }
 
   @override
@@ -272,82 +261,6 @@ class _EditUserDetailState extends State<EditUserDetail> {
     );
   }
 
-  Widget _buildHeaderCard() {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.shade200),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 12,
-            offset: const Offset(0, 8),
-          )
-        ],
-      ),
-      child: Column(
-        children: [
-          CircleAvatar(
-            radius: 40,
-            backgroundColor: const Color(0x1A5B67CA),
-            child: const Icon(Icons.person_rounded,
-                color: kPrimaryColor, size: 34),
-          ),
-          const SizedBox(height: 10),
-          Text(
-            _uSerServices.nameController.text.isEmpty
-                ? "Edit user details"
-                : _uSerServices.nameController.text,
-            style: const TextStyle(
-              fontFamily: 'TamilArima',
-              fontWeight: FontWeight.w700,
-              fontSize: 16,
-            ),
-          ),
-          const SizedBox(height: 6),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(vertical: 4, horizontal: 10),
-                decoration: BoxDecoration(
-                  color: kPrimaryColor.withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  widget.collectionName,
-                  style: const TextStyle(
-                    fontFamily: 'TamilArima2',
-                    color: kPrimaryColor,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-              if (_uSerServices.selectedArea != 'Select Area') ...[
-                const SizedBox(width: 8),
-                Flexible(
-                  child: Text(
-                    _uSerServices.selectedArea,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontFamily: 'TamilArima2',
-                      color: Colors.black54,
-                      fontSize: 12,
-                    ),
-                  ),
-                ),
-              ]
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildSaveButton(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(12),
@@ -389,11 +302,13 @@ class _EditUserDetailState extends State<EditUserDetail> {
             _uSerServices.createAt = now;
             _uSerServices.createAtDateController.text =
                 DateFormat('dd-MM-yyyy hh:mm a').format(now);
+            final previousArea = _getItemMap()['area']?.toString() ?? '';
             _uSerServices.updateRecord(
               index: 0,
               userId: widget.userId,
               context: context,
               collectionName: widget.collectionName,
+              previousArea: previousArea,
             );
           },
         ),
@@ -501,21 +416,6 @@ class _EditUserDetailState extends State<EditUserDetail> {
           const SizedBox(height: 10),
           child,
         ],
-      ),
-    );
-  }
-
-  Widget _fieldLabel(String text) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 6),
-      child: Text(
-        text,
-        style: const TextStyle(
-          fontFamily: 'TamilArima2',
-          fontSize: 12,
-          fontWeight: FontWeight.w600,
-          color: Colors.black54,
-        ),
       ),
     );
   }

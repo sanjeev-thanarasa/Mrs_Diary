@@ -25,7 +25,6 @@ class EditMyAccountsPayment extends StatefulWidget {
 
 class _EditMyAccountsPaymentState extends State<EditMyAccountsPayment> {
   DashBoardService _dashBoardService = DashBoardService();
-  bool _showNotes = false;
 
   @override
   void dispose() {
@@ -51,7 +50,6 @@ class _EditMyAccountsPaymentState extends State<EditMyAccountsPayment> {
             : "";
 
     _dashBoardService.userNote.text = widget.snapshot['USER_NOTE'] ?? '';
-    _showNotes = _dashBoardService.userNote.text.trim().isNotEmpty;
     //_dashBoardService.rechargePlace.text=widget.snapshot['RECHARGE_PLACE'];
 
     _dashBoardService.pendingAmount.text = widget.snapshot['PENDING_AMOUNT'];
@@ -445,13 +443,6 @@ class _EditMyAccountsPaymentState extends State<EditMyAccountsPayment> {
     //                                                     .spaceAround,
     //                                             crossAxisAlignment:
     //                                                 CrossAxisAlignment
-    _dashBoardService
-        .updateRecord(dbID: widget.dbId, snapshot: widget.snapshot)
-        .then((_) {
-      if (mounted) {
-        Navigator.pop(context);
-      }
-    });
     //                                                 Widget>[
     //                                               CText(
     //                                                 msg: data["RECHARGE_PLACE"] ==

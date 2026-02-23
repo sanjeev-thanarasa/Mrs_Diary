@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:mrs_dth_diary_v1/scr/helpers/operations.dart';
+import 'package:mrs_dth_diary_v1/scr/helpers/village_summary_refresh_manager.dart';
 import 'package:mrs_dth_diary_v1/scr/ui/editPayment.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/animatedSizeTransition.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/subHelpers/screen_navigation.dart';
@@ -674,8 +675,12 @@ class _PaymentContainerListTileState extends State<PaymentContainerListTile>
 
     if (confirm == true) {
       try {
+        final userId = _field(widget.snapshot.data()['USER_ID']);
         await deleteProduct(
             id: widget.snapshot.id, collectionName: "PaymentRecords");
+        if (userId.isNotEmpty) {
+          VillageSummaryRefreshManager.scheduleRefreshForUserId(userId);
+        }
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(

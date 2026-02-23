@@ -380,21 +380,6 @@ class _CreatePaymentState extends State<CreatePayment> {
     );
   }
 
-  Widget _fieldLabel(String text) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 6),
-      child: Text(
-        text,
-        style: const TextStyle(
-          fontFamily: 'TamilArima2',
-          fontSize: 12,
-          fontWeight: FontWeight.w600,
-          color: Colors.black54,
-        ),
-      ),
-    );
-  }
-
   Widget _inputField({
     required TextEditingController controller,
     required String labelText,

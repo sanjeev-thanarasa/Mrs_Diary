@@ -112,53 +112,39 @@ class _UserDetailsState extends State<UserDetails> {
         child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
           stream: filterStream(),
           builder: (context, snapshot) {
-            if (snapshot.hasError) {
-              return const Center(
-                child: CText(
-                  msg: "Something went wrong!!!",
-                  color: Colors.black,
-                  size: 30.0,
-                ),
-              );
-            }
-
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return SizedBox(
-                height: MediaQuery.of(context).size.height / 2 + 100,
-                child: const Center(child: LoadingCircle()),
-              );
-            }
-
             final docs = snapshot.data?.docs ?? [];
+            if (snapshot.hasError) {
+              return Center(child: Text('Error: ${snapshot.error}'));
+            }
+            if (snapshot.connectionState == ConnectionState.waiting &&
+                docs.isEmpty) {
+              return const Center(child: LoadingCircle());
+            }
 
-            return DefaultTextStyle(
-              style: const TextStyle(color: kIndigoDark),
-              child: ListView(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
-                children: [
-                  _buildUserHeaderCard(context),
-                  const SizedBox(height: 12),
-                  _buildUserQuickActions(context),
-                  const SizedBox(height: 12),
-                  _buildUserInfoCard(),
-                  const SizedBox(height: 12),
-                  _buildPaymentSummaryCard(docs),
-                  const SizedBox(height: 12),
-                  _buildSectionTitle(
-                    title: "Payment history",
-                    subtitle: docs.isEmpty
-                        ? "No payment records yet"
-                        : "${docs.length} records",
+            return ListView(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+              children: [
+                _buildUserHeaderCard(context),
+                const SizedBox(height: 12),
+                _buildUserQuickActions(context),
+                const SizedBox(height: 12),
+                _buildUserInfoCard(),
+                const SizedBox(height: 12),
+                _buildPaymentSummaryCard(docs),
+                const SizedBox(height: 12),
+                _buildSectionTitle(
+                  title: 'Payments',
+                  subtitle:
+                      docs.isEmpty ? 'No records' : '${docs.length} records',
+                ),
+                const SizedBox(height: 8),
+                if (docs.isEmpty)
+                  _buildEmptyState()
+                else
+                  ...docs.map(
+                    (doc) => PaymentContainerListTile(snapshot: doc),
                   ),
-                  const SizedBox(height: 8),
-                  if (docs.isEmpty)
-                    _buildEmptyState()
-                  else
-                    ...docs.map(
-                      (doc) => PaymentContainerListTile(snapshot: doc),
-                    ),
-                ],
-              ),
+              ],
             );
           },
         ),
@@ -688,49 +674,6 @@ class _UserDetailsState extends State<UserDetails> {
     }
   }
 
-  Widget _buildToggleCard({
-    required IconData icon,
-    required String title,
-    required bool value,
-    required String updateField,
-    required String toast,
-  }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: BoxDecoration(
-        color: Colors.grey.shade50,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.grey.shade200),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, color: kPrimaryColor),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              title,
-              style: const TextStyle(
-                fontFamily: 'TamilArima',
-                fontWeight: FontWeight.w600,
-                color: kIndigoDark,
-              ),
-            ),
-          ),
-          FlutterSwitch(
-            height: 18.0,
-            width: 36.0,
-            padding: 3.0,
-            toggleSize: 14.0,
-            borderRadius: 10.0,
-            activeColor: Colors.green,
-            value: value,
-            onToggle: (val) => _handleToggle(updateField, val, toast),
-          ),
-        ],
-      ),
-    );
-  }
-
   void _handleToggle(String updateField, bool val, String toast) {
     if (val) {
       updateSingleProduct(
@@ -762,82 +705,6 @@ class _UserDetailsState extends State<UserDetails> {
         black = val;
       }
     });
-  }
-
-  Widget _buildInfoSection(Map<String, dynamic> map) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.grey.shade50,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.grey.shade200),
-      ),
-      child: Column(
-        children: [
-          _infoRow("Name", _safeField(map, 'name')),
-          _infoRow("Area", _safeField(map, 'area')),
-          if (_safeField(map, 'address').isNotEmpty)
-            _infoRow("Address", _safeField(map, 'address')),
-          _infoRow("Dish Number", _safeField(map, 'dishNumber')),
-          _infoRow("Dish Type", _safeField(map, 'dishType')),
-          _infoRow("User Type", "${widget.collectionName}"),
-          if (_safeField(map, 'shopName').isNotEmpty)
-            _infoRow("Shop", _safeField(map, 'shopName')),
-          _infoRow("Mobile", _safeField(map, 'mobileNo')),
-          if (_safeField(map, 'mobileNo2').isNotEmpty)
-            _infoRow("Mobile 2", _safeField(map, 'mobileNo2')),
-          _infoRow(
-            "Register Date",
-            map['registerDate'] != null
-                ? DateFormat('dd-MM-yyyy').format(map['registerDate'].toDate())
-                : "No Data",
-          ),
-          _infoRow(
-            "Expired Date",
-            map['expiredDate'] != null
-                ? DateFormat('dd-MM-yyyy').format(map['expiredDate'].toDate())
-                : "No Data",
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _infoRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            flex: 4,
-            child: Text(
-              label,
-              style: const TextStyle(
-                fontFamily: 'TamilArima2',
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: Colors.black54,
-              ),
-            ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            flex: 6,
-            child: Text(
-              value.isEmpty ? "-" : value,
-              textAlign: TextAlign.right,
-              style: const TextStyle(
-                fontFamily: 'TamilArima',
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: Colors.black,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
   }
 
   Widget buildNewUserFields(

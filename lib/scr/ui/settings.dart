@@ -6,7 +6,6 @@ import 'package:mrs_dth_diary_v1/scr/helpers/app_settings.dart';
 import 'package:mrs_dth_diary_v1/scr/helpers/auth_service.dart';
 import 'package:mrs_dth_diary_v1/scr/helpers/passcode_storage.dart';
 import 'package:mrs_dth_diary_v1/scr/ui/DashBoard/MyAccountsScreen.dart';
-import 'package:mrs_dth_diary_v1/scr/ui/records_screen.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/customText.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/subHelpers/responsive.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/subHelpers/styles.dart';

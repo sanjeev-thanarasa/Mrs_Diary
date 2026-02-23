@@ -240,13 +240,29 @@ class _TotalNewCustomersState extends State<TotalNewCustomers> {
         }
 
         final data = showResults[index];
+        final userId = (data['id'] ?? data.id).toString();
+        final status = _statusCache[userId];
+        final hasPending = status?.pending != null && status!.pending > 0;
+        final hasBalance =
+            !hasPending && status?.balance != null && status!.balance > 0;
         return UserDetailsTile(
           name: data['name'],
           dishNumber: data['dishNumber'],
           mobileNo: data['mobileNo'],
           villageName: data['area'],
-          userId: data['id'] ?? data.id,
+          userId: userId,
           collectionName: "NewUser",
+          enableActions: true,
+          amountLabel: hasPending
+              ? 'தருமதி'
+              : hasBalance
+                  ? 'கொடுமதி'
+                  : null,
+          amountValue: hasPending
+              ? status.pending
+              : hasBalance
+                  ? status.balance
+                  : null,
           onTap: () {
             changeScreenAnimated(
                 context,

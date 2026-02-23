@@ -107,42 +107,37 @@ class _AstrologyChartScreenState extends State<AstrologyChartScreen> {
   void initState() {
     super.initState();
     _kattamBoxes = _normalizeBoxes(widget.profile.kattamBoxes);
-    _loadPlanetDegrees();
-    _loadGocharamParvaEntries();
+    _loadProfileExtras();
   }
 
-  Future<void> _loadPlanetDegrees() async {
+  Future<void> _loadProfileExtras() async {
     final doc = await FirebaseFirestore.instance
         .collection('AstrologyProfiles')
         .doc(widget.profile.id)
         .get();
     if (!doc.exists) return;
     final data = doc.data();
-    if (data == null || !data.containsKey('planetDegrees')) return;
-    final raw = data['planetDegrees'];
-    if (raw is! Map) return;
-    setState(() {
-      _planetDegrees = raw.map(
+    if (data == null) return;
+
+    Map<String, String> planetDegrees = {};
+    final rawDegrees = data['planetDegrees'];
+    if (rawDegrees is Map) {
+      planetDegrees = rawDegrees.map(
         (key, value) => MapEntry(key.toString(), (value ?? '').toString()),
       );
-    });
-  }
+    }
 
-  Future<void> _loadGocharamParvaEntries() async {
-    final doc = await FirebaseFirestore.instance
-        .collection('AstrologyProfiles')
-        .doc(widget.profile.id)
-        .get();
-    if (!doc.exists) return;
-    final data = doc.data();
-    if (data == null || !data.containsKey('gocharamParvaEntries')) return;
-    final raw = data['gocharamParvaEntries'];
-    if (raw is! List) return;
-    final mapped = raw
-        .whereType<Map>()
-        .map((map) =>
-            _GocharamParvaEntry.fromMap(map, profileId: widget.profile.id))
-        .toList();
+    final rawEntries = data['gocharamParvaEntries'];
+    final mapped = <_GocharamParvaEntry>[];
+    if (rawEntries is List) {
+      mapped.addAll(
+        rawEntries.whereType<Map>().map(
+              (map) => _GocharamParvaEntry.fromMap(map,
+                  profileId: widget.profile.id),
+            ),
+      );
+    }
+
     var maxNumber = 0;
     var fallbackNumber = 1;
     for (var i = 0; i < mapped.length; i++) {
@@ -155,8 +150,10 @@ class _AstrologyChartScreenState extends State<AstrologyChartScreen> {
         maxNumber = mapped[i].number;
       }
     }
+
     if (!mounted) return;
     setState(() {
+      _planetDegrees = planetDegrees;
       _gocharamParvaEntries
         ..clear()
         ..addAll(mapped);

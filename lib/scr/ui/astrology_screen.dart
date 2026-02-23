@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -17,11 +19,21 @@ class AstrologyScreen extends StatefulWidget {
 class _AstrologyScreenState extends State<AstrologyScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _query = '';
+  Timer? _searchDebounce;
 
   @override
   void dispose() {
+    _searchDebounce?.cancel();
     _searchController.dispose();
     super.dispose();
+  }
+
+  void _onSearchChanged(String value) {
+    _searchDebounce?.cancel();
+    _searchDebounce = Timer(const Duration(milliseconds: 250), () {
+      if (!mounted) return;
+      setState(() => _query = value);
+    });
   }
 
   @override
@@ -155,7 +167,7 @@ class _AstrologyScreenState extends State<AstrologyScreen> {
             ),
             isDense: true,
           ),
-          onChanged: (value) => setState(() => _query = value),
+          onChanged: _onSearchChanged,
         ),
       ),
     );
@@ -239,32 +251,8 @@ class _AstrologyScreenState extends State<AstrologyScreen> {
         return false;
       },
       child: Card(
-        child: ListTile(
-          leading: CircleAvatar(
-            radius: rs.r(20),
-            backgroundColor: kPrimaryLightColor,
-            child: Icon(
-              Icons.person_outline,
-              color: kPrimaryColor,
-              size: rs.r(20),
-            ),
-          ),
-          title: Text(
-            profile.name,
-            style: TextStyle(fontWeight: FontWeight.w700, fontSize: rs.sp(16)),
-          ),
-          subtitle: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              SizedBox(height: rs.rh(4)),
-              Text(profile.address, style: TextStyle(fontSize: rs.sp(13.5))),
-              SizedBox(height: rs.rh(2)),
-              Text(
-                'Birth: $date · $time',
-                style: TextStyle(fontSize: rs.sp(13.5)),
-              ),
-            ],
-          ),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
           onTap: () {
             Navigator.of(context).push(
               MaterialPageRoute(
@@ -272,6 +260,34 @@ class _AstrologyScreenState extends State<AstrologyScreen> {
               ),
             );
           },
+          child: ListTile(
+            leading: CircleAvatar(
+              radius: rs.r(20),
+              backgroundColor: kPrimaryLightColor,
+              child: Icon(
+                Icons.person_outline,
+                color: kPrimaryColor,
+                size: rs.r(20),
+              ),
+            ),
+            title: Text(
+              profile.name,
+              style:
+                  TextStyle(fontWeight: FontWeight.w700, fontSize: rs.sp(16)),
+            ),
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(height: rs.rh(4)),
+                Text(profile.address, style: TextStyle(fontSize: rs.sp(13.5))),
+                SizedBox(height: rs.rh(2)),
+                Text(
+                  'Birth: $date · $time',
+                  style: TextStyle(fontSize: rs.sp(13.5)),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );

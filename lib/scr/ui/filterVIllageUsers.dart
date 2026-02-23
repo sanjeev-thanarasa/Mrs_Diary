@@ -3,18 +3,16 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:mrs_dth_diary_v1/scr/helpers/owner_service.dart';
-import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:mrs_dth_diary_v1/scr/models/filterUser.dart';
-import 'package:mrs_dth_diary_v1/scr/ui/editUserDetail.dart';
 import 'package:mrs_dth_diary_v1/scr/ui/userDetails.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/CAppBar.dart';
-import 'package:mrs_dth_diary_v1/scr/widgets/customText.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/loading.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/noResultFound.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/userDetailsTile.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/subHelpers/screen_navigation.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/subHelpers/responsive.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/subHelpers/styles.dart';
+import 'dart:async';
 
 class FilterVillageUser extends StatefulWidget {
   final String villageName;
@@ -32,6 +30,7 @@ class _FilterVillageUserState extends State<FilterVillageUser> {
   bool _isStatusLoading = false;
   final Map<String, _UserPaymentStatus> _statusCache = {};
   ScrollController _controller = ScrollController();
+  Timer? _searchDebounce;
   String counter = "0";
   Future<_VillageAmountSummary>? _amountSummaryFuture;
   List<QueryDocumentSnapshot<Map<String, dynamic>>> _cachedOldDocs = [];
@@ -46,6 +45,7 @@ class _FilterVillageUserState extends State<FilterVillageUser> {
 
   @override
   void dispose() {
+    _searchDebounce?.cancel();
     _controller.dispose();
     super.dispose();
   }
@@ -87,101 +87,130 @@ class _FilterVillageUserState extends State<FilterVillageUser> {
           }
         }),
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            Visibility(
-              visible: searchVisible,
-              child: Padding(
-                padding: const EdgeInsets.only(top: 15.0, bottom: 15.0),
-                child: Column(
-                  children: [
-                    _buildAllFilterChips(),
-                    if (_isStatusLoading)
-                      const Padding(
-                        padding: EdgeInsets.only(top: 8),
-                        child: SizedBox(
-                          height: 16,
-                          width: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        ),
-                      ),
-                  ],
+      body: CustomScrollView(
+        controller: _controller,
+        slivers: [
+          SliverToBoxAdapter(
+            child: Column(
+              children: [
+                Visibility(
+                  visible: searchVisible,
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: 15.0, bottom: 15.0),
+                    child: Column(
+                      children: [
+                        _buildAllFilterChips(),
+                        if (_isStatusLoading)
+                          const Padding(
+                            padding: EdgeInsets.only(top: 8),
+                            child: SizedBox(
+                              height: 16,
+                              width: 16,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
                 ),
-              ),
+                if (!searchVisible)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+                    child: _buildVillagePendingCard(),
+                  ),
+              ],
             ),
-            if (!searchVisible)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-                child: _buildVillagePendingCard(),
-              ),
-            Padding(
-              padding: const EdgeInsets.only(top: 15.0),
-              child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-                stream: _oldUsersStreamRef,
-                builder: (context, oldSnapshot) {
-                  final oldDocs = oldSnapshot.data?.docs ?? _cachedOldDocs;
-                  if (oldSnapshot.hasData) {
-                    _cachedOldDocs = oldSnapshot.data?.docs ?? [];
-                  }
+          ),
+          SliverPadding(
+            padding: const EdgeInsets.only(top: 15.0),
+            sliver: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+              stream: _oldUsersStreamRef,
+              builder: (context, oldSnapshot) {
+                final oldDocs = oldSnapshot.data?.docs ?? _cachedOldDocs;
+                if (oldSnapshot.hasData) {
+                  _cachedOldDocs = oldSnapshot.data?.docs ?? [];
+                }
 
-                  if (oldSnapshot.connectionState == ConnectionState.waiting &&
-                      _cachedOldDocs.isEmpty) {
-                    return const Center(child: LoadingCircle());
-                  }
-
-                  return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-                    stream: _newUsersStreamRef,
-                    builder: (context, newSnapshot) {
-                      final newDocs = newSnapshot.data?.docs ?? _cachedNewDocs;
-                      if (newSnapshot.hasData) {
-                        _cachedNewDocs = newSnapshot.data?.docs ?? [];
-                      }
-
-                      final allDocs = [...oldDocs, ...newDocs];
-                      final showResults = _searchResultsList(allDocs);
-
-                      if (showResults.isEmpty &&
-                          _paymentFilterValue != 0 &&
-                          _isStatusLoading &&
-                          _statusCache.isEmpty) {
-                        return const Center(child: LoadingCircle());
-                      }
-
-                      return showResults.isNotEmpty
-                          ? ListView.builder(
-                              scrollDirection: Axis.vertical,
-                              controller: _controller,
-                              shrinkWrap: true,
-                              itemCount: showResults.length,
-                              itemBuilder: (_, index) {
-                                final data = showResults[index];
-                                final collectionName = data.reference.parent.id;
-                                return UserDetailsTile(
-                                  name: data['name'] ?? '',
-                                  dishNumber: data['dishNumber'] ?? '',
-                                  mobileNo: data['mobileNo'] ?? '',
-                                  villageName: data['area'] ?? '',
-                                  userId: data['id'] ?? data.id,
-                                  collectionName: collectionName,
-                                  onTap: () {
-                                    changeScreenAnimated(
-                                        context,
-                                        UserDetails(
-                                          collectionName: collectionName,
-                                          userId: data.id,
-                                        ));
-                                  },
-                                );
-                              })
-                          : SearchNoData();
-                    },
+                if (oldSnapshot.connectionState == ConnectionState.waiting &&
+                    _cachedOldDocs.isEmpty) {
+                  return const SliverToBoxAdapter(
+                    child: Center(child: LoadingCircle()),
                   );
-                },
-              ),
+                }
+
+                return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                  stream: _newUsersStreamRef,
+                  builder: (context, newSnapshot) {
+                    final newDocs = newSnapshot.data?.docs ?? _cachedNewDocs;
+                    if (newSnapshot.hasData) {
+                      _cachedNewDocs = newSnapshot.data?.docs ?? [];
+                    }
+
+                    final allDocs = [...oldDocs, ...newDocs];
+                    final showResults = _searchResultsList(allDocs);
+
+                    if (showResults.isEmpty &&
+                        _paymentFilterValue != 0 &&
+                        _isStatusLoading &&
+                        _statusCache.isEmpty) {
+                      return const SliverToBoxAdapter(
+                        child: Center(child: LoadingCircle()),
+                      );
+                    }
+
+                    if (showResults.isEmpty) {
+                      return const SliverToBoxAdapter(child: SearchNoData());
+                    }
+
+                    return SliverList(
+                      delegate: SliverChildBuilderDelegate(
+                        (context, index) {
+                          final data = showResults[index];
+                          final collectionName = data.reference.parent.id;
+                          final userId = (data['id'] ?? data.id).toString();
+                          final status = _statusCache[userId];
+                          final hasPending =
+                              status?.pending != null && status!.pending > 0;
+                          final hasBalance = !hasPending &&
+                              status?.balance != null &&
+                              status!.balance > 0;
+                          return UserDetailsTile(
+                            name: data['name'] ?? '',
+                            dishNumber: data['dishNumber'] ?? '',
+                            mobileNo: data['mobileNo'] ?? '',
+                            villageName: data['area'] ?? '',
+                            userId: userId,
+                            collectionName: collectionName,
+                            amountLabel: hasPending
+                                ? 'தருமதி'
+                                : hasBalance
+                                    ? 'கொடுமதி'
+                                    : null,
+                            amountValue: hasPending
+                                ? status.pending
+                                : hasBalance
+                                    ? status.balance
+                                    : null,
+                            onTap: () {
+                              changeScreenAnimated(
+                                context,
+                                UserDetails(
+                                  collectionName: collectionName,
+                                  userId: data.id,
+                                ),
+                              );
+                            },
+                          );
+                        },
+                        childCount: showResults.length,
+                      ),
+                    );
+                  },
+                );
+              },
             ),
-          ],
-        ),
+          ),
+        ],
       ),
       // floatingActionButton: FloatingActionButton(
       //   backgroundColor: Colors.red,
@@ -303,12 +332,13 @@ class _FilterVillageUserState extends State<FilterVillageUser> {
   }
 
   _onSearchChanged(String text) {
-    setState(() {
-      searchText = text;
-      print(searchText);
+    _searchDebounce?.cancel();
+    _searchDebounce = Timer(const Duration(milliseconds: 250), () {
+      if (!mounted) return;
+      setState(() {
+        searchText = text;
+      });
     });
-    // searchResultsList();
-    print(searchText);
   }
 
   _searchResultsList(var snapshots) {
@@ -638,46 +668,6 @@ class _FilterVillageUserState extends State<FilterVillageUser> {
       return value.toInt().toString();
     }
     return value.toString();
-  }
-
-  Future<void> _confirmDelete(
-    BuildContext context, {
-    required String userId,
-    required String collectionName,
-    required String name,
-  }) async {
-    final shouldDelete = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text(
-          'Delete user?',
-          style: TextStyle(fontFamily: 'TamilArima'),
-        ),
-        content: Text(
-          name.isEmpty
-              ? 'Are you sure you want to delete this user?'
-              : 'Delete $name from $collectionName?',
-          style: const TextStyle(fontFamily: 'TamilArima2'),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
-    );
-
-    if (shouldDelete != true) return;
-    await FirebaseFirestore.instance
-        .collection(collectionName)
-        .doc(userId)
-        .delete();
   }
 }
 

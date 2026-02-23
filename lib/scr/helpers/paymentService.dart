@@ -3,6 +3,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:mrs_dth_diary_v1/scr/helpers/owner_service.dart';
+import 'package:mrs_dth_diary_v1/scr/helpers/user_amount_cache.dart';
+import 'package:mrs_dth_diary_v1/scr/helpers/village_summary_refresh_manager.dart';
 import 'package:rounded_loading_button/rounded_loading_button.dart';
 
 class PaymentServices {
@@ -144,6 +146,8 @@ class PaymentServices {
     };
 
     await databaseReference.collection(collection).add(addPayment);
+    UserAmountCache.invalidate(userId);
+    VillageSummaryRefreshManager.scheduleRefreshForUserId(userId);
     btnController.success();
     clearRecords();
     return true;
@@ -330,6 +334,10 @@ class PaymentServices {
         .collection(collection)
         .doc(snapshot.id)
         .update(updatePayment);
+    UserAmountCache.invalidate(snapshot["USER_ID"].toString());
+    VillageSummaryRefreshManager.scheduleRefreshForUserId(
+      snapshot["USER_ID"].toString(),
+    );
     btnController.success();
     clearRecords();
   }

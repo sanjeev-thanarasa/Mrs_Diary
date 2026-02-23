@@ -1,8 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:mrs_dth_diary_v1/scr/helpers/operations.dart';
 import 'package:mrs_dth_diary_v1/scr/helpers/owner_service.dart';
+import 'package:mrs_dth_diary_v1/scr/helpers/user_amount_cache.dart';
 import 'package:mrs_dth_diary_v1/scr/ui/editUserDetail.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/subHelpers/responsive.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/subHelpers/screen_navigation.dart';
@@ -17,6 +17,7 @@ class UserDetailsTile extends StatefulWidget {
   final Object? amountValue;
   final String userId;
   final String collectionName;
+  final bool enableActions;
 
   const UserDetailsTile({
     super.key,
@@ -27,6 +28,7 @@ class UserDetailsTile extends StatefulWidget {
     required this.onTap,
     required this.userId,
     required this.collectionName,
+    this.enableActions = false,
     this.amountLabel,
     this.amountValue,
   });
@@ -63,7 +65,14 @@ class _UserDetailsTileState extends State<UserDetailsTile> {
       _amountFuture = null;
       return;
     }
-    _amountFuture = _fetchOutstandingAmount(id);
+    final cached = UserAmountCache.get(id);
+    if (cached != null) {
+      _amountFuture = cached;
+      return;
+    }
+    final future = _fetchOutstandingAmount(id);
+    UserAmountCache.set(id, future);
+    _amountFuture = future;
   }
 
   bool _hasAmountValue(Object? value) {
@@ -270,6 +279,8 @@ class _UserDetailsTileState extends State<UserDetailsTile> {
           collectionName: widget.collectionName,
         );
 
+        UserAmountCache.invalidate(widget.userId);
+
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -309,123 +320,47 @@ class _UserDetailsTileState extends State<UserDetailsTile> {
     final rs = context.rs;
     final colorScheme = Theme.of(context).colorScheme;
 
-    return Slidable(
-      key: ValueKey(widget.userId),
-      endActionPane: ActionPane(
-        motion: const DrawerMotion(),
-        extentRatio: 0.4,
-        children: [
-          SlidableAction(
-            onPressed: (_) => _navigateToEdit(context),
-            backgroundColor: Colors.blue,
-            foregroundColor: Colors.white,
-            icon: Icons.edit_rounded,
-            label: 'Edit',
-            borderRadius: BorderRadius.circular(rs.r(16)),
-          ),
-          SlidableAction(
-            onPressed: (_) => _confirmDelete(context),
-            backgroundColor: Colors.redAccent,
-            foregroundColor: Colors.white,
-            icon: Icons.delete_rounded,
-            label: 'Delete',
-            borderRadius: BorderRadius.circular(rs.r(16)),
-          ),
-        ],
+    return Card(
+      elevation: rs.r(1.5),
+      margin: EdgeInsets.symmetric(horizontal: rs.rw(8), vertical: rs.rh(4)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(rs.r(16)),
       ),
-      child: Card(
-        elevation: rs.r(1.5),
-        margin: EdgeInsets.symmetric(horizontal: rs.rw(8), vertical: rs.rh(4)),
-        shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(rs.r(16))),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(rs.r(16)),
-          onTap: widget.onTap,
-          child: Padding(
-            padding: EdgeInsets.all(rs.r(14)),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        widget.name,
-                        style: TextStyle(
-                          fontSize: rs.sp(16),
-                          fontWeight: FontWeight.w700,
-                          color: colorScheme.onSurface,
-                          fontFamily: 'TamilArima',
-                        ),
-                        overflow: TextOverflow.ellipsis,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(rs.r(16)),
+        onTap: widget.onTap,
+        onLongPress: widget.enableActions ? () => _showActions(context) : null,
+        child: Padding(
+          padding: EdgeInsets.all(rs.r(14)),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      widget.name,
+                      style: TextStyle(
+                        fontSize: rs.sp(16),
+                        fontWeight: FontWeight.w700,
+                        color: colorScheme.onSurface,
+                        fontFamily: 'TamilArima',
                       ),
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    SizedBox(width: rs.rw(12)),
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.tv_rounded,
-                            color: colorScheme.primary, size: rs.r(16)),
-                        SizedBox(width: rs.rw(4)),
-                        Text(
-                          widget.dishNumber,
-                          style: TextStyle(
-                            fontSize: rs.sp(12.5),
-                            fontWeight: FontWeight.w700,
-                            color: colorScheme.onSurface,
-                            fontFamily: 'Lobster',
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-                if (widget.villageName.isNotEmpty ||
-                    _hasAmountValue(widget.amountValue) ||
-                    _amountFuture != null) ...[
-                  SizedBox(height: rs.rh(8)),
-                  Row(
-                    children: [
-                      if (widget.villageName.isNotEmpty)
-                        Expanded(
-                          child: Row(
-                            children: [
-                              Icon(Icons.location_on_rounded,
-                                  color: colorScheme.primary, size: rs.r(16)),
-                              SizedBox(width: rs.rw(6)),
-                              Expanded(
-                                child: Text(
-                                  widget.villageName,
-                                  style: TextStyle(
-                                    fontSize: rs.sp(13),
-                                    color: colorScheme.onSurfaceVariant,
-                                    fontFamily: 'TamilArima2',
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                            ],
-                          ),
-                        )
-                      else
-                        const Spacer(),
-                      _buildAmountSection(context),
-                    ],
                   ),
-                ],
-                if (widget.mobileNo.trim().isNotEmpty) ...[
-                  SizedBox(height: rs.rh(8)),
+                  SizedBox(width: rs.rw(12)),
                   Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.phone_rounded,
+                      Icon(Icons.tv_rounded,
                           color: colorScheme.primary, size: rs.r(16)),
                       SizedBox(width: rs.rw(4)),
                       Text(
-                        widget.mobileNo,
+                        widget.dishNumber,
                         style: TextStyle(
-                          fontSize: rs.sp(13.5),
-                          fontWeight: FontWeight.w600,
+                          fontSize: rs.sp(12.5),
+                          fontWeight: FontWeight.w700,
                           color: colorScheme.onSurface,
                           fontFamily: 'Lobster',
                         ),
@@ -433,11 +368,100 @@ class _UserDetailsTileState extends State<UserDetailsTile> {
                     ],
                   ),
                 ],
+              ),
+              if (widget.villageName.isNotEmpty ||
+                  _hasAmountValue(widget.amountValue) ||
+                  _amountFuture != null) ...[
+                SizedBox(height: rs.rh(8)),
+                Row(
+                  children: [
+                    if (widget.villageName.isNotEmpty)
+                      Expanded(
+                        child: Row(
+                          children: [
+                            Icon(Icons.location_on_rounded,
+                                color: colorScheme.primary, size: rs.r(16)),
+                            SizedBox(width: rs.rw(6)),
+                            Expanded(
+                              child: Text(
+                                widget.villageName,
+                                style: TextStyle(
+                                  fontSize: rs.sp(13),
+                                  color: colorScheme.onSurfaceVariant,
+                                  fontFamily: 'TamilArima2',
+                                  fontWeight: FontWeight.w600,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    else
+                      const Spacer(),
+                    _buildAmountSection(context),
+                  ],
+                ),
               ],
-            ),
+              if (widget.mobileNo.trim().isNotEmpty) ...[
+                SizedBox(height: rs.rh(8)),
+                Row(
+                  children: [
+                    Icon(Icons.phone_rounded,
+                        color: colorScheme.primary, size: rs.r(16)),
+                    SizedBox(width: rs.rw(4)),
+                    Text(
+                      widget.mobileNo,
+                      style: TextStyle(
+                        fontSize: rs.sp(13.5),
+                        fontWeight: FontWeight.w600,
+                        color: colorScheme.onSurface,
+                        fontFamily: 'Lobster',
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ],
           ),
         ),
       ),
+    );
+  }
+
+  Future<void> _showActions(BuildContext context) async {
+    final rs = context.rs;
+    await showModalBottomSheet<void>(
+      context: context,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(rs.r(18))),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.edit_rounded, color: Colors.blue),
+                title: const Text('Edit'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _navigateToEdit(context);
+                },
+              ),
+              ListTile(
+                leading:
+                    const Icon(Icons.delete_rounded, color: Colors.redAccent),
+                title: const Text('Delete'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _confirmDelete(context);
+                },
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

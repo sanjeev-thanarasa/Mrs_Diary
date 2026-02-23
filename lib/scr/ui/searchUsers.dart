@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:mrs_dth_diary_v1/scr/helpers/owner_service.dart';
 import 'package:mrs_dth_diary_v1/scr/helpers/createUser.dart';
+import 'package:mrs_dth_diary_v1/scr/helpers/user_search_service.dart';
 import 'package:mrs_dth_diary_v1/scr/models/dropDownModel.dart';
 import 'package:mrs_dth_diary_v1/scr/ui/userDetails.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/CDropDownList.dart';
@@ -30,6 +33,7 @@ class _SearchUsersScreenState extends State<SearchUsersScreen> {
   final _shopController = TextEditingController();
 
   final USerServices _userServices = USerServices();
+  final UserSearchService _searchService = UserSearchService();
 
   DateTime? _registerFrom;
   DateTime? _registerTo;
@@ -47,6 +51,7 @@ class _SearchUsersScreenState extends State<SearchUsersScreen> {
   bool _useShopFilter = false;
   bool _useDishTypeFilter = false;
   bool _useVillageFilter = false;
+  Timer? _searchDebounce;
 
   @override
   void initState() {
@@ -57,6 +62,7 @@ class _SearchUsersScreenState extends State<SearchUsersScreen> {
 
   @override
   void dispose() {
+    _searchDebounce?.cancel();
     _queryController.dispose();
     _nameController.dispose();
     _mobileController.dispose();
@@ -124,7 +130,7 @@ class _SearchUsersScreenState extends State<SearchUsersScreen> {
             child: TextField(
               controller: _queryController,
               style: const TextStyle(color: Colors.black),
-              onChanged: (_) => setState(() {}),
+              onChanged: (_) => _onQueryChanged(),
               decoration: const InputDecoration(
                 border: InputBorder.none,
                 hintText: 'Search users...',
@@ -248,6 +254,14 @@ class _SearchUsersScreenState extends State<SearchUsersScreen> {
         _buildInlineFilters(colorScheme),
       ],
     );
+  }
+
+  void _onQueryChanged() {
+    _searchDebounce?.cancel();
+    _searchDebounce = Timer(const Duration(milliseconds: 250), () {
+      if (!mounted) return;
+      setState(() {});
+    });
   }
 
   Widget _scopeChoiceChip(String label, _UserScope scope) {
@@ -631,72 +645,109 @@ class _SearchUsersScreenState extends State<SearchUsersScreen> {
     );
   }
 
-  Widget _buildResultsList() {
-    final ownerId = currentOwnerId();
-    if (ownerId == null) {
-      return const Center(child: CircularProgressIndicator());
+  List<String> _targetCollections() {
+    switch (_scope) {
+      case _UserScope.old:
+        return ['OldUser'];
+      case _UserScope.newUser:
+        return ['NewUser'];
+      case _UserScope.all:
+        return ['OldUser', 'NewUser'];
     }
-    final oldStream = FirebaseFirestore.instance
-        .collection('OldUser')
-        .where('ownerId', isEqualTo: ownerId)
-        .snapshots();
-    final newStream = FirebaseFirestore.instance
-        .collection('NewUser')
-        .where('ownerId', isEqualTo: ownerId)
-        .snapshots();
+  }
 
-    return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-      stream: oldStream,
-      builder: (context, oldSnapshot) {
-        if (oldSnapshot.connectionState == ConnectionState.waiting) {
+  Future<List<_UserResult>> _performSearch() async {
+    final ownerId = currentOwnerId();
+    if (ownerId == null) return [];
+
+    final query = _queryController.text.trim();
+    final name = _useNameFilter ? _nameController.text.trim() : '';
+    final mobile = _useMobileFilter ? _mobileController.text.trim() : '';
+    final village = _useVillageFilter && _selectedVillage != 'Select Area'
+        ? _selectedVillage.trim()
+        : '';
+
+    final results = <_UserResult>[];
+
+    for (final collection in _targetCollections()) {
+      List<QueryDocumentSnapshot<Map<String, dynamic>>> docs = [];
+
+      if (mobile.isNotEmpty) {
+        docs = await _searchService.searchByMobile(
+          mobile,
+          collection: collection,
+        );
+      } else if (name.isNotEmpty) {
+        docs = await _searchService.searchByName(
+          name,
+          collection: collection,
+        );
+      } else if (village.isNotEmpty) {
+        docs = await _searchService.searchByArea(
+          village,
+          collection: collection,
+        );
+      } else if (query.isNotEmpty) {
+        docs = await _searchService.searchByNameOrMobile(
+          query,
+          collection: collection,
+        );
+      } else {
+        final snapshot = await FirebaseFirestore.instance
+            .collection(collection)
+            .where('ownerId', isEqualTo: ownerId)
+            .orderBy('name')
+            .limit(200)
+            .get();
+        docs = snapshot.docs;
+      }
+
+      results.addAll(docs.map((doc) => _UserResult(doc, collection)));
+    }
+
+    return results;
+  }
+
+  Widget _buildResultsList() {
+    return FutureBuilder<List<_UserResult>>(
+      future: _performSearch(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
         }
-        final oldDocs = oldSnapshot.data?.docs ?? [];
-        return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-          stream: newStream,
-          builder: (context, newSnapshot) {
-            if (newSnapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator());
-            }
-            final newDocs = newSnapshot.data?.docs ?? [];
-            final merged = <_UserResult>[];
-            if (_scope == _UserScope.all || _scope == _UserScope.old) {
-              merged.addAll(oldDocs.map((doc) => _UserResult(doc, 'OldUser')));
-            }
-            if (_scope == _UserScope.all || _scope == _UserScope.newUser) {
-              merged.addAll(newDocs.map((doc) => _UserResult(doc, 'NewUser')));
-            }
+        if (snapshot.hasError) {
+          return Center(child: Text('Error: ${snapshot.error}'));
+        }
 
-            final filtered = _applyFilters(merged);
-            if (filtered.isEmpty) {
-              return const Center(child: SearchNoData());
-            }
+        final merged = snapshot.data ?? [];
+        final filtered = _applyFilters(merged);
+        if (filtered.isEmpty) {
+          return const Center(child: SearchNoData());
+        }
 
-            return ListView.builder(
-              padding: EdgeInsets.fromLTRB(
-                  context.rs.rw(12), 0, context.rs.rw(12), context.rs.rh(16)),
-              itemCount: filtered.length,
-              itemBuilder: (_, index) {
-                final entry = filtered[index];
-                final data = entry.doc.data();
-                return UserDetailsTile(
-                  name: _field(data['name']),
-                  dishNumber: _field(data['dishNumber']),
-                  mobileNo: _field(data['mobileNo']),
-                  villageName: _field(data['area']),
-                  userId: _field(data['id']).isNotEmpty
-                      ? _field(data['id'])
-                      : entry.doc.id,
-                  collectionName: entry.collection,
-                  onTap: () {
-                    changeScreenAnimated(
-                      context,
-                      UserDetails(
-                        collectionName: entry.collection,
-                        userId: entry.doc.id,
-                      ),
-                    );
-                  },
+        return ListView.builder(
+          padding: EdgeInsets.fromLTRB(
+              context.rs.rw(12), 0, context.rs.rw(12), context.rs.rh(16)),
+          itemCount: filtered.length,
+          itemBuilder: (_, index) {
+            final entry = filtered[index];
+            final data = entry.doc.data();
+            return UserDetailsTile(
+              name: _field(data['name']),
+              dishNumber: _field(data['dishNumber']),
+              mobileNo: _field(data['mobileNo']),
+              villageName: _field(data['area']),
+              userId: _field(data['id']).isNotEmpty
+                  ? _field(data['id'])
+                  : entry.doc.id,
+              collectionName: entry.collection,
+              onTap: () {
+                changeScreenAnimated(
+                  context,
+                  UserDetails(
+                    collectionName: entry.collection,
+                    userId: entry.doc.id,
+                  ),
                 );
               },
             );

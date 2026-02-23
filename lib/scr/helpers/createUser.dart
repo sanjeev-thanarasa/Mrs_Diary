@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:mrs_dth_diary_v1/scr/models/dropDownModel.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/CToast.dart';
 import 'package:mrs_dth_diary_v1/scr/helpers/owner_service.dart';
+import 'package:mrs_dth_diary_v1/scr/helpers/village_summary_refresh_manager.dart';
 import 'package:rounded_loading_button/rounded_loading_button.dart';
 import 'package:uuid/uuid.dart';
 
@@ -71,6 +72,7 @@ class USerServices {
   void createRecord({required int index, required BuildContext context}) async {
     String id = const Uuid().v1();
     final ownerId = requireOwnerId();
+    final areaName = selectedArea.trim();
     addOldUser = {
       "id": id,
       "ownerId": ownerId,
@@ -111,6 +113,9 @@ class USerServices {
             .whenComplete(() {
           btnController.success();
           CToast.show(message: "Added Successfully");
+          if (areaName.isNotEmpty) {
+            VillageSummaryRefreshManager.scheduleRefresh(areaName);
+          }
           clearRecords();
         });
       });
@@ -123,6 +128,9 @@ class USerServices {
             .whenComplete(() {
           btnController.success();
           CToast.show(message: "Added Successfully");
+          if (areaName.isNotEmpty) {
+            VillageSummaryRefreshManager.scheduleRefresh(areaName);
+          }
           clearRecords();
         });
       });
@@ -134,9 +142,12 @@ class USerServices {
     required BuildContext context,
     required String userId,
     required String collectionName,
+    String? previousArea,
   }) async {
     final now = DateTime.now();
     final ownerId = requireOwnerId();
+    final areaName = selectedArea.trim();
+    final previousAreaName = previousArea?.trim() ?? '';
     if (collectionName == 'NewUser') {
       addNewUser = {
         "id": userId,
@@ -161,6 +172,12 @@ class USerServices {
             .whenComplete(() {
           btnController.success();
           CToast.show(message: "Added Successfully");
+          if (areaName.isNotEmpty) {
+            VillageSummaryRefreshManager.scheduleRefresh(areaName);
+          }
+          if (previousAreaName.isNotEmpty && previousAreaName != areaName) {
+            VillageSummaryRefreshManager.scheduleRefresh(previousAreaName);
+          }
           clearRecords();
           Navigator.maybePop(context, true);
         });
@@ -186,6 +203,12 @@ class USerServices {
             .whenComplete(() {
           btnController.success();
           CToast.show(message: "Added Successfully");
+          if (areaName.isNotEmpty) {
+            VillageSummaryRefreshManager.scheduleRefresh(areaName);
+          }
+          if (previousAreaName.isNotEmpty && previousAreaName != areaName) {
+            VillageSummaryRefreshManager.scheduleRefresh(previousAreaName);
+          }
           clearRecords();
           Navigator.maybePop(context, true);
         });

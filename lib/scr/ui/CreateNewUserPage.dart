@@ -539,25 +539,6 @@ class _CreateNewUserState extends State<CreateNewUser> {
     );
   }
 
-  Widget _sectionLabel(String text) {
-    final rs = context.rs;
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: rs.rw(16)),
-      child: Align(
-        alignment: Alignment.centerLeft,
-        child: Text(
-          text,
-          style: TextStyle(
-            fontSize: rs.sp(13),
-            fontWeight: FontWeight.w700,
-            fontFamily: 'TamilArima',
-            color: Colors.black87,
-          ),
-        ),
-      ),
-    );
-  }
-
   @override
   void dispose() {
     _uSerServices.selectedArea = 'Select Area';

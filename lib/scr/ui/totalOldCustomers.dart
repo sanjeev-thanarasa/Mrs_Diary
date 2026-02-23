@@ -6,7 +6,6 @@ import 'package:mrs_dth_diary_v1/scr/helpers/owner_service.dart';
 import 'package:mrs_dth_diary_v1/scr/models/totalCustomers.dart';
 import 'package:mrs_dth_diary_v1/scr/ui/userDetails.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/CAppBar.dart';
-import 'package:mrs_dth_diary_v1/scr/widgets/customText.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/loading.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/noResultFound.dart';
 import 'package:mrs_dth_diary_v1/scr/widgets/userDetailsTile.dart';
@@ -240,13 +239,29 @@ class _TotalOldCustomersState extends State<TotalOldCustomers> {
         }
 
         final data = showResults[index];
+        final userId = (data['id'] ?? data.id).toString();
+        final status = _statusCache[userId];
+        final hasPending = status?.pending != null && status!.pending > 0;
+        final hasBalance =
+            !hasPending && status?.balance != null && status!.balance > 0;
         return UserDetailsTile(
           name: data['name'],
           dishNumber: data['dishNumber'],
           mobileNo: data['mobileNo'],
           villageName: data['area'],
-          userId: data['id'] ?? data.id,
+          userId: userId,
           collectionName: "OldUser",
+          enableActions: true,
+          amountLabel: hasPending
+              ? 'தருமதி'
+              : hasBalance
+                  ? 'கொடுமதி'
+                  : null,
+          amountValue: hasPending
+              ? status.pending
+              : hasBalance
+                  ? status.balance
+                  : null,
           onTap: () {
             changeScreenAnimated(
                 context,

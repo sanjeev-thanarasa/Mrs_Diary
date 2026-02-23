@@ -19,6 +19,7 @@ class _MyAccountsScreenState extends State<MyAccountsScreen> {
   final ScrollController _controller = ScrollController();
   late final CollectionReference<Map<String, dynamic>> collectionReference;
   late final CollectionReference<Map<String, dynamic>> paymentsReference;
+  Map<String, _AccountSummary> _latestSummaries = {};
 
   @override
   void initState() {
@@ -51,44 +52,59 @@ class _MyAccountsScreenState extends State<MyAccountsScreen> {
           ),
         ),
       ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: EdgeInsets.fromLTRB(
-            rs.rw(16),
-            rs.rh(12),
-            rs.rw(16),
-            rs.rh(24),
-          ),
-          child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-            stream: paymentsReference
-                .where('ownerId', isEqualTo: requireOwnerId())
-                .snapshots(),
-            builder: (context, snapshot) {
-              final docs = snapshot.data?.docs ?? [];
-              final totals = docs.isEmpty
-                  ? _SummaryTotals.empty
-                  : _SummaryTotals.fromDocs(docs);
-              final summaries = docs.isEmpty
-                  ? <String, _AccountSummary>{}
-                  : _AccountSummary.fromDocs(docs);
-              final isLoading =
-                  snapshot.connectionState == ConnectionState.waiting &&
-                      snapshot.data == null;
+      body: CustomScrollView(
+        controller: _controller,
+        slivers: [
+          SliverPadding(
+            padding: EdgeInsets.fromLTRB(
+              rs.rw(16),
+              rs.rh(12),
+              rs.rw(16),
+              rs.rh(12),
+            ),
+            sliver: SliverToBoxAdapter(
+              child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                stream: paymentsReference
+                    .where('ownerId', isEqualTo: requireOwnerId())
+                    .snapshots(),
+                builder: (context, snapshot) {
+                  final docs = snapshot.data?.docs ?? [];
+                  final totals = docs.isEmpty
+                      ? _SummaryTotals.empty
+                      : _SummaryTotals.fromDocs(docs);
+                  final summaries = docs.isEmpty
+                      ? <String, _AccountSummary>{}
+                      : _AccountSummary.fromDocs(docs);
+                  final isLoading =
+                      snapshot.connectionState == ConnectionState.waiting &&
+                          snapshot.data == null;
 
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildHeaderCard(
-                    totals: totals,
-                    isLoading: isLoading,
-                  ),
-                  SizedBox(height: rs.rh(16)),
-                  _buildAccountsSection(summaries),
-                ],
-              );
-            },
+                  _latestSummaries = summaries;
+
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildHeaderCard(
+                        totals: totals,
+                        isLoading: isLoading,
+                      ),
+                      SizedBox(height: rs.rh(16)),
+                    ],
+                  );
+                },
+              ),
+            ),
           ),
-        ),
+          SliverPadding(
+            padding: EdgeInsets.fromLTRB(
+              rs.rw(16),
+              0,
+              rs.rw(16),
+              rs.rh(24),
+            ),
+            sliver: _buildAccountsSection(_latestSummaries),
+          ),
+        ],
       ),
       floatingActionButton: Padding(
         padding: EdgeInsets.only(left: rs.rw(16), bottom: rs.rh(16)),
@@ -119,22 +135,26 @@ class _MyAccountsScreenState extends State<MyAccountsScreen> {
         final colorScheme = Theme.of(context).colorScheme;
         final rs = context.rs;
         if (snap.hasError) {
-          return Center(
-            child: Text(
-              'Something went wrong!!!',
-              style: TextStyle(
-                fontSize: rs.sp(16),
-                fontWeight: FontWeight.w600,
-                color: colorScheme.onSurfaceVariant,
+          return SliverToBoxAdapter(
+            child: Center(
+              child: Text(
+                'Something went wrong!!!',
+                style: TextStyle(
+                  fontSize: rs.sp(16),
+                  fontWeight: FontWeight.w600,
+                  color: colorScheme.onSurfaceVariant,
+                ),
               ),
             ),
           );
         }
         if (snap.connectionState == ConnectionState.waiting || !snap.hasData) {
-          return const Center(
-            child: Padding(
-              padding: EdgeInsets.only(top: 16),
-              child: CircularProgressIndicator(),
+          return const SliverToBoxAdapter(
+            child: Center(
+              child: Padding(
+                padding: EdgeInsets.only(top: 16),
+                child: CircularProgressIndicator(),
+              ),
             ),
           );
         }
@@ -143,13 +163,15 @@ class _MyAccountsScreenState extends State<MyAccountsScreen> {
           snap.data?.docs ?? [],
         );
         if (docs.isEmpty) {
-          return Center(
-            child: Text(
-              'No results found. Try a different keyword',
-              style: TextStyle(
-                fontSize: rs.sp(16),
-                fontWeight: FontWeight.w600,
-                color: colorScheme.onSurfaceVariant,
+          return SliverToBoxAdapter(
+            child: Center(
+              child: Text(
+                'No results found. Try a different keyword',
+                style: TextStyle(
+                  fontSize: rs.sp(16),
+                  fontWeight: FontWeight.w600,
+                  color: colorScheme.onSurfaceVariant,
+                ),
               ),
             ),
           );
@@ -161,56 +183,57 @@ class _MyAccountsScreenState extends State<MyAccountsScreen> {
           return bDate.compareTo(aDate);
         });
 
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              "All Accounts (${docs.length})",
-              style: TextStyle(
-                fontSize: rs.sp(16),
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            SizedBox(height: rs.rh(8)),
-            ListView.builder(
-              scrollDirection: Axis.vertical,
-              controller: _controller,
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: docs.length,
-              itemBuilder: (_, index) {
-                final data = docs[index];
-                final map = data.data();
-                final id = (map["id"]?.toString().trim().isNotEmpty ?? false)
-                    ? map["id"].toString()
-                    : data.id;
-                final title = map["name"]?.toString().trim();
-                final createdAt = _formatCreatedAt(map["createAt"]);
-                final summary = summaries[id];
-                final pendingChip = _buildPendingChipText(summary);
-
-                return CListTile(
-                  context: context,
-                  docId: id,
-                  collectionName: "DashBoard",
-                  tileOnTap: () => changeScreenAnimated(
-                    context,
-                    MyAccountsUserDetails(data: data),
-                  ),
-                  onEdit: () => _showRenameDialog(
-                    context,
-                    id,
-                    title ?? "",
-                  ),
-                  title: title?.isNotEmpty == true ? title! : 'Topup',
-                  subtitle: createdAt,
-                  subtitleIcon: Icons.access_time,
-                  counter: "${index + 1}",
-                  pendingAmount: pendingChip,
+        return SliverList(
+          delegate: SliverChildBuilderDelegate(
+            (context, index) {
+              if (index == 0) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "All Accounts (${docs.length})",
+                      style: TextStyle(
+                        fontSize: rs.sp(16),
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    SizedBox(height: rs.rh(8)),
+                  ],
                 );
-              },
-            ),
-          ],
+              }
+
+              final data = docs[index - 1];
+              final map = data.data();
+              final id = (map["id"]?.toString().trim().isNotEmpty ?? false)
+                  ? map["id"].toString()
+                  : data.id;
+              final title = map["name"]?.toString().trim();
+              final createdAt = _formatCreatedAt(map["createAt"]);
+              final summary = summaries[id];
+              final pendingChip = _buildPendingChipText(summary);
+
+              return CListTile(
+                context: context,
+                docId: id,
+                collectionName: "DashBoard",
+                tileOnTap: () => changeScreenAnimated(
+                  context,
+                  MyAccountsUserDetails(data: data),
+                ),
+                onEdit: () => _showRenameDialog(
+                  context,
+                  id,
+                  title ?? "",
+                ),
+                title: title?.isNotEmpty == true ? title! : 'Topup',
+                subtitle: createdAt,
+                subtitleIcon: Icons.access_time,
+                counter: "${index}",
+                pendingAmount: pendingChip,
+              );
+            },
+            childCount: docs.length + 1,
+          ),
         );
       },
     );
@@ -338,11 +361,6 @@ class _MyAccountsScreenState extends State<MyAccountsScreen> {
       return 'கொடுமதி ${_formatAmount(summary.balance)}';
     }
     return null;
-  }
-
-  bool _canEditSummary(_AccountSummary? summary) {
-    if (summary == null) return true;
-    return summary.pending > 0 || summary.balance > 0;
   }
 
   void _showCreateTopupDialog() {
